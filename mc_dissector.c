@@ -61,18 +61,15 @@ void proto_register_mcbe() {
 }
 
 guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
-    int ret;
-    uint32_t len;
-    guint packet_length;
-
-    packet_length = tvb_reported_length(tvb);
+    guint len;
+    guint packet_length = tvb_reported_length(tvb);
     if (packet_length == 0)
         return 0;
 
     const guint8 *dt = tvb_get_ptr(tvb, offset, packet_length - offset);
-    ret = read_var_int(dt, packet_length - offset, &len);
+    int ret = read_var_int(dt, packet_length - offset, &len);
     if (is_invalid(ret)) {
-        col_add_str(pinfo->cinfo, COL_INFO, "[INVALID] Failed to parse payload length");
+        col_append_str(pinfo->cinfo, COL_INFO, "[INVALID] Failed to parse payload length");
         conversation_t *conv = find_or_create_conversation(pinfo);
         mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
         ctx->state = INVALID;
@@ -89,14 +86,6 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-    if (!ctx) {
-        ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
-        ctx->server_port = pinfo->destport;
-        ctx->state = HANDSHAKE;
-        ctx->compression_threshold = -1;
-        conversation_add_proto_data(conv, proto_mcje, ctx);
-        conversation_set_dissector(conv, mcje_handle);
-    }
 
     if (pinfo->destport == ctx->server_port)
         col_set_str(pinfo->cinfo, COL_INFO, "[C => S]");
@@ -107,15 +96,16 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     guint packet_length = tvb_reported_length(tvb);
     guint8 *dt = tvb_get_ptr(tvb, 0, packet_length);
     guint packet_length_vari;
-    read_pointer += read_var_int(dt, packet_length, &packet_length_vari);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "(%d bytes)", packet_length_vari);
+    guint packet_length_length = read_var_int(dt, packet_length, &packet_length_vari);
+    read_pointer += packet_length_length;
+    col_append_fstr(pinfo->cinfo, COL_INFO, " (%d bytes)", packet_length_vari);
 
     if (tree) {
         proto_item *ti;
 
         ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         proto_tree *mcje_tree = proto_item_add_subtree(ti, ett_mcje);
-        proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, read_pointer, packet_length_vari);
+        proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
         proto_item_append_text(ti, ", state: %d", ctx->state);
     }
 }

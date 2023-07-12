@@ -4,8 +4,8 @@
 
 #include "protocol_data.h"
 
-int read_var_int(const guint8 *data, guint max_length, guint *result) {
-    int p = 0;
+guint read_var_int(const guint8 *data, guint max_length, guint *result) {
+    guint p = 0;
     *result = 0;
     guint8 read;
     do {

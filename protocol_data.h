@@ -19,7 +19,7 @@ typedef struct {
     guint32 compression_threshold;
 } mc_protocol_context;
 
-int read_var_int(const guint8 *data, guint max_length, guint *result);
+guint read_var_int(const guint8 *data, guint max_length, guint *result);
 
 int read_var_long(const guint8 *data, guint max_length, guint64 *result);
 
