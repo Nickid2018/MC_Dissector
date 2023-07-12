@@ -12,18 +12,20 @@
 
 typedef struct {
     enum {
-        PING, HANDSHAKE, LOGIN, PLAY, INVALID
+        HANDSHAKE, PLAY, PING, LOGIN, INVALID
     } state;
     guint32 server_port;
     guint32 protocol_version;
-    guint32 compression_threshold;
+    gint32 compression_threshold;
     bool encrypted;
 } mc_protocol_context;
 
 extern char *STATE_NAME[];
 
-int read_var_int(const guint8 *data, guint max_length, guint *result);
+gint read_var_int(const guint8 *data, guint max_length, guint *result);
 
+gint read_ushort(const guint8 *data, guint16 *result);
 
+gint read_string(const guint8 *data, guint8 **result);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H
