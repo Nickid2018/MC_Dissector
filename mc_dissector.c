@@ -23,9 +23,10 @@ int proto_mcje = -1;
 int proto_mcbe = -1;
 
 int hf_packet_length_je = -1;
+int hf_packet_data_length_je = -1;
 int hf_packet_id_je = -1;
 
-int ett_mcje = -1;
+int ett_mcje = -1, ett_je_proto = -1;
 
 static dissector_handle_t mcje_boot_handle, mcbe_boot_handle, mcje_handle, mcbe_handle, ignore_je_handle, ignore_be_handle;
 
@@ -33,23 +34,31 @@ static dissector_handle_t mcje_boot_handle, mcbe_boot_handle, mcje_handle, mcbe_
 
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
-    static gint *ett_je[] = {&ett_mcje};
+    static gint *ett_je[] = {&ett_mcje, &ett_je_proto};
     static hf_register_info hf_je[] = {
             {&hf_packet_length_je,
-             {"Packet Length",
-              "mcje.packet_length",
-              FT_UINT32, BASE_DEC,
-              NULL, 0x0,
-              NULL, HFILL
-             }
+                    {"Packet Length",
+                            "mcje.packet_length",
+                            FT_UINT32, BASE_DEC,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
+            },
+            {&hf_packet_data_length_je,
+                    {"Packet Data Length",
+                            "mcje.packet_data_length",
+                            FT_UINT32, BASE_DEC,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
             },
             {&hf_packet_id_je,
-             {"Packet ID",
-              "mcje.packet_id",
-              FT_UINT32, BASE_HEX,
-              NULL, 0x0,
-              NULL, HFILL
-             }
+                    {"Packet ID",
+                            "mcje.packet_id",
+                            FT_UINT32, BASE_HEX,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
             }
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
@@ -81,6 +90,11 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
 
 // ------------------- JE Dissector Registration -------------------
 
+void subdissect_mcpc_proto(guint length, tvbuff_t *tvb, packet_info *pinfo,
+                           proto_tree *tree, mc_protocol_context *ctx) {
+
+}
+
 int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
@@ -94,7 +108,7 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 
     guint read_pointer = 0;
     guint packet_length = tvb_reported_length(tvb);
-    guint8 *dt = tvb_get_ptr(tvb, 0, packet_length);
+    const guint8 *dt = tvb_get_ptr(tvb, 0, packet_length);
     guint packet_length_vari;
     guint packet_length_length = read_var_int(dt, packet_length, &packet_length_vari);
     read_pointer += packet_length_length;
@@ -106,8 +120,40 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
         ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         proto_tree *mcje_tree = proto_item_add_subtree(ti, ett_mcje);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
-        proto_item_append_text(ti, ", state: %d", ctx->state);
+        proto_item_append_text(ti, ", State: %s", STATE_NAME[ctx->state]);
+
+        tvbuff_t *new_tvb;
+        if (ctx->compression_threshold < 0) {
+            new_tvb = tvb_new_subset_remaining(tvb, packet_length_length);
+            proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
+            proto_item_set_text(packet_item, "Minecraft JE Packet");
+            proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
+            subdissect_mcpc_proto(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx);
+        } else {
+            guint uncompressed_length;
+            int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
+            if (is_invalid(var_len))
+                return 0;
+
+            proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb, read_pointer, var_len, uncompressed_length);
+            read_pointer += var_len;
+
+            if ((int32_t) uncompressed_length > 0) {
+                new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
+                if (new_tvb == NULL)
+                    return 0;
+                add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
+            } else
+                new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
+
+            proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
+            proto_item_set_text(packet_item, "Minecraft JE Packet");
+            proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
+            subdissect_mcpc_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx);
+        }
     }
+
+    return tvb_captured_length(tvb);
 }
 
 int dissect_mcje_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
@@ -137,9 +183,9 @@ int dissect_ignore_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, v
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
 
-    if (ctx->state == INVALID)
+    if (ctx->state == INVALID) {
         col_add_str(pinfo->cinfo, COL_INFO, "[INVALID] before");
-    else
+    } else
         tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,
                          get_packet_length_je, dissect_mcje_core, data);
 

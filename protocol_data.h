@@ -17,10 +17,13 @@ typedef struct {
     guint32 server_port;
     guint32 protocol_version;
     guint32 compression_threshold;
+    bool encrypted;
 } mc_protocol_context;
 
-guint read_var_int(const guint8 *data, guint max_length, guint *result);
+extern char *STATE_NAME[];
 
-int read_var_long(const guint8 *data, guint max_length, guint64 *result);
+int read_var_int(const guint8 *data, guint max_length, guint *result);
+
+
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

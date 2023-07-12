@@ -4,7 +4,9 @@
 
 #include "protocol_data.h"
 
-guint read_var_int(const guint8 *data, guint max_length, guint *result) {
+char *STATE_NAME[] = {"PING", "HANDSHAKE", "LOGIN", "PLAY", "INVALID"};
+
+int read_var_int(const guint8 *data, guint max_length, guint *result) {
     guint p = 0;
     *result = 0;
     guint8 read;
