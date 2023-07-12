@@ -17,4 +17,5 @@ link_directories($ENV{WIRESHARK_DIR_LIB})
 
 add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS})
 target_link_libraries(MC_Dissector $ENV{WIRESHARK_LIB})
+target_link_libraries(MC_Dissector $ENV{WSUTIL_LIB})
 
