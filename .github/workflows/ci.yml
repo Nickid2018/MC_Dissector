@@ -37,13 +37,17 @@ jobs:
       - name: Make build dir
         run: mkdir build
         working-directory: wireshark
-      - run: cmake -A x64 .. -DBUILD_wireshark=OFF
+      - name: Configure Wireshark
+        run: cmake -A x64 .. -DBUILD_wireshark=OFF
         working-directory: wireshark/build
       - run: cmake --build . --config RelWithDebInfo --target epan
         working-directory: wireshark/build
-      - name: Build dissector
+      - name: Configure dissector
         run: cmake -S . -B build
         working-directory: dissector
+      - name: Build dissector
+        run: make
+        working-directory: dissector/build
       - name: Upload dissector
         uses: actions/upload-artifact@v2
         with:
