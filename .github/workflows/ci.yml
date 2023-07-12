@@ -48,5 +48,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: windows
-          path: dissector/build/libMC_Dissector.dll
+          path: dissector/build/*.dll
 
