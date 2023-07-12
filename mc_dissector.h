@@ -17,4 +17,7 @@
 extern int proto_mcje;
 extern int proto_mcbe;
 
+extern int hf_packet_length_je;
+extern int hf_packet_id_je;
+
 #endif //MC_DISSECTOR_MC_DISSECTOR_H
