@@ -14,7 +14,8 @@
 #include <epan/proto_data.h>
 #include <epan/dissectors/packet-tcp.h>
 
-WS_DLL_PUBLIC_DEF const gchar plugin_version[] = "0.0.0";
+WS_DLL_PUBLIC_DEF const gchar
+plugin_version[] = "0.0.0";
 WS_DLL_PUBLIC_DEF const int plugin_want_major = VERSION_MAJOR;
 WS_DLL_PUBLIC_DEF const int plugin_want_minor = VERSION_MINOR;
 
@@ -51,7 +52,7 @@ void proto_register_mcje() {
             {&hf_packet_data_length_je,
                     {"Packet Data Length",
                             "mcje.packet_data_length",
-                            FT_STRING, BASE_NONE,
+                            FT_UINT32, BASE_DEC,
                             NULL, 0x0,
                             NULL, HFILL
                     }
@@ -59,7 +60,7 @@ void proto_register_mcje() {
             {&hf_packet_id_je,
                     {"Packet ID",
                             "mcje.packet_id",
-                            FT_UINT32, BASE_HEX,
+                            FT_STRING, BASE_NONE,
                             NULL, 0x0,
                             NULL, HFILL
                     }
@@ -80,6 +81,14 @@ void proto_register_mcje() {
                             NULL, HFILL
                     }
             },
+            {&hf_next_state_je,
+                    {"Next State",
+                            "mcje.next_state",
+                            FT_STRING, BASE_NONE,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
+            }
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
     proto_register_subtree_array(ett_je, array_length(ett_je));
@@ -188,9 +197,11 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_client, pinfo->fd->visited);
+            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_client,
+                                 pinfo->fd->visited);
         } else
-            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_client, pinfo->fd->visited);
+            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_client,
+                                 pinfo->fd->visited);
     }
 
     return tvb_captured_length(tvb);
