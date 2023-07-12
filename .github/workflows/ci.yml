@@ -10,8 +10,8 @@ jobs:
     runs-on: windows-latest
     env:
       PLATFORM: x64
-      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs
-      GLIB_DIR: C:/wireshark-win64-libs/vcpkg-export-20220726-1-win64ws/installed/x64-windows
+      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.0
+      GLIB_DIR: C:/wireshark-win64-libs-4.0/vcpkg-export-20220726-1-win64ws/installed/x64-windows
       WIRESHARK_DIR: ${{ github.workspace }}/wireshark
       WIRESHARK_BUILD_DIR: ${{ github.workspace }}/wireshark/build
       WIRESHARK_DIR_LIB: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo/wireshark.lib
