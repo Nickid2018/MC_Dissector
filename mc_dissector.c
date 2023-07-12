@@ -111,13 +111,17 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
 // ------------------- JE Dissector Registration -------------------
 
 void sub_dissect_je_proto(guint length, tvbuff_t *tvb, packet_info *pinfo,
-                          proto_tree *tree, mc_protocol_context *ctx, bool is_client) {
+                          proto_tree *tree, mc_protocol_context *ctx,
+                          bool is_client, bool visited) {
     const guint8 *data = tvb_get_ptr(tvb, pinfo->desegment_offset, length);
     if (is_client) {
         switch (ctx->state) {
             case HANDSHAKE:
-                handle_server_handshake(tree, tvb, pinfo, data, length, ctx);
-                break;
+                if (tree)
+                    handle_server_handshake(tree, tvb, pinfo, data, length, ctx);
+                if (visited)
+                    handle_server_handshake_switch(data, length, ctx);
+                return;
             default:
 //                col_add_str(pinfo->cinfo, COL_INFO, "[INVALID]");
                 return;
@@ -145,43 +149,48 @@ int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
     read_pointer += packet_length_length;
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%d bytes)", packet_length_vari);
 
+    proto_tree *mcje_tree;
     if (tree) {
-        proto_item *ti;
-
-        ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
-        proto_tree *mcje_tree = proto_item_add_subtree(ti, ett_mcje);
+        proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
+        mcje_tree = proto_item_add_subtree(ti, ett_mcje);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
         proto_item_append_text(ti, ", State: %s", STATE_NAME[ctx->state]);
+    }
 
-        tvbuff_t *new_tvb;
-        if (ctx->compression_threshold < 0) {
-            new_tvb = tvb_new_subset_remaining(tvb, packet_length_length);
+    tvbuff_t *new_tvb;
+    if (ctx->compression_threshold < 0) {
+        new_tvb = tvb_new_subset_remaining(tvb, packet_length_length);
+        if (tree) {
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je_proto(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx, is_client);
-        } else {
-            guint uncompressed_length;
-            int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
-            if (is_invalid(var_len))
+            sub_dissect_je_proto(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx, is_client, pinfo->fd->visited);
+        } else
+            sub_dissect_je_proto(packet_length_vari, new_tvb, pinfo, NULL, ctx, is_client, pinfo->fd->visited);
+    } else {
+        guint uncompressed_length;
+        int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
+        if (is_invalid(var_len))
+            return 0;
+
+        proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb, read_pointer, var_len, uncompressed_length);
+        read_pointer += var_len;
+
+        if ((int32_t) uncompressed_length > 0) {
+            new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
+            if (new_tvb == NULL)
                 return 0;
+            add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
+        } else
+            new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
 
-            proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb, read_pointer, var_len, uncompressed_length);
-            read_pointer += var_len;
-
-            if ((int32_t) uncompressed_length > 0) {
-                new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
-                if (new_tvb == NULL)
-                    return 0;
-                add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
-            } else
-                new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
-
+        if (tree) {
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_client);
-        }
+            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_client, pinfo->fd->visited);
+        } else
+            sub_dissect_je_proto(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_client, pinfo->fd->visited);
     }
 
     return tvb_captured_length(tvb);

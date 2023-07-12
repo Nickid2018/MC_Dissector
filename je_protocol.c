@@ -7,7 +7,31 @@
 #include "mc_dissector.h"
 #include <epan/proto.h>
 
-void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data, guint length, mc_protocol_context *ctx) {
+int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol_context *ctx) {
+    guint packet_id;
+    guint read;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id != 0x00)
+        return INVALID_DATA;
+    guint str_len;
+    read = read_var_int(data + p, length - p, &str_len);
+    if (is_invalid(read))
+        return INVALID_DATA;
+    p += read + str_len;
+    guint next_state;
+    read = read_var_int(data + p, length - p, &next_state);
+    if (is_invalid(read))
+        return INVALID_DATA;
+    if (next_state != 1 && next_state != 2)
+        return INVALID_DATA;
+    ctx->state = next_state + 1;
+    return 0;
+}
+
+void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                             guint length, mc_protocol_context *ctx) {
     guint packet_id;
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
@@ -30,7 +54,7 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     guint8 *server_address;
     read = read_string(data + p, &server_address);
     if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_server_address_je, tvb, p, 0,"Invalid Server Address");
+        proto_tree_add_string(packet_tree, hf_server_address_je, tvb, p, 0, "Invalid Server Address");
         return;
     }
     guint16 server_port;
@@ -44,6 +68,5 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
         proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, 0, "Invalid Next State");
         return;
     }
-    ctx->state = next_state + 1;
     proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, read, STATE_NAME[next_state]);
 }

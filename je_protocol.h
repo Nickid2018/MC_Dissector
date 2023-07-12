@@ -8,6 +8,9 @@
 #include <epan/proto.h>
 #include "protocol_data.h"
 
-void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data, guint length, mc_protocol_context *ctx);
+int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol_context *ctx);
+
+void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                             guint length, mc_protocol_context *ctx);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H
