@@ -15,7 +15,7 @@
 #include <epan/dissectors/packet-tcp.h>
 
 WS_DLL_PUBLIC_DEF const gchar
-plugin_version[] = "0.0.0";
+        plugin_version[] = "0.0.0";
 WS_DLL_PUBLIC_DEF const int plugin_want_major = VERSION_MAJOR;
 WS_DLL_PUBLIC_DEF const int plugin_want_minor = VERSION_MINOR;
 
@@ -24,12 +24,15 @@ WS_DLL_PUBLIC void plugin_register();
 int proto_mcje = -1;
 int proto_mcbe = -1;
 
+int hf_invalid_data_je = -1;
 int hf_packet_length_je = -1;
 int hf_packet_data_length_je = -1;
 int hf_packet_id_je = -1;
 int hf_protocol_version_je = -1;
 int hf_server_address_je = -1;
 int hf_next_state_je = -1;
+int hf_ping_time_je = -1;
+int hf_server_status_je = -1;
 
 int ett_mcje = -1, ett_je_proto = -1;
 
@@ -41,8 +44,18 @@ void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
     static gint *ett_je[] = {&ett_mcje, &ett_je_proto};
     static hf_register_info hf_je[] = {
+            {&hf_invalid_data_je,
+                    {
+                            "Invalid Data",
+                            "mcje.invalid_data",
+                            FT_STRING, BASE_NONE,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
+            },
             {&hf_packet_length_je,
-                    {"Packet Length",
+                    {
+                            "Packet Length",
                             "mcje.packet_length",
                             FT_UINT32, BASE_DEC,
                             NULL, 0x0,
@@ -50,7 +63,8 @@ void proto_register_mcje() {
                     }
             },
             {&hf_packet_data_length_je,
-                    {"Packet Data Length",
+                    {
+                            "Packet Data Length",
                             "mcje.packet_data_length",
                             FT_UINT32, BASE_DEC,
                             NULL, 0x0,
@@ -58,7 +72,8 @@ void proto_register_mcje() {
                     }
             },
             {&hf_packet_id_je,
-                    {"Packet ID",
+                    {
+                            "Packet ID",
                             "mcje.packet_id",
                             FT_STRING, BASE_NONE,
                             NULL, 0x0,
@@ -66,7 +81,8 @@ void proto_register_mcje() {
                     }
             },
             {&hf_protocol_version_je,
-                    {"Protocol Version",
+                    {
+                            "Protocol Version",
                             "mcje.protocol_version",
                             FT_STRING, BASE_NONE,
                             NULL, 0x0,
@@ -74,7 +90,8 @@ void proto_register_mcje() {
                     }
             },
             {&hf_server_address_je,
-                    {"Server Address",
+                    {
+                            "Server Address",
                             "mcje.server_address",
                             FT_STRING, BASE_NONE,
                             NULL, 0x0,
@@ -82,13 +99,32 @@ void proto_register_mcje() {
                     }
             },
             {&hf_next_state_je,
-                    {"Next State",
+                    {
+                            "Next State",
                             "mcje.next_state",
                             FT_STRING, BASE_NONE,
                             NULL, 0x0,
                             NULL, HFILL
                     }
-            }
+            },
+            {&hf_ping_time_je,
+                    {
+                            "Ping Time",
+                            "mcje.ping_time",
+                            FT_UINT64, BASE_DEC,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
+            },
+            {&hf_server_status_je,
+                    {
+                            "Server Status",
+                            "mcje.server_status",
+                            FT_STRING, BASE_NONE,
+                            NULL, 0x0,
+                            NULL, HFILL
+                    }
+            },
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
     proto_register_subtree_array(ett_je, array_length(ett_je));
@@ -126,13 +162,26 @@ void sub_dissect_je_proto(guint length, tvbuff_t *tvb, packet_info *pinfo,
     if (is_client) {
         switch (ctx->state) {
             case HANDSHAKE:
+                if (!visited && is_invalid(handle_server_handshake_switch(data, length, ctx)))
+                    return;
                 if (tree)
                     handle_server_handshake(tree, tvb, pinfo, data, length, ctx);
-                if (visited)
-                    handle_server_handshake_switch(data, length, ctx);
+                return;
+            case PING:
+                if (tree)
+                    handle_server_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
             default:
 //                col_add_str(pinfo->cinfo, COL_INFO, "[INVALID]");
+                return;
+        }
+    } else {
+        switch (ctx->state) {
+            case PING:
+                if (tree)
+                    handle_client_slp(tree, tvb, pinfo, data, length, ctx);
+                return;
+            default:
                 return;
         }
     }
@@ -141,8 +190,18 @@ void sub_dissect_je_proto(guint length, tvbuff_t *tvb, packet_info *pinfo,
 int dissect_mcje_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
-    conversation_t *conv = find_or_create_conversation(pinfo);
-    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    mc_protocol_context *ctx;
+    if (pinfo->fd->visited) {
+        ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum);
+    } else {
+        conversation_t *conv;
+        conv = find_or_create_conversation(pinfo);
+        ctx = conversation_get_proto_data(conv, proto_mcje);
+        mc_protocol_context *save;
+        save = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
+        *save = *ctx;
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
+    }
 
     bool is_client = pinfo->destport == ctx->server_port;
     if (is_client)
@@ -231,8 +290,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
 int dissect_ignore_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
     pinfo->fd->subnum = 0;
+
+    mc_protocol_context *ctx;
     conversation_t *conv = find_or_create_conversation(pinfo);
-    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    if (!(ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum)))
+        ctx = conversation_get_proto_data(conv, proto_mcje);
 
     if (ctx->state == INVALID) {
         col_add_str(pinfo->cinfo, COL_INFO, "[INVALID] before");

@@ -24,6 +24,13 @@ gint read_ushort(const guint8 *data, guint16 *result) {
     return 2;
 }
 
+gint read_ulong(const guint8 *data, guint64 *result) {
+    *result = ((guint64) data[0] << 56) | ((guint64) data[1] << 48) | ((guint64) data[2] << 40) |
+              ((guint64) data[3] << 32) | ((guint64) data[4] << 24) | ((guint64) data[5] << 16) |
+              ((guint64) data[6] << 8) | data[7];
+    return 8;
+}
+
 gint read_string(const guint8 *data, guint8 **result) {
     guint length;
     gint read = read_var_int(data, 5, &length);

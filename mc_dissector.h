@@ -17,11 +17,14 @@
 extern int proto_mcje;
 extern int proto_mcbe;
 
+extern int hf_invalid_data_je;
 extern int hf_packet_length_je;
 extern int hf_packet_data_length_je;
 extern int hf_packet_id_je;
 extern int hf_protocol_version_je;
 extern int hf_server_address_je;
 extern int hf_next_state_je;
+extern int hf_ping_time_je;
+extern int hf_server_status_je;
 
 #endif //MC_DISSECTOR_MC_DISSECTOR_H
