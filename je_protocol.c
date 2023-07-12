@@ -7,9 +7,9 @@
 #include "mc_dissector.h"
 #include <epan/proto.h>
 
-void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const void *data, guint length, mc_protocol_context *ctx) {
+void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data, guint length, mc_protocol_context *ctx) {
     guint packet_id;
-    guint p = 0;
+    guint p;
     gint read = p = read_var_int(data, length, &packet_id);
     if (is_invalid(read)) {
         proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
