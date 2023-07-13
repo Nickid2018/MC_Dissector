@@ -58,5 +58,5 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
 target_link_libraries(MC_Dissector $ENV{WIRESHARK_LIB})
 target_link_libraries(MC_Dissector $ENV{WSUTIL_LIB})
-target_link_libraries(MC_Dissector glib-2.0-0.dll)
+target_link_libraries(MC_Dissector glib-2.0-0)
 
