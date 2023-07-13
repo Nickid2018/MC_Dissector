@@ -25,4 +25,12 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
 void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                        guint length, mc_protocol_context *ctx);
 
+int handle_client_login_switch(const guint8 *data, guint length, mc_protocol_context *ctx);
+
+void handle_client_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                         guint length, mc_protocol_context *ctx);
+
+void handle_server_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                         guint length, mc_protocol_context *ctx);
+
 #endif //MC_DISSECTOR_JE_PROTOCOL_H
