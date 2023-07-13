@@ -44,7 +44,7 @@ jobs:
       - run: cmake --build . --config RelWithDebInfo --target epan
         working-directory: wireshark/build
       - name: Configure dissector
-        run: cmake -S . -B build
+        run: cmake -S . -G Ninja -B build
         working-directory: dissector
       - name: Build dissector
         run: cmake --build build --target MC_Dissector
@@ -53,5 +53,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: windows
-          path: dissector/build/Debug/MC_Dissector.dll
+          path: dissector/build/Debug/*.dll
 
