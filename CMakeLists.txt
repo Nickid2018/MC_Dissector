@@ -22,6 +22,7 @@ include_directories(
         $ENV{GLIB_DIR}/lib/glib-2.0/include
 )
 link_directories($ENV{WIRESHARK_DIR_LIB})
+link_directories($ENV{GLIB_DIR}/lib)
 
 # Resources
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
@@ -56,7 +57,7 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${PROTOCOL_SOURCES} ${PROTOCOL_HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
-target_link_libraries(MC_Dissector $ENV{WIRESHARK_LIB})
-target_link_libraries(MC_Dissector $ENV{WSUTIL_LIB})
-target_link_libraries(MC_Dissector glib-2.0-0)
+target_link_libraries(MC_Dissector wireshark)
+target_link_libraries(MC_Dissector wsutil)
+target_link_libraries(MC_Dissector glib-2.0)
 
