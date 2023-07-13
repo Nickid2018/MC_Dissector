@@ -2,10 +2,9 @@
 // Created by Nickid2018 on 2023/7/12.
 //
 
-#include "je_protocol.h"
-#include "protocol_data.h"
-#include "mc_dissector.h"
 #include <epan/proto.h>
+#include "je_dissect.h"
+#include "je_protocol.h"
 
 int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol_context *ctx) {
     guint packet_id;
