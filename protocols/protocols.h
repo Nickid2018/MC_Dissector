@@ -6,7 +6,21 @@
 #define MC_DISSECTOR_PROTOCOLS_H
 
 #include <epan/proto.h>
+#include "protocol_schema.h"
+
+typedef struct _protocol_je_set {
+    protocol_set login;
+    protocol_set play;
+} *protocol_je_set;
 
 gchar *get_java_version_name(guint protocol_version);
+
+gint get_java_data_version(gchar *java_version);
+
+gchar *get_java_version_name_by_data_version(guint data_version);
+
+gchar *find_java_protocol_name(guint data_version);
+
+protocol_je_set get_protocol_je_set(gchar *java_version);
 
 #endif //MC_DISSECTOR_PROTOCOLS_H
