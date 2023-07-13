@@ -5,6 +5,7 @@
 #include <epan/proto.h>
 #include "je_dissect.h"
 #include "je_protocol.h"
+#include "../protocols/protocols.h"
 
 int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol_context *ctx) {
     guint packet_id;
@@ -56,7 +57,7 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     }
     ctx->protocol_version = protocol_version;
     proto_tree_add_string_format_value(packet_tree, hf_protocol_version_je, tvb, p, read, "",
-                        "%d ()", protocol_version);
+                        "%d (%s)", protocol_version, get_java_version_name(protocol_version));
     p += read;
     guint8 *server_address;
     read = read_string(data + p, &server_address);
