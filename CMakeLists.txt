@@ -26,8 +26,6 @@ link_directories($ENV{GLIB_DIR}/lib)
 
 # Resources
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
-file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
-file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 file(GLOB PROTOCOL_VERSION_JE_DATA_FILE "minecraft-data/data/pc/common/protocolVersions.json")
@@ -49,6 +47,8 @@ file(READ ${PROTOCOL_VERSION_BE_DATA_FILE} FILE_DATA HEX)
 string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
 file(APPEND ${PROTOCOL_VERSION_SOURCE} "${FILE_DATA}\";")
 
+file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
+file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
 include_directories(${GEN_RESOURCE_DIR})
 
 add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}

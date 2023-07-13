@@ -46,9 +46,6 @@ jobs:
       - name: Configure dissector
         run: cmake -S . -B build
         working-directory: dissector
-      - name: Configure dissector x2
-        run: cmake -S . -B build
-        working-directory: dissector
       - name: Build dissector
         run: cmake --build build --target MC_Dissector
         working-directory: dissector
