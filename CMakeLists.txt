@@ -9,6 +9,8 @@ file(GLOB PROTOCOL_JE_SOURCES "./protocol_je/*.c")
 file(GLOB PROTOCOL_JE_HEADERS "./protocol_je/*.h")
 file(GLOB PROTOCOL_BE_SOURCES "./protocol_be/*.c")
 file(GLOB PROTOCOL_BE_HEADERS "./protocol_be/*.h")
+file(GLOB LIBRARY_CJSON_SOURCES "./cJSON/cJSON*.c")
+file(GLOB LIBRARY_CJSON_HEADERS "./cJSON/cJSON*.h")
 
 include_directories(
         $ENV{WIRESHARK_DIR}
@@ -19,7 +21,10 @@ include_directories(
 )
 link_directories($ENV{WIRESHARK_DIR_LIB})
 
-add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS} ${PROTOCOL_JE_SOURCES} ${PROTOCOL_JE_HEADERS} ${PROTOCOL_BE_SOURCES} ${PROTOCOL_BE_HEADERS})
+add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
+        ${PROTOCOL_JE_SOURCES} ${PROTOCOL_JE_HEADERS}
+        ${PROTOCOL_BE_SOURCES} ${PROTOCOL_BE_HEADERS}
+        ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS})
 target_link_libraries(MC_Dissector $ENV{WIRESHARK_LIB})
 target_link_libraries(MC_Dissector $ENV{WSUTIL_LIB})
 
