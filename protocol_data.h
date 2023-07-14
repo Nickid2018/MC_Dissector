@@ -6,6 +6,7 @@
 #define MC_DISSECTOR_PROTOCOL_DATA_H
 
 #include <epan/proto.h>
+#include "protocols/protocols.h"
 
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)
@@ -16,9 +17,10 @@ typedef struct {
     } state;
     guint32 server_port;
     guint32 protocol_version;
+    protocol_je_set protocol_set;
     gint32 compression_threshold;
     bool encrypted;
-} mc_protocol_context;
+} mcje_protocol_context;
 
 extern char *STATE_NAME[];
 

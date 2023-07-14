@@ -3,11 +3,11 @@
 //
 
 #include <epan/proto.h>
+#include <stdlib.h>
 #include "je_dissect.h"
 #include "je_protocol.h"
-#include "../protocols/protocols.h"
 
-int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol_context *ctx) {
+int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
     guint packet_id;
     guint read;
     guint p = read_var_int(data, length, &packet_id);
@@ -15,7 +15,8 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol
         return INVALID_DATA;
     if (packet_id != PACKET_ID_HANDSHAKE)
         return INVALID_DATA;
-    read = read_var_int(data + p, length - p, &ctx->protocol_version);
+    guint protocol_version;
+    read = read_var_int(data + p, length - p, &protocol_version);
     if (is_invalid(read))
         return INVALID_DATA;
     p += read;
@@ -30,12 +31,20 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mc_protocol
         return INVALID_DATA;
     if (next_state != 1 && next_state != 2)
         return INVALID_DATA;
+    gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
+    gint data_version = get_java_data_version(unchecked_java_version);
+    if (data_version == -1)
+        return INVALID_DATA;
+    guint nearest_data_version = find_nearest_java_protocol(data_version);
+    gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
     ctx->state = next_state + 1;
+    ctx->protocol_set = get_protocol_je_set(nearest_java_version);
+    ctx->protocol_version = protocol_version;
     return 0;
 }
 
 void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                             guint length, mc_protocol_context *ctx) {
+                             guint length, mcje_protocol_context *ctx) {
     guint packet_id;
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
@@ -45,20 +54,21 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     }
     if (packet_id != 0x00) {
         proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                            "Unknown Packet ID (%d)", packet_id);
+                                           "Unknown Packet ID (%d)", packet_id);
         return;
     }
     proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x00 Server Handshake");
+
     guint protocol_version;
     read = read_var_int(data + p, length - p, &protocol_version);
     if (is_invalid(read)) {
         proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
         return;
     }
-    ctx->protocol_version = protocol_version;
     proto_tree_add_string_format_value(packet_tree, hf_protocol_version_je, tvb, p, read, "",
-                        "%d (%s)", protocol_version, get_java_version_name(protocol_version));
+                                       "%d (%s)", protocol_version, get_java_version_name(protocol_version));
     p += read;
+
     guint8 *server_address;
     read = read_string(data + p, &server_address);
     if (is_invalid(read)) {
@@ -68,8 +78,9 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     guint16 server_port;
     read += read_ushort(data + p + read, &server_port);
     proto_tree_add_string_format_value(packet_tree, hf_server_address_je, tvb, p, read, "",
-                        "%s:%d", server_address, server_port);
+                                       "%s:%d", server_address, server_port);
     p += read;
+
     guint next_state;
     read = read_var_int(data + p, length - p, &next_state);
     if (is_invalid(read)) {
@@ -80,7 +91,7 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
 }
 
 void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       guint length, mc_protocol_context *ctx) {
+                       guint length, mcje_protocol_context *ctx) {
     guint packet_id;
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
@@ -102,11 +113,11 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
     } else
         proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                            "Unknown Packet ID (%d)", packet_id);
+                                           "Unknown Packet ID (%d)", packet_id);
 }
 
 void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       guint length, mc_protocol_context *ctx) {
+                       guint length, mcje_protocol_context *ctx) {
     guint packet_id;
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
@@ -135,5 +146,57 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
     } else
         proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                            "Unknown Packet ID (%d)", packet_id);
+                                           "Unknown Packet ID (%d)", packet_id);
+}
+
+void handle_server_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                         guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p;
+    gint read = p = read_var_int(data, length, &packet_id);
+    if (is_invalid(read)) {
+        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        return;
+    }
+    if (ctx->protocol_set == NULL) {
+        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "Can't find protocol set");
+        return;
+    }
+    protocol_set protocol_set = ctx->protocol_set->login;
+    protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, false);
+    if (protocol == NULL) {
+        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
+                                           "Unknown Packet ID (%d)", packet_id);
+        return;
+    }
+    gchar *packet_name = get_packet_name(protocol);
+    proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
+                                       "0x%02x %s", packet_id, packet_name);
+
+}
+
+void handle_client_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                         guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p;
+    gint read = p = read_var_int(data, length, &packet_id);
+    if (is_invalid(read)) {
+        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        return;
+    }
+    if (ctx->protocol_set == NULL) {
+        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "Can't find protocol set");
+        return;
+    }
+    protocol_set protocol_set = ctx->protocol_set->login;
+    protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, true);
+    if (protocol == NULL) {
+        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
+                                           "Unknown Packet ID (%d)", packet_id);
+        return;
+    }
+    gchar *packet_name = get_packet_name(protocol);
+    proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
+                                       "0x%02x %s", packet_id, packet_name);
+
 }

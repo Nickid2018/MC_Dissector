@@ -118,6 +118,7 @@ void proto_register_mcje() {
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
     proto_register_subtree_array(ett_je, array_length(ett_je));
+    init_je();
 }
 
 guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
@@ -131,7 +132,7 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
     if (is_invalid(ret)) {
         col_append_str(pinfo->cinfo, COL_INFO, "[INVALID] Failed to parse payload length");
         conversation_t *conv = find_or_create_conversation(pinfo);
-        mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+        mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
         ctx->state = INVALID;
         conversation_set_dissector(conv, ignore_je_handle);
         return 0;
@@ -140,7 +141,7 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
 }
 
 void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
-                    proto_tree *tree, mc_protocol_context *ctx,
+                    proto_tree *tree, mcje_protocol_context *ctx,
                     bool is_client, bool visited) {
     const guint8 *data = tvb_get_ptr(tvb, pinfo->desegment_offset, length);
     if (is_client) {
@@ -155,6 +156,9 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                 if (tree)
                     handle_server_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
+            case LOGIN:
+                if (tree)
+                    handle_server_login(tree, tvb, pinfo, data, length, ctx);
             default:
 //                col_add_str(pinfo->cinfo, COL_INFO, "[INVALID]");
                 return;
@@ -165,6 +169,10 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                 if (tree)
                     handle_client_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
+            case LOGIN:
+                if (tree)
+                    handle_client_login(tree, tvb, pinfo, data, length, ctx);
+                return;
             default:
                 return;
         }
@@ -174,15 +182,15 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
-    mc_protocol_context *ctx;
+    mcje_protocol_context *ctx;
     if (pinfo->fd->visited) {
         ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum);
     } else {
         conversation_t *conv;
         conv = find_or_create_conversation(pinfo);
         ctx = conversation_get_proto_data(conv, proto_mcje);
-        mc_protocol_context *save;
-        save = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
+        mcje_protocol_context *save;
+        save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         *save = *ctx;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
     }
@@ -251,10 +259,11 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 }
 
 int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
+    init_je();
     conversation_t *conv = find_or_create_conversation(pinfo);
-    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     if (!ctx) {
-        ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
+        ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         ctx->server_port = pinfo->destport;
         ctx->state = HANDSHAKE;
         ctx->compression_threshold = -1;
@@ -275,7 +284,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
     pinfo->fd->subnum = 0;
 
-    mc_protocol_context *ctx;
+    mcje_protocol_context *ctx;
     conversation_t *conv = find_or_create_conversation(pinfo);
     if (!(ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum)))
         ctx = conversation_get_proto_data(conv, proto_mcje);
