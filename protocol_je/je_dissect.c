@@ -130,7 +130,7 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
     const guint8 *dt = tvb_get_ptr(tvb, offset, packet_length - offset);
     int ret = read_var_int(dt, packet_length - offset, &len);
     if (is_invalid(ret)) {
-        col_append_str(pinfo->cinfo, COL_INFO, "[INVALID] Failed to parse payload length");
+        col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Failed to parse payload length");
         conversation_t *conv = find_or_create_conversation(pinfo);
         mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
         ctx->state = INVALID;
@@ -158,9 +158,13 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                 return;
             case LOGIN:
                 if (tree)
-                    handle_server_login(tree, tvb, pinfo, data, length, ctx);
+                    handle_login(tree, tvb, pinfo, data, length, ctx, false);
+            case PLAY:
+                if (tree)
+                    handle_play(tree, tvb, pinfo, data, length, ctx, false);
+                return;
             default:
-//                col_add_str(pinfo->cinfo, COL_INFO, "[INVALID]");
+                col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
                 return;
         }
     } else {
@@ -170,10 +174,17 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     handle_client_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
             case LOGIN:
+                if (!visited && is_invalid(handle_client_login_switch(data, length, ctx)))
+                    return;
                 if (tree)
-                    handle_client_login(tree, tvb, pinfo, data, length, ctx);
+                    handle_login(tree, tvb, pinfo, data, length, ctx, true);
+                return;
+            case PLAY:
+                if (tree)
+                    handle_play(tree, tvb, pinfo, data, length, ctx, true);
                 return;
             default:
+                col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
                 return;
         }
     }
@@ -290,7 +301,7 @@ int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, v
         ctx = conversation_get_proto_data(conv, proto_mcje);
 
     if (ctx->state == INVALID) {
-        col_add_str(pinfo->cinfo, COL_INFO, "[INVALID] before");
+        col_add_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
     } else
         tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,
                          get_packet_length_je, dissect_je_core, data);

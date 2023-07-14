@@ -19,6 +19,19 @@ gint read_var_int(const guint8 *data, guint max_length, guint *result) {
     return p;
 }
 
+gint read_var_long(const guint8 *data, guint max_length, guint64 *result) {
+    gint p = 0;
+    *result = 0;
+    guint8 read;
+    do {
+        if (p == 10 || p >= max_length)
+            return INVALID_DATA;
+        read = data[p];
+        *result |= (read & 0x7F) << (7 * p++);
+    } while ((read & 0x80) != 0);
+    return p;
+}
+
 gint read_ushort(const guint8 *data, guint16 *result) {
     *result = (data[0] << 8) | data[1];
     return 2;
@@ -31,7 +44,7 @@ gint read_ulong(const guint8 *data, guint64 *result) {
     return 8;
 }
 
-gint read_string(const guint8 *data, guint8 **result) {
+gint read_buffer(const guint8 *data, guint8 **result) {
     guint length;
     gint read = read_var_int(data, 5, &length);
     if (is_invalid(read))

@@ -26,10 +26,12 @@ extern char *STATE_NAME[];
 
 gint read_var_int(const guint8 *data, guint max_length, guint *result);
 
+gint read_var_long(const guint8 *data, guint max_length, guint64 *result);
+
 gint read_ushort(const guint8 *data, guint16 *result);
 
 gint read_ulong(const guint8 *data, guint64 *result);
 
-gint read_string(const guint8 *data, guint8 **result);
+gint read_buffer(const guint8 *data, guint8 **result);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

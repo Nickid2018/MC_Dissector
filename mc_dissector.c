@@ -32,4 +32,5 @@ _U_ void plugin_register() {
         plugMCBE.register_handoff = proto_reg_handoff_mcbe;
         proto_register_plugin(&plugMCBE);
     }
+    init_schema_data();
 }
