@@ -26,13 +26,13 @@ struct _protocol_field {
     int hf_index;
     wmem_map_t *additional_info;
 
-    guint (*make_tree)(guint8 *data, proto_tree *tree, tvbuff_t *tvb,
+    guint (*make_tree)(const guint8 *data, proto_tree *tree, tvbuff_t *tvb,
                        protocol_field field, guint offset, guint remaining, data_recorder recorder);
 };
 
 // ---------------------------------- Native Fields ----------------------------------
 #define FIELD_MAKE_TREE(name) \
-    guint make_tree_##name(guint8 *data, proto_tree *tree, tvbuff_t *tvb, \
+    guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, \
     protocol_field field, guint offset, guint remaining, data_recorder recorder)
 
 FIELD_MAKE_TREE(var_int) {
@@ -116,11 +116,12 @@ FIELD_MAKE_TREE(rest_buffer) {
 }
 
 FIELD_MAKE_TREE(uuid) {
+    e_guid_t *uuid = wmem_new(wmem_packet_scope(), e_guid_t);
+    tvb_get_guid(tvb, offset, uuid, 0);
     if (tree)
-        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16,
-                            record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, 16)));
+        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
     else
-        record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, 16));
+        record(recorder, uuid);
     return 16;
 }
 
@@ -140,7 +141,7 @@ FIELD_MAKE_TREE(optional_nbt) {
         return 1;
 }
 
-guint make_tree_container(guint8 *data, proto_tree *tree, tvbuff_t *tvb, protocol_field field, guint offset,
+guint make_tree_container(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, protocol_field field, guint offset,
                           guint remaining, data_recorder recorder, bool is_je) {
     bool not_top = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)) == NULL;
     if (not_top)
@@ -234,6 +235,47 @@ FIELD_MAKE_TREE(array) {
     return len;
 }
 
+guint make_tree_bitfield(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, protocol_field field, guint offset,
+                         guint remaining, data_recorder recorder, bool is_je) {
+    int size = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)));
+    int *const *bitfields = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-2));
+    if (tree)
+        proto_tree_add_bitmask(tree, tvb, offset, field->hf_index,
+                               is_je ? ett_sub_je : ett_sub_be, bitfields, ENC_BIG_ENDIAN);
+    record_push(recorder);
+    int offset_bit = 0;
+    for (int i = 0; i < size; i++) {
+        int len = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(i * 3)));
+        bool signed_ = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(i * 3 + 1)));
+        char *name = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(i * 3 + 2));
+        record_start(recorder, name);
+        if (len <= 32) {
+            guint read = tvb_get_bits(tvb, offset * 8 + offset_bit, len, ENC_BIG_ENDIAN);
+            if (signed_)
+                record_int(recorder, *(gint32 *) &read);
+            else
+                record_uint(recorder, read);
+        } else {
+            guint64 read = tvb_get_bits64(tvb, offset * 8 + offset_bit, len, ENC_BIG_ENDIAN);
+            if (signed_)
+                record_int64(recorder, *(gint64 *) &read);
+            else
+                record_uint64(recorder, read);
+        }
+        offset_bit += len;
+    }
+    record_pop(recorder);
+    return (offset_bit + 7) / 8;
+}
+
+FIELD_MAKE_TREE(bitfield_je) {
+    return make_tree_bitfield(data, tree, tvb, field, offset, remaining, recorder, true);
+}
+
+FIELD_MAKE_TREE(bitfield_be) {
+    return make_tree_bitfield(data, tree, tvb, field, offset, remaining, recorder, false);
+}
+
 // ------------------------------- End of Native Fields --------------------------------
 
 wmem_map_t *native_make_tree_map = NULL;
@@ -298,8 +340,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
 
     wmem_map_t *search_hf_map = is_je ? name_hf_map_je : name_hf_map_be;
     cJSON *fields = cJSON_GetArrayItem(data, 1);
-    // container
-    if (strcmp(type, "container") == 0) {
+    if (strcmp(type, "container") == 0) { // container
         field->make_tree = is_je ? make_tree_container_je : make_tree_container_be;
         int size = cJSON_GetArraySize(fields);
         wmem_map_insert(field->additional_info, 0, GINT_TO_POINTER(size));
@@ -362,8 +403,32 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
         field->make_tree = make_tree_array;
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), sub_field);
         return field;
+    } else if (strcmp(type, "bitfield") == 0) {
+        int size = cJSON_GetArraySize(fields);
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), GINT_TO_POINTER(size));
+        char *bitmask_name = "";
+        for (int i = 0; i < size; i++) {
+            cJSON *field_data = cJSON_GetArrayItem(fields, i);
+            bool signed_ = cJSON_GetObjectItem(field_data, "signed")->valueint;
+            int bits = cJSON_GetObjectItem(field_data, "size")->valueint;
+            char *name = cJSON_GetObjectItem(field_data, "name")->valuestring;
+            bitmask_name = g_strdup_printf("%s[%d]%s", bitmask_name, bits, name);
+            wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3), GINT_TO_POINTER(bits));
+            wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3 + 1), GINT_TO_POINTER(signed_));
+            wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3 + 2), strdup(name));
+        }
+        int **hf_data = wmem_map_lookup(is_je ? bitmask_hf_map_je : bitmask_hf_map_be, bitmask_name);
+        if (hf_data == NULL)
+            return NULL;
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(-2), hf_data);
+        field->make_tree = is_je ? make_tree_bitfield_je : make_tree_bitfield_be;
+        int hf_index = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, bitmask_name));
+        if (hf_index == 0)
+            return NULL;
+        field->hf_index = hf_index;
+        return field;
     }
-    // entityMetadataLoop/topBitSetTerminatedArray/bitfield/switch
+    // entityMetadataLoop/topBitSetTerminatedArray/switch
 
     return NULL;
 }
@@ -430,11 +495,15 @@ protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_cli
     return wmem_map_lookup(packet_map, GUINT_TO_POINTER(packet_id));
 }
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, guint8 *data, guint remaining) {
+bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, const guint8 *data, guint remaining) {
     if (entry->field != NULL) {
         data_recorder recorder = create_data_recorder();
-        entry->field->make_tree(data, tree, tvb, entry->field, 1, remaining - 1, recorder);
+        gint len = entry->field->make_tree(data, tree, tvb, entry->field, 1, remaining - 1, recorder);
         destroy_data_recorder(recorder);
+        if (len != remaining - 1)
+            proto_tree_add_string_format_value(tree, hf_invalid_data_je, tvb, 1, remaining - 1,
+                                               "length mismatch", "Packet length mismatch, expected %d, got %d", len,
+                                               remaining - 1);
         return true;
     }
     return false;

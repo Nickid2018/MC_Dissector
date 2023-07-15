@@ -35,6 +35,7 @@ extern int hf_unknown_uuid_je;
 extern int ett_sub_je;
 extern wmem_map_t *name_hf_map_je;
 extern wmem_map_t *unknown_hf_map_je;
+extern wmem_map_t *bitmask_hf_map_je;
 
 void proto_register_mcje();
 

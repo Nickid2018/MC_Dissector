@@ -25,6 +25,6 @@ gint get_packet_id(protocol_set set, gchar *name, bool is_client);
 
 protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_client);
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, guint8 *data, guint remaining);
+bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, const guint8 *data, guint remaining);
 
 #endif //MC_DISSECTOR_PROTOCOL_SCHEMA_H
