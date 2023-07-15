@@ -159,6 +159,7 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
             case LOGIN:
                 if (tree)
                     handle_login(tree, tvb, pinfo, data, length, ctx, false);
+                return;
             case PLAY:
                 if (tree)
                     handle_play(tree, tvb, pinfo, data, length, ctx, false);
@@ -241,13 +242,24 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     } else {
         guint uncompressed_length;
         int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
-        if (is_invalid(var_len))
+        if (is_invalid(var_len)) {
+            proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
+                                  read_pointer, var_len, "Invalid Compression VarInt");
             return 0;
+        }
 
-        proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb, read_pointer, var_len, uncompressed_length);
         read_pointer += var_len;
 
         if ((int32_t) uncompressed_length > 0) {
+            if (tree) {
+                proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
+                                    read_pointer - var_len, var_len, uncompressed_length);
+                if (uncompressed_length < ctx->compression_threshold)
+                    proto_tree_add_string_format_value(mcje_tree, hf_invalid_data_je, tvb, read_pointer - var_len,
+                                                       var_len, "",
+                                                       "Badly compressed packet - size of %d is below server threshold of %d",
+                                                       uncompressed_length, ctx->compression_threshold);
+            }
             new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
             if (new_tvb == NULL)
                 return 0;

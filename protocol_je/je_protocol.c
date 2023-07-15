@@ -157,6 +157,13 @@ int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_c
         return INVALID_DATA;
     if (packet_id == PACKET_ID_CLIENT_SUCCESS)
         ctx->state = PLAY;
+    if (packet_id == PACKET_ID_CLIENT_COMPRESS) {
+        guint threshold;
+        read = read_var_int(data + p, length - p, &threshold);
+        if (is_invalid(read))
+            return INVALID_DATA;
+        ctx->compression_threshold = threshold;
+    }
     return 0;
 }
 

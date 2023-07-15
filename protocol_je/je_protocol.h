@@ -14,6 +14,7 @@
 #define PACKET_ID_CLIENT_SERVER_INFO 0x00
 #define PACKET_ID_CLIENT_PING 0x01
 #define PACKET_ID_CLIENT_SUCCESS 0x02
+#define PACKET_ID_CLIENT_COMPRESS 0x03
 
 int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
 
