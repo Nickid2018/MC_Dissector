@@ -142,7 +142,7 @@ FIELD_MAKE_TREE(optional_nbt) {
 
 guint make_tree_container(guint8 *data, proto_tree *tree, tvbuff_t *tvb, protocol_field field, guint offset,
                           guint remaining, data_recorder recorder, bool is_je) {
-    bool not_top = field->name != NULL;
+    bool not_top = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)) == NULL;
     if (not_top)
         record_push(recorder);
     if (tree && not_top)
@@ -175,7 +175,8 @@ FIELD_MAKE_TREE(option) {
     bool is_present = tvb_get_guint8(tvb, offset) != 0;
     if (is_present) {
         protocol_field sub_field = wmem_map_lookup(field->additional_info, 0);
-        sub_field->hf_index = field->hf_index;
+        if (field->hf_index != -1)
+            sub_field->hf_index = field->hf_index;
         return sub_field->make_tree(data, tree, tvb, sub_field, offset + 1, remaining - 1, recorder) + 1;
     } else
         return 1;
@@ -189,6 +190,48 @@ FIELD_MAKE_TREE(buffer) {
     else
         record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, length));
     return length;
+}
+
+FIELD_MAKE_TREE(mapper) {
+    protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1));
+    if (field->hf_index != -1)
+        sub_field->hf_index = field->hf_index;
+    gchar *recording = record_get_recording(recorder);
+    guint length = sub_field->make_tree(data, NULL, tvb, sub_field, offset, remaining, recorder);
+    guint map = GPOINTER_TO_UINT(record_query(recorder, 1, recording));
+    gchar *map_name = wmem_map_lookup(field->additional_info, GUINT_TO_POINTER(map));
+    record_start(recorder, recording);
+    record(recorder, map_name);
+    if (tree)
+        proto_tree_add_string(tree, field->hf_index, tvb, offset, length, map_name);
+    return length;
+}
+
+FIELD_MAKE_TREE(array) {
+    protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(1));
+    if (field->hf_index != -1)
+        sub_field->hf_index = field->hf_index;
+    char *len_data = wmem_map_lookup(field->additional_info, 0);
+    guint len = 0;
+    guint data_count = 0;
+    if (len_data == NULL)
+        len = read_var_int(data + offset, remaining, &data_count);
+    else
+        data_count = GPOINTER_TO_UINT(record_query(recorder, 1, len_data));
+    offset += len;
+    remaining -= len;
+    gchar *recording = record_get_recording(recorder);
+    char *name_raw = sub_field->name;
+    for (int i = 0; i < data_count; i++) {
+        record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", i), "]", NULL));
+        sub_field->name = g_strdup_printf("%s[%d]", field->name, i);
+        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
+        offset += sub_length;
+        len += sub_length;
+        remaining -= sub_length;
+    }
+    sub_field->name = name_raw;
+    return len;
 }
 
 // ------------------------------- End of Native Fields --------------------------------
@@ -227,7 +270,7 @@ void init_schema_data() {
     ADD_NATIVE(optionalNbt, optional_nbt, bytes)
 }
 
-protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je) {
+protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top) {
     if (cJSON_IsString(data)) {
         char *type = data->valuestring;
         void *make_tree_func = wmem_map_lookup(native_make_tree_map, type);
@@ -241,7 +284,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je) {
             field->make_tree = make_tree_func;
             return field;
         }
-        return parse_protocol(cJSON_GetObjectItem(types, data->valuestring), types, is_je);
+        return parse_protocol(cJSON_GetObjectItem(types, data->valuestring), types, is_je, false);
     }
     if (cJSON_GetArraySize(data) != 2)
         return NULL;
@@ -263,7 +306,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je) {
         for (int i = 0; i < size; i++) {
             cJSON *field_data = cJSON_GetArrayItem(fields, i);
             cJSON *type_data = cJSON_GetObjectItem(field_data, "type");
-            protocol_field sub_field = parse_protocol(type_data, types, is_je);
+            protocol_field sub_field = parse_protocol(type_data, types, is_je, false);
             if (sub_field == NULL)
                 return NULL;
             sub_field->name = strdup(cJSON_GetObjectItem(field_data, "name")->valuestring);
@@ -272,13 +315,16 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je) {
                 sub_field->hf_index = hf_index;
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(i + 1), sub_field);
         }
+        if (on_top)
+            wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), GINT_TO_POINTER(1));
         return field;
     } else if (strcmp(type, "option") == 0) { // option
         field->make_tree = make_tree_option;
-        protocol_field sub_field = parse_protocol(fields, types, is_je);
+        protocol_field sub_field = parse_protocol(fields, types, is_je, false);
         if (sub_field == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
+        return field;
     } else if (strcmp(type, "buffer") == 0) { // buffer
         if (cJSON_HasObjectItem(fields, "count")) {
             field->make_tree = make_tree_buffer;
@@ -287,8 +333,37 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je) {
         } else
             field->make_tree = make_tree_var_buffer;
         return field;
+    } else if (strcmp(type, "mapper") == 0) { // mapper
+        cJSON *type_data = cJSON_GetObjectItem(fields, "type");
+        protocol_field sub_field = parse_protocol(type_data, types, is_je, false);
+        if (sub_field == NULL)
+            return NULL;
+        field->make_tree = make_tree_mapper;
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), sub_field);
+        cJSON *mappings = cJSON_GetObjectItem(fields, "mappings");
+        cJSON *now = mappings->child;
+        while (now != NULL) {
+            char *key = now->string;
+            int key_int = strtol(key, NULL, 10);
+            char *value = now->valuestring;
+            wmem_map_insert(sub_field->additional_info, GINT_TO_POINTER(key_int), strdup(value));
+            now = now->next;
+        }
+        return field;
+    } else if (strcmp(type, "array") == 0) { // array
+        cJSON *count_type = cJSON_GetObjectItem(fields, "countType");
+        char *count_type_str = count_type->valuestring;
+        if (strcmp(count_type_str, "varint") != 0)
+            wmem_map_insert(field->additional_info, 0, strdup(count_type_str));
+        cJSON *type_data = cJSON_GetObjectItem(fields, "type");
+        protocol_field sub_field = parse_protocol(type_data, types, is_je, false);
+        if (sub_field == NULL)
+            return NULL;
+        field->make_tree = make_tree_array;
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), sub_field);
+        return field;
     }
-    // entityMetadataLoop/topBitSetTerminatedArray/bitfield/switch/array/mapper
+    // entityMetadataLoop/topBitSetTerminatedArray/bitfield/switch
 
     return NULL;
 }
@@ -315,7 +390,7 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
         wmem_map_insert(packet_map, GUINT_TO_POINTER(packet_id), entry);
 
         gchar *packet_definition = g_strconcat("packet_", packet_name, NULL);
-        entry->field = parse_protocol(cJSON_GetObjectItem(data, packet_definition), types, is_je);
+        entry->field = parse_protocol(cJSON_GetObjectItem(data, packet_definition), types, is_je, true);
         g_free(packet_definition);
 
         now = now->next;

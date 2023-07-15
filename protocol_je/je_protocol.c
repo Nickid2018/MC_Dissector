@@ -48,15 +48,15 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
     if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
         return;
     }
+    proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (packet_id != 0x00) {
-        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                                           "Unknown Packet ID (%d)", packet_id);
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
-    proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x00 Server Handshake");
+    proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Handshake");
 
     guint protocol_version;
     read = read_var_int(data + p, length - p, &protocol_version);
@@ -95,14 +95,15 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
     if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
         return;
     }
 
+    proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (packet_id == PACKET_ID_SERVER_PING_START)
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x00 Server Ping Start");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Ping Start");
     else if (packet_id == PACKET_ID_SERVER_PING) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x01 Server Ping");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Ping");
         guint64 payload;
         read = read_ulong(data + p, &payload);
         if (is_invalid(read)) {
@@ -111,8 +112,7 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         }
         proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
     } else
-        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                                           "Unknown Packet ID (%d)", packet_id);
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
 void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
@@ -121,12 +121,13 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
     if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
         return;
     }
 
+    proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (packet_id == PACKET_ID_CLIENT_SERVER_INFO) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x00 Client Server Info");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Client Server Info");
         guint8 *server_info;
         read = read_buffer(data + p, &server_info);
         if (is_invalid(read)) {
@@ -135,7 +136,7 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         }
         proto_tree_add_string(packet_tree, hf_server_status_je, tvb, p, read, server_info);
     } else if (packet_id == PACKET_ID_CLIENT_PING) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "0x01 Client Ping");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Client Ping");
         guint64 payload;
         read = read_ulong(data + p, &payload);
         if (is_invalid(read)) {
@@ -144,8 +145,7 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         }
         proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
     } else
-        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                                           "Unknown Packet ID (%d)", packet_id);
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
 int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
@@ -172,22 +172,21 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
     guint p;
     gint read = p = read_var_int(data, length, &packet_id);
     if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 0, "Invalid Packet ID");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
         return;
     }
     if (protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_id_je, tvb, 0, 1, "Can't find protocol set");
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
     protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, is_client);
+    proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (protocol == NULL) {
-        proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                                           "Unknown Packet ID (%d)", packet_id);
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
     gchar *packet_name = get_packet_name(protocol);
-    proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
-                                       "0x%02x %s", packet_id, packet_name);
+    proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name);
     if (!make_tree(protocol, packet_tree, tvb, data, length))
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, p, length - p,
                               "Protocol hasn't been implemented yet");

@@ -14,6 +14,7 @@ extern int hf_invalid_data_je;
 extern int hf_packet_length_je;
 extern int hf_packet_data_length_je;
 extern int hf_packet_id_je;
+extern int hf_packet_name_je;
 extern int hf_protocol_version_je;
 extern int hf_server_address_je;
 extern int hf_next_state_je;

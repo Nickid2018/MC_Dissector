@@ -37,6 +37,8 @@ void record_store(data_recorder recorder);
 
 void record_restore(data_recorder recorder);
 
-void *query(data_recorder recorder, int path_len, ...);
+void *record_query(data_recorder recorder, int path_len, ...);
+
+gchar *record_get_recording(data_recorder recorder);
 
 #endif //MC_DISSECTOR_DATA_RECORDER_H

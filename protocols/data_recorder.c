@@ -123,7 +123,7 @@ void record_restore(data_recorder recorder) {
     recorder->restore_stack = NULL;
 }
 
-void *query(data_recorder recorder, int path_len, ...) {
+void *record_query(data_recorder recorder, int path_len, ...) {
     va_list args;
     va_start(args, path_len);
     record_store(recorder);
@@ -149,4 +149,8 @@ void *query(data_recorder recorder, int path_len, ...) {
     record_restore(recorder);
     va_end(args);
     return result;
+}
+
+gchar *record_get_recording(data_recorder recorder) {
+    return recorder->recording;
 }

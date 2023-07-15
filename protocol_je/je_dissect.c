@@ -13,6 +13,7 @@ int hf_invalid_data_je = -1;
 int hf_packet_length_je = -1;
 int hf_packet_data_length_je = -1;
 int hf_packet_id_je = -1;
+int hf_packet_name_je = -1;
 int hf_protocol_version_je = -1;
 int hf_server_address_je = -1;
 int hf_next_state_je = -1;
@@ -56,7 +57,8 @@ void proto_register_mcje() {
             DEFINE_HF(hf_invalid_data_je, "Invalid Data", "mcje.invalid_data", STRING, NONE),
             DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC),
             DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC),
-            DEFINE_HF(hf_packet_id_je, "Packet ID", "mcje.packet_id", STRING, NONE),
+            DEFINE_HF(hf_packet_id_je, "Packet ID", "mcje.packet_id", UINT8, HEX),
+            DEFINE_HF(hf_packet_name_je, "Packet Name", "mcje.packet_name", STRING, NONE),
             DEFINE_HF(hf_protocol_version_je, "Protocol Version", "mcje.protocol_version", STRING, NONE),
             DEFINE_HF(hf_server_address_je, "Server Address", "mcje.server_address", STRING, NONE),
             DEFINE_HF(hf_next_state_je, "Next State", "mcje.next_state", STRING, NONE),
@@ -255,7 +257,6 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 }
 
 int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
-    init_je();
     conversation_t *conv = find_or_create_conversation(pinfo);
     mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     if (!ctx) {
