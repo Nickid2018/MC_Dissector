@@ -4,10 +4,13 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    - cron: '0 0 1 * *'
 
 jobs:
   build-windows:
     runs-on: windows-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     env:
       PLATFORM: x64
       WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.0
