@@ -308,8 +308,8 @@ void init_schema_data() {
     ADD_NATIVE(UUID, uuid, uuid)
     ADD_NATIVE(restBuffer, rest_buffer, bytes)
     ADD_NATIVE(void, void, uint)
-    ADD_NATIVE(nbt, nbt, bytes)
-    ADD_NATIVE(optionalNbt, optional_nbt, bytes)
+//    ADD_NATIVE(nbt, nbt, bytes)
+//    ADD_NATIVE(optionalNbt, optional_nbt, bytes)
 }
 
 protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top) {
@@ -350,7 +350,10 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
             protocol_field sub_field = parse_protocol(type_data, types, is_je, false);
             if (sub_field == NULL)
                 return NULL;
-            sub_field->name = strdup(cJSON_GetObjectItem(field_data, "name")->valuestring);
+            if (cJSON_HasObjectItem(field_data, "name"))
+                sub_field->name = strdup(cJSON_GetObjectItem(field_data, "name")->valuestring);
+            else
+                sub_field->name = strdup("Anon Field");
             int hf_index = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, sub_field->name));
             if (hf_index != 0)
                 sub_field->hf_index = hf_index;

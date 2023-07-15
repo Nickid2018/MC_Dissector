@@ -34,9 +34,38 @@ int hf_unknown_uuid_je = -1;
 #define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_je, g_strdup(name), GINT_TO_POINTER(hf_index))
 int hf_threshold = -1;
 int hf_position_xzy = -1;
+int hf_position_xz = -1;
+int hf_command_flags = -1;
+int hf_command_arg_limit = -1;
+int hf_command_entity_arg = -1;
+int hf_command_score_holder_arg = -1;
+int hf_advancement_flags = -1;
+int hf_chunk_coords = -1;
+// --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
 int hf_y_12 = -1;
+int hf_x_4 = -1;
+int hf_z_4 = -1;
+int hf_unused_3 = -1;
+int hf_has_custom_suggestions_1 = -1;
+int hf_has_redirect_node_1 = -1;
+int hf_has_command_1 = -1;
+int hf_command_node_type_2 = -1;
+int hf_unused_6 = -1;
+int hf_max_present_1 = -1;
+int hf_min_present_1 = -1;
+int hf_only_allow_players_1 = -1;
+int hf_only_allow_entities_1 = -1;
+int hf_unused_7 = -1;
+int hf_allow_multiple_1 = -1;
+int hf_unused_29 = -1;
+int hf_hidden_1 = -1;
+int hf_show_toast_1 = -1;
+int hf_has_background_texture_1 = -1;
+int hf_x_22 = -1;
+int hf_z_22 = -1;
+int hf_y_20 = -1;
 // --------------------
 
 dissector_handle_t mcje_boot_handle, mcje_handle, ignore_je_handle;
@@ -81,10 +110,44 @@ void proto_register_mcje() {
             DEFINE_HF(hf_unknown_uuid_je, "Unresolved UUID", "mcje.unknown_uuid", GUID, NONE)
             DEFINE_HF(hf_threshold, "Threshold", "mcje.threshold", UINT32, DEC)
             DEFINE_HF(hf_position_xzy, "Position", "mcje.position_xzy", INT64, DEC)
+            DEFINE_HF(hf_position_xz, "Chunk Position", "mcje.position_xz", INT8, DEC)
+            DEFINE_HF(hf_command_flags, "Command Flags", "mcje.command_flags", UINT8, DEC)
+            DEFINE_HF(hf_command_arg_limit, "Command Argument Limit", "mcje.command_arg_limit", UINT8, DEC)
+            DEFINE_HF(hf_command_entity_arg, "Command Entity Argument", "mcje.command_entity_arg", UINT8, DEC)
+            DEFINE_HF(hf_command_score_holder_arg, "Command Score Holder Argument", "mcje.command_score_holder_arg",
+                      UINT8, DEC)
+            DEFINE_HF(hf_advancement_flags, "Advancement Display Flags", "mcje.advancement_flags", UINT32, DEC)
+            DEFINE_HF(hf_chunk_coords, "Chunk Coordinates", "mcje.chunk_coords", INT64, DEC)
 
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
             DEFINE_HF_BITMASK(hf_z_26, "Z", "mcje.z26", INT64, DEC, 0x0000003FFFFFF000)
             DEFINE_HF_BITMASK(hf_y_12, "Y", "mcje.y12", INT64, DEC, 0x0000000000000FFF)
+            DEFINE_HF_BITMASK(hf_x_4, "X", "mcje.x4", INT8, DEC, 0xF0)
+            DEFINE_HF_BITMASK(hf_z_4, "Z", "mcje.z4", INT8, DEC, 0x0F)
+            DEFINE_HF_BITMASK(hf_unused_3, "Unused Bits", "mcje.unused3", UINT8, HEX, 0xE0)
+            DEFINE_HF_BITMASK(hf_has_custom_suggestions_1, "Has Custom Suggestions", "mcje.has_custom_suggestions",
+                              BOOLEAN, NONE, 0x10)
+            DEFINE_HF_BITMASK(hf_has_redirect_node_1, "Has Redirect Node", "mcje.has_redirect_node", BOOLEAN, NONE,
+                              0x08)
+            DEFINE_HF_BITMASK(hf_has_command_1, "Has Command", "mcje.has_command", BOOLEAN, NONE, 0x04)
+            DEFINE_HF_BITMASK(hf_command_node_type_2, "Command Node Type", "mcje.command_node_type", UINT8, DEC, 0x03)
+            DEFINE_HF_BITMASK(hf_unused_6, "Unused Bits", "mcje.unused6", UINT8, HEX, 0xFC)
+            DEFINE_HF_BITMASK(hf_max_present_1, "Max Present", "mcje.max_present", BOOLEAN, NONE, 0x02)
+            DEFINE_HF_BITMASK(hf_min_present_1, "Min Present", "mcje.min_present", BOOLEAN, NONE, 0x01)
+            DEFINE_HF_BITMASK(hf_only_allow_players_1, "Only Allow Players", "mcje.only_allow_players", BOOLEAN, NONE,
+                              0x02)
+            DEFINE_HF_BITMASK(hf_only_allow_entities_1, "Only Allow Entities", "mcje.only_allow_entities", BOOLEAN,
+                              NONE, 0x01)
+            DEFINE_HF_BITMASK(hf_unused_7, "Unused Bits", "mcje.unused7", UINT8, HEX, 0xFE)
+            DEFINE_HF_BITMASK(hf_allow_multiple_1, "Allow Multiple", "mcje.allow_multiple", BOOLEAN, NONE, 0x01)
+            DEFINE_HF_BITMASK(hf_unused_29, "Unused Bits", "mcje.unused29", UINT8, HEX, 0xFFF8)
+            DEFINE_HF_BITMASK(hf_hidden_1, "Hidden", "mcje.hidden1", BOOLEAN, NONE, 0x04)
+            DEFINE_HF_BITMASK(hf_show_toast_1, "Show Toast", "mcje.show_toast", BOOLEAN, NONE, 0x02)
+            DEFINE_HF_BITMASK(hf_has_background_texture_1, "Has Background Texture", "mcje.has_background_texture",
+                              BOOLEAN, NONE, 0x01)
+            DEFINE_HF_BITMASK(hf_x_22, "X", "mcje.x22", INT64, DEC, 0xFFFFFC0000000000)
+            DEFINE_HF_BITMASK(hf_z_22, "Z", "mcje.z22", INT64, DEC, 0x000003FFFFF00000)
+            DEFINE_HF_BITMASK(hf_y_20, "Y", "mcje.y20", INT64, DEC, 0x00000000000FFFFF)
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
     proto_register_subtree_array(ett_je, array_length(ett_je));
@@ -103,11 +166,41 @@ void proto_register_mcje() {
 
     name_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     ADD_HF("threshold", hf_threshold);
-    ADD_HF("[26]x[26]z[12]y", hf_position_xzy);
 
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    static int * positionXZY[] = {&hf_x_26, &hf_z_26, &hf_y_12, NULL};
+    static int *positionXZY[] = {&hf_x_26, &hf_z_26, &hf_y_12, NULL};
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[26]x[26]z[12]y"), positionXZY);
+    ADD_HF("[26]x[26]z[12]y", hf_position_xzy);
+    static int *positionXZ[] = {&hf_x_4, &hf_z_4, NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[4]x[4]z"), positionXZ);
+    ADD_HF("[4]x[4]z", hf_position_xz);
+    static int *command_flags[] = {&hf_unused_3, &hf_has_custom_suggestions_1, &hf_has_redirect_node_1,
+                                   &hf_has_command_1, &hf_command_node_type_2, NULL};
+    wmem_map_insert(bitmask_hf_map_je,
+                    g_strdup(
+                            "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type"),
+                    command_flags);
+    ADD_HF("[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type",
+           hf_command_flags);
+    static int *command_arg_limit[] = {&hf_unused_6, &hf_max_present_1, &hf_min_present_1, NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]max_present[1]min_present"), command_arg_limit);
+    ADD_HF("[6]unused[1]max_present[1]min_present", hf_command_arg_limit);
+    static int *command_arg_entity[] = {&hf_unused_6, &hf_only_allow_players_1, &hf_only_allow_entities_1, NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities"),
+                    command_arg_entity);
+    ADD_HF("[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities", hf_command_entity_arg);
+    static int *command_arg_score_holder[] = {&hf_unused_7, &hf_allow_multiple_1, NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[7]unused[1]allowMultiple"), command_arg_score_holder);
+    ADD_HF("[7]unused[1]allowMultiple", hf_command_score_holder_arg);
+    static int *advancement_display[] = {&hf_unused_29, &hf_hidden_1, &hf_show_toast_1, &hf_has_background_texture_1,
+                                         NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[29]_unused[1]hidden[1]show_toast[1]has_background_texture"),
+                    advancement_display);
+    ADD_HF("[29]_unused[1]hidden[1]show_toast[1]has_background_texture", hf_advancement_flags);
+    static int *chunk_coordinates[] = {&hf_x_22, &hf_z_22, &hf_y_20, NULL};
+    wmem_map_insert(bitmask_hf_map_je, g_strdup("[22]x[22]z[20]y"), chunk_coordinates);
+    ADD_HF("[22]x[22]z[20]y", hf_chunk_coords);
+
     init_je();
 }
 
