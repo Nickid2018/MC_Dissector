@@ -20,6 +20,21 @@ extern int hf_next_state_je;
 extern int hf_ping_time_je;
 extern int hf_server_status_je;
 
+extern int hf_unknown_int_je;
+extern int hf_unknown_uint_je;
+extern int hf_unknown_int64_je;
+extern int hf_unknown_uint64_je;
+extern int hf_unknown_float_je;
+extern int hf_unknown_double_je;
+extern int hf_unknown_bytes_je;
+extern int hf_unknown_string_je;
+extern int hf_unknown_boolean_je;
+extern int hf_unknown_uuid_je;
+
+extern int ett_sub_je;
+extern wmem_map_t *name_hf_map_je;
+extern wmem_map_t *unknown_hf_map_je;
+
 void proto_register_mcje();
 
 void proto_reg_handoff_mcje();

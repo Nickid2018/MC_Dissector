@@ -3,7 +3,6 @@
 //
 
 #include <epan/proto.h>
-#include <stdlib.h>
 #include "je_dissect.h"
 #include "je_protocol.h"
 
@@ -189,6 +188,9 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
     gchar *packet_name = get_packet_name(protocol);
     proto_tree_add_string_format_value(packet_tree, hf_packet_id_je, tvb, 0, 1, "",
                                        "0x%02x %s", packet_id, packet_name);
+    if (!make_tree(protocol, packet_tree, tvb, data, length))
+        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, p, length - p,
+                              "Protocol hasn't been implemented yet");
 }
 
 void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,

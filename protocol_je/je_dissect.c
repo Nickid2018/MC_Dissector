@@ -19,9 +19,27 @@ int hf_next_state_je = -1;
 int hf_ping_time_je = -1;
 int hf_server_status_je = -1;
 
+int hf_unknown_int_je = -1;
+int hf_unknown_uint_je = -1;
+int hf_unknown_int64_je = -1;
+int hf_unknown_uint64_je = -1;
+int hf_unknown_float_je = -1;
+int hf_unknown_double_je = -1;
+int hf_unknown_bytes_je = -1;
+int hf_unknown_string_je = -1;
+int hf_unknown_boolean_je = -1;
+int hf_unknown_uuid_je = -1;
+// --------------------
+#define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_je, g_strdup(name), GINT_TO_POINTER(hf_index))
+int hf_threshold = -1;
+// --------------------
+
 dissector_handle_t mcje_boot_handle, mcje_handle, ignore_je_handle;
 
 int ett_mcje = -1, ett_je_proto = -1;
+int ett_sub_je = -1;
+wmem_map_t *name_hf_map_je = NULL;
+wmem_map_t *unknown_hf_map_je = NULL;
 
 void proto_reg_handoff_mcje() {
     mcje_boot_handle = create_dissector_handle(dissect_je_boot, proto_mcje);
@@ -32,92 +50,47 @@ void proto_reg_handoff_mcje() {
 
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
-    static gint *ett_je[] = {&ett_mcje, &ett_je_proto};
+
+    static gint *ett_je[] = {&ett_mcje, &ett_je_proto, &ett_sub_je};
     static hf_register_info hf_je[] = {
-            {&hf_invalid_data_je,
-                    {
-                            "Invalid Data",
-                            "mcje.invalid_data",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_packet_length_je,
-                    {
-                            "Packet Length",
-                            "mcje.packet_length",
-                            FT_UINT32, BASE_DEC,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_packet_data_length_je,
-                    {
-                            "Packet Data Length",
-                            "mcje.packet_data_length",
-                            FT_UINT32, BASE_DEC,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_packet_id_je,
-                    {
-                            "Packet ID",
-                            "mcje.packet_id",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_protocol_version_je,
-                    {
-                            "Protocol Version",
-                            "mcje.protocol_version",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_server_address_je,
-                    {
-                            "Server Address",
-                            "mcje.server_address",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_next_state_je,
-                    {
-                            "Next State",
-                            "mcje.next_state",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_ping_time_je,
-                    {
-                            "Ping Time",
-                            "mcje.ping_time",
-                            FT_UINT64, BASE_DEC,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
-            {&hf_server_status_je,
-                    {
-                            "Server Status",
-                            "mcje.server_status",
-                            FT_STRING, BASE_NONE,
-                            NULL, 0x0,
-                            NULL, HFILL
-                    }
-            },
+            DEFINE_HF(hf_invalid_data_je, "Invalid Data", "mcje.invalid_data", STRING, NONE),
+            DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC),
+            DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC),
+            DEFINE_HF(hf_packet_id_je, "Packet ID", "mcje.packet_id", STRING, NONE),
+            DEFINE_HF(hf_protocol_version_je, "Protocol Version", "mcje.protocol_version", STRING, NONE),
+            DEFINE_HF(hf_server_address_je, "Server Address", "mcje.server_address", STRING, NONE),
+            DEFINE_HF(hf_next_state_je, "Next State", "mcje.next_state", STRING, NONE),
+            DEFINE_HF(hf_ping_time_je, "Ping Time", "mcje.ping_time", UINT64, DEC),
+            DEFINE_HF(hf_server_status_je, "Server Status", "mcje.server_status", STRING, NONE),
+            DEFINE_HF(hf_unknown_int_je, "Unresolved Integer", "mcje.unknown_int", INT32, DEC),
+            DEFINE_HF(hf_unknown_uint_je, "Unresolved Unsigned Integer", "mcje.unknown_uint", UINT32, DEC),
+            DEFINE_HF(hf_unknown_int64_je, "Unresolved Long Integer", "mcje.unknown_int64", INT64, DEC),
+            DEFINE_HF(hf_unknown_uint64_je, "Unresolved Unsigned Long Integer", "mcje.unknown_uint64", UINT64, DEC),
+            DEFINE_HF(hf_unknown_float_je, "Unresolved Float", "mcje.unknown_float", FLOAT, DEC),
+            DEFINE_HF(hf_unknown_double_je, "Unresolved Double", "mcje.unknown_double", DOUBLE, DEC),
+            DEFINE_HF(hf_unknown_bytes_je, "Unresolved Bytes", "mcje.unknown_bytes", BYTES, NONE),
+            DEFINE_HF(hf_unknown_string_je, "Unresolved String", "mcje.unknown_string", STRING, NONE),
+            DEFINE_HF(hf_unknown_boolean_je, "Unresolved Boolean", "mcje.unknown_boolean", BOOLEAN, NONE),
+            DEFINE_HF(hf_unknown_uuid_je, "Unresolved UUID", "mcje.unknown_uuid", GUID, NONE),
+            DEFINE_HF(hf_threshold, "Threshold", "mcje.threshold", UINT32, DEC)
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
     proto_register_subtree_array(ett_je, array_length(ett_je));
+
+    unknown_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    wmem_map_insert(unknown_hf_map_je, g_strdup("int"), GINT_TO_POINTER(hf_unknown_int_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("uint"), GINT_TO_POINTER(hf_unknown_uint_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("int64"), GINT_TO_POINTER(hf_unknown_int64_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("uint64"), GINT_TO_POINTER(hf_unknown_uint64_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("float"), GINT_TO_POINTER(hf_unknown_float_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("double"), GINT_TO_POINTER(hf_unknown_double_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("bytes"), GINT_TO_POINTER(hf_unknown_bytes_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("string"), GINT_TO_POINTER(hf_unknown_string_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("boolean"), GINT_TO_POINTER(hf_unknown_boolean_je));
+    wmem_map_insert(unknown_hf_map_je, g_strdup("uuid"), GINT_TO_POINTER(hf_unknown_uuid_je));
+
+    name_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    ADD_HF("threshold", hf_threshold);
     init_je();
 }
 

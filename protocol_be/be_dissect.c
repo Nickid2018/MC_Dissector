@@ -8,6 +8,21 @@
 
 dissector_handle_t mcbe_boot_handle, mcbe_handle, ignore_be_handle;
 
+int hf_unknown_int_be = -1;
+int hf_unknown_uint_be = -1;
+int hf_unknown_int64_be = -1;
+int hf_unknown_uint64_be = -1;
+int hf_unknown_float_be = -1;
+int hf_unknown_double_be = -1;
+int hf_unknown_bytes_be = -1;
+int hf_unknown_string_be = -1;
+int hf_unknown_boolean_be = -1;
+int hf_unknown_uuid_be = -1;
+
+int ett_sub_be = -1;
+wmem_map_t *name_hf_map_be = NULL;
+wmem_map_t *unknown_hf_map_be = NULL;
+
 void proto_register_mcbe() {
     proto_mcbe = proto_register_protocol(MCBE_NAME, MCBE_SHORT_NAME, MCBE_FILTER);
 }

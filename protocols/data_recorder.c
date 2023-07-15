@@ -18,6 +18,11 @@ data_recorder create_data_recorder() {
     recorder->current = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
     wmem_stack_push(recorder->stack, recorder->current);
     recorder->recording = NULL;
+    return recorder;
+}
+
+void destroy_data_recorder(data_recorder recorder) {
+    wmem_free(wmem_packet_scope(), recorder);
 }
 
 void record_start(data_recorder recorder, gchar *name) {

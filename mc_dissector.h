@@ -14,6 +14,8 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
+#define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}}
+
 extern int proto_mcje;
 extern int proto_mcbe;
 
