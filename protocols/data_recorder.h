@@ -7,7 +7,11 @@
 
 #include <epan/proto.h>
 
-typedef struct _data_recorder data_recorder_t, *data_recorder;
+typedef struct _data_recorder {
+    wmem_map_t *store_map;
+    gchar *recording_path;
+    gchar *recording;
+} data_recorder_t, *data_recorder;
 
 data_recorder create_data_recorder();
 
@@ -16,6 +20,8 @@ void destroy_data_recorder(data_recorder recorder);
 void record_start(data_recorder recorder, gchar *name);
 
 void *record(data_recorder recorder, void *data);
+
+guint32 record_bool(data_recorder recorder, guint32 data);
 
 guint32 record_uint(data_recorder recorder, guint32 data);
 
@@ -33,11 +39,7 @@ void record_push(data_recorder recorder);
 
 void record_pop(data_recorder recorder);
 
-void record_store(data_recorder recorder);
-
-void record_restore(data_recorder recorder);
-
-void *record_query(data_recorder recorder, int path_len, ...);
+void *record_query(data_recorder recorder, gchar **path);
 
 gchar *record_get_recording(data_recorder recorder);
 

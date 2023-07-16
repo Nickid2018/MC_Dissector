@@ -88,6 +88,12 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
         return;
     }
     proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, read, STATE_NAME[next_state + 1]);
+
+    gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
+    gint data_version = get_java_data_version(unchecked_java_version);
+    guint nearest_data_version = find_nearest_java_protocol(data_version);
+    gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
+    get_protocol_je_set(nearest_java_version);
 }
 
 void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
