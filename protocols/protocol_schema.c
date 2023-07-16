@@ -8,6 +8,8 @@
 #include "../protocol_je/je_dissect.h"
 #include "../protocol_be/be_dissect.h"
 
+#define BYTES_MAX_LENGTH 200
+
 struct _protocol_set {
     wmem_map_t *client_packet_map;
     wmem_map_t *server_packet_map;
@@ -67,11 +69,17 @@ FIELD_MAKE_TREE(string) {
 }
 
 FIELD_MAKE_TREE(var_buffer) {
-    guint8 *str;
-    guint length = read_buffer(data + offset, &str);
-    if (tree)
-        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length, str);
-    return length;
+    guint length;
+    gint read = read_var_int(data + offset, 5, &length);
+    if (tree) {
+        if (length < BYTES_MAX_LENGTH)
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + read,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset + read, length));
+        else
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + read,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset + read, BYTES_MAX_LENGTH));
+    }
+    return read + length;
 }
 
 #define SINGLE_LENGTH_FIELD_MAKE(name, len, func_add, func_parse, record) \
@@ -106,11 +114,14 @@ SINGLE_LENGTH_FIELD_MAKE(f64, 8, proto_tree_add_double, tvb_get_ntohieee_double,
 SINGLE_LENGTH_FIELD_MAKE(boolean, 1, proto_tree_add_boolean, tvb_get_guint8, record_uint)
 
 FIELD_MAKE_TREE(rest_buffer) {
-    if (tree)
-        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, remaining,
-                             record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, remaining)));
-    else
-        record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, remaining));
+    if (tree) {
+        if (remaining < BYTES_MAX_LENGTH)
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, remaining,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, remaining));
+        else
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, remaining,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+    }
     return remaining;
 }
 
@@ -130,9 +141,14 @@ FIELD_MAKE_TREE(void) {
 
 FIELD_MAKE_TREE(nbt) {
     guint length = count_nbt_length(data + offset);
-    if (tree)
-        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                             tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+    if (tree) {
+        if (length < BYTES_MAX_LENGTH)
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+        else
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+    }
     return length;
 }
 
@@ -140,9 +156,14 @@ FIELD_MAKE_TREE(optional_nbt) {
     guint8 present = tvb_get_guint8(tvb, offset);
     if (present != 0) {
         guint length = count_nbt_length(data + offset);
-        if (tree)
-            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+        if (tree) {
+            if (length < BYTES_MAX_LENGTH)
+                proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                                     tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+            else
+                proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                                     tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+        }
         return length;
     } else
         return 1;
@@ -192,9 +213,14 @@ FIELD_MAKE_TREE(option) {
 
 FIELD_MAKE_TREE(buffer) {
     guint length = GPOINTER_TO_UINT(wmem_map_lookup(field->additional_info, 0));
-    if (tree)
-        proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
-                             tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+    if (tree) {
+        if (length < BYTES_MAX_LENGTH)
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+        else
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+    }
     return length;
 }
 

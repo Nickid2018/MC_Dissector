@@ -8,8 +8,13 @@
 #include "../mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
+#include "je_protocol_constants.h"
+
+module_t *pref_mcje = NULL;
+gchar *pref_ignore_packets_je = "c:map_chunk";
 
 int hf_invalid_data_je = -1;
+int hf_ignored_packet_je = -1;
 int hf_packet_length_je = -1;
 int hf_packet_data_length_je = -1;
 int hf_packet_id_je = -1;
@@ -81,7 +86,7 @@ void proto_reg_handoff_mcje() {
     mcje_boot_handle = create_dissector_handle(dissect_je_boot, proto_mcje);
     mcje_handle = create_dissector_handle(dissect_je_conv, proto_mcje);
     ignore_je_handle = create_dissector_handle(dissect_je_ignore, proto_mcje);
-    dissector_add_uint("tcp.port", MCJE_PORT, mcje_boot_handle);
+    dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_boot_handle);
 }
 
 void proto_register_mcje() {
@@ -90,6 +95,7 @@ void proto_register_mcje() {
     static gint *ett_je[] = {&ett_mcje, &ett_je_proto, &ett_sub_je};
     static hf_register_info hf_je[] = {
             DEFINE_HF(hf_invalid_data_je, "Invalid Data", "mcje.invalid_data", STRING, NONE)
+            DEFINE_HF(hf_ignored_packet_je, "Ignored Packet", "mcje.ignored_packet", STRING, NONE)
             DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC)
             DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC)
             DEFINE_HF(hf_packet_id_je, "Packet ID", "mcje.packet_id", UINT8, HEX)
@@ -204,7 +210,12 @@ void proto_register_mcje() {
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[22]x[22]z[20]y"), chunk_coordinates);
     ADD_HF("[22]x[22]z[20]y", hf_chunk_coords);
 
+    pref_mcje = prefs_register_protocol(proto_mcje, NULL);
+    prefs_register_string_preference(pref_mcje, "ignore_packets", "Ignore Packets",
+                                     "Ignore packets with the given names", (const char **) &pref_ignore_packets_je);
+
     init_je();
+    init_je_constants();
 }
 
 guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
@@ -350,8 +361,12 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             if (new_tvb == NULL)
                 return 0;
             add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
-        } else
+        } else {
+            if (tree)
+                proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
+                                    read_pointer - 1, 1, packet_length_vari - 1);
             new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
+        }
 
         if (tree) {
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);

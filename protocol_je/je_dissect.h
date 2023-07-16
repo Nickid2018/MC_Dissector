@@ -10,7 +10,10 @@
 
 extern dissector_handle_t mcje_boot_handle, mcje_handle, ignore_je_handle;
 
+extern gchar *pref_ignore_packets_je;
+
 extern int hf_invalid_data_je;
+extern int hf_ignored_packet_je;
 extern int hf_packet_length_je;
 extern int hf_packet_data_length_je;
 extern int hf_packet_id_je;

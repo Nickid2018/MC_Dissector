@@ -5,6 +5,7 @@
 #include <epan/proto.h>
 #include "je_dissect.h"
 #include "je_protocol.h"
+#include "je_protocol_constants.h"
 
 int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
     guint packet_id;
@@ -186,14 +187,32 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         return;
     }
     gchar *packet_name = get_packet_name(protocol);
-    proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name);
-    if (!make_tree(protocol, packet_tree, tvb, data, length))
-        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, p, length - p,
+    gchar *better_name = wmem_map_lookup(is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
+                                         packet_name);
+    if (better_name == NULL)
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name);
+    else
+        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
+                                           "%s (%s)", better_name, packet_name);
+
+    if (strcmp(packet_name, "bundle_delimiter") == 0)
+        return;
+
+    bool ignore = false;
+    if (strlen(pref_ignore_packets_je) != 0) {
+        gchar *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", packet_name);
+        GList *list = prefs_get_string_list(pref_ignore_packets_je);
+        ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
+    }
+    if (ignore)
+        proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p, "Ignored by user");
+    else if (!make_tree(protocol, packet_tree, tvb, data, length))
+        proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p,
                               "Protocol hasn't been implemented yet");
 }
 
 void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                         guint length, mcje_protocol_context *ctx, bool is_client) {
+                  guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
         return;
@@ -202,7 +221,7 @@ void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_
 }
 
 void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                  guint length, mcje_protocol_context *ctx, bool is_client) {
+                 guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
         return;
