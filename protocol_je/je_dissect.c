@@ -41,6 +41,7 @@ int hf_command_entity_arg = -1;
 int hf_command_score_holder_arg = -1;
 int hf_advancement_flags = -1;
 int hf_chunk_coords = -1;
+int hf_chunk_data = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -118,6 +119,7 @@ void proto_register_mcje() {
                       UINT8, DEC)
             DEFINE_HF(hf_advancement_flags, "Advancement Display Flags", "mcje.advancement_flags", UINT32, DEC)
             DEFINE_HF(hf_chunk_coords, "Chunk Coordinates", "mcje.chunk_coords", INT64, DEC)
+            DEFINE_HF(hf_chunk_data, "Chunk Data", "mcje.chunk_data", BYTES, NONE)
 
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
             DEFINE_HF_BITMASK(hf_z_26, "Z", "mcje.z26", INT64, DEC, 0x0000003FFFFFF000)
@@ -166,6 +168,7 @@ void proto_register_mcje() {
 
     name_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     ADD_HF("threshold", hf_threshold);
+    ADD_HF("chunkData", hf_chunk_data);
 
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     static int *positionXZY[] = {&hf_x_26, &hf_z_26, &hf_y_12, NULL};

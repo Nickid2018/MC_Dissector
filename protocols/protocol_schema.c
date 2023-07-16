@@ -22,6 +22,7 @@ struct _protocol_entry {
 };
 
 struct _protocol_field {
+    bool hf_resolved;
     gchar *name;
     int hf_index;
     wmem_map_t *additional_info;
@@ -69,9 +70,7 @@ FIELD_MAKE_TREE(var_buffer) {
     guint8 *str;
     guint length = read_buffer(data + offset, &str);
     if (tree)
-        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length, record(recorder, str));
-    else
-        record(recorder, str);
+        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length, str);
     return length;
 }
 
@@ -81,7 +80,7 @@ FIELD_MAKE_TREE(var_buffer) {
             func_add(tree, field->hf_index, tvb, offset, len, record(recorder, func_parse(tvb, offset))); \
         else                                                              \
             record(recorder, func_parse(tvb, offset));                    \
-        return len; \
+        return len;                                                       \
     }
 
 SINGLE_LENGTH_FIELD_MAKE(u8, 1, proto_tree_add_uint, tvb_get_guint8, record_uint)
@@ -130,13 +129,21 @@ FIELD_MAKE_TREE(void) {
 }
 
 FIELD_MAKE_TREE(nbt) {
-    // TODO: parse nbt
+    guint length = count_nbt_length(data + offset);
+    if (tree)
+        proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                             tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+    return length;
 }
 
 FIELD_MAKE_TREE(optional_nbt) {
     guint8 present = tvb_get_guint8(tvb, offset);
     if (present != 0) {
-        // TODO: parse nbt
+        guint length = count_nbt_length(data + offset);
+        if (tree)
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
+                                 tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+        return length;
     } else
         return 1;
 }
@@ -176,7 +183,7 @@ FIELD_MAKE_TREE(option) {
     bool is_present = tvb_get_guint8(tvb, offset) != 0;
     if (is_present) {
         protocol_field sub_field = wmem_map_lookup(field->additional_info, 0);
-        if (field->hf_index != -1)
+        if (field->hf_resolved && !sub_field->hf_resolved)
             sub_field->hf_index = field->hf_index;
         return sub_field->make_tree(data, tree, tvb, sub_field, offset + 1, remaining - 1, recorder) + 1;
     } else
@@ -187,15 +194,13 @@ FIELD_MAKE_TREE(buffer) {
     guint length = GPOINTER_TO_UINT(wmem_map_lookup(field->additional_info, 0));
     if (tree)
         proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
-                             record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, length)));
-    else
-        record(recorder, tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+                             tvb_memdup(wmem_packet_scope(), tvb, offset, length));
     return length;
 }
 
 FIELD_MAKE_TREE(mapper) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1));
-    if (field->hf_index != -1)
+    if (field->hf_resolved && !sub_field->hf_resolved)
         sub_field->hf_index = field->hf_index;
     gchar *recording = record_get_recording(recorder);
     guint length = sub_field->make_tree(data, NULL, tvb, sub_field, offset, remaining, recorder);
@@ -210,7 +215,7 @@ FIELD_MAKE_TREE(mapper) {
 
 FIELD_MAKE_TREE(array) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(1));
-    if (field->hf_index != -1)
+    if (field->hf_resolved && !sub_field->hf_resolved)
         sub_field->hf_index = field->hf_index;
     char *len_data = wmem_map_lookup(field->additional_info, 0);
     guint len = 0;
@@ -293,7 +298,6 @@ void init_schema_data() {
     ADD_NATIVE(optvarint, var_int, uint)
     ADD_NATIVE(varlong, var_long, uint64)
     ADD_NATIVE(string, string, string)
-    ADD_NATIVE(buffer, buffer, bytes)
     ADD_NATIVE(u8, u8, uint)
     ADD_NATIVE(u16, u16, uint)
     ADD_NATIVE(u32, u32, uint)
@@ -308,8 +312,8 @@ void init_schema_data() {
     ADD_NATIVE(UUID, uuid, uuid)
     ADD_NATIVE(restBuffer, rest_buffer, bytes)
     ADD_NATIVE(void, void, uint)
-//    ADD_NATIVE(nbt, nbt, bytes)
-//    ADD_NATIVE(optionalNbt, optional_nbt, bytes)
+    ADD_NATIVE(nbt, nbt, bytes)
+    ADD_NATIVE(optionalNbt, optional_nbt, bytes)
 }
 
 protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top) {
@@ -321,6 +325,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
             char *unknown_fallback = wmem_map_lookup(native_unknown_fallback_map, type);
             field->hf_index = GPOINTER_TO_INT(wmem_map_lookup(
                     is_je ? unknown_hf_map_je : unknown_hf_map_be, unknown_fallback));
+            field->hf_resolved = false;
             field->name = NULL;
             field->additional_info = NULL;
             field->make_tree = make_tree_func;
@@ -337,6 +342,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
     field->make_tree = NULL;
     field->name = NULL;
     field->hf_index = -1;
+    field->hf_resolved = false;
 
     wmem_map_t *search_hf_map = is_je ? name_hf_map_je : name_hf_map_be;
     cJSON *fields = cJSON_GetArrayItem(data, 1);
@@ -350,13 +356,15 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
             protocol_field sub_field = parse_protocol(type_data, types, is_je, false);
             if (sub_field == NULL)
                 return NULL;
-            if (cJSON_HasObjectItem(field_data, "name"))
+            if (cJSON_HasObjectItem(field_data, "name")) {
                 sub_field->name = strdup(cJSON_GetObjectItem(field_data, "name")->valuestring);
-            else
+                int hf_index = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, sub_field->name));
+                if (hf_index != 0) {
+                    sub_field->hf_index = hf_index;
+                    field->hf_resolved = true;
+                }
+            } else
                 sub_field->name = strdup("Anon Field");
-            int hf_index = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, sub_field->name));
-            if (hf_index != 0)
-                sub_field->hf_index = hf_index;
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(i + 1), sub_field);
         }
         if (on_top)
@@ -370,6 +378,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
         wmem_map_insert(field->additional_info, 0, sub_field);
         return field;
     } else if (strcmp(type, "buffer") == 0) { // buffer
+        field->hf_index = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, "bytes"));
         if (cJSON_HasObjectItem(fields, "count")) {
             field->make_tree = make_tree_buffer;
             cJSON *count = cJSON_GetObjectItem(fields, "count");
@@ -429,6 +438,7 @@ protocol_field parse_protocol(cJSON *data, cJSON *types, bool is_je, bool on_top
         if (hf_index == 0)
             return NULL;
         field->hf_index = hf_index;
+        field->hf_resolved = true;
         return field;
     }
     // entityMetadataLoop/topBitSetTerminatedArray/switch
