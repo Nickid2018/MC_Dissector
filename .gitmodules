@@ -1,6 +1,6 @@
-[submodule "minecraft-data"]
-	path = minecraft-data
-	url = https://github.com/PrismarineJS/minecraft-data.git
 [submodule "cJSON"]
 	path = cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "minecraft-data"]
+	path = minecraft-data
+	url = https://github.com/Nickid2018/minecraft-data.git

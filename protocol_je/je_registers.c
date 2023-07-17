@@ -90,6 +90,12 @@ int hf_properties = -1;
 int hf_registry = -1;
 int hf_min = -1;
 int hf_max = -1;
+int hf_min_i64 = -1;
+int hf_max_i64 = -1;
+int hf_min_f32 = -1;
+int hf_max_f32 = -1;
+int hf_min_f64 = -1;
+int hf_max_f64 = -1;
 int hf_suggestion_type = -1;
 int hf_reason = -1;
 int hf_server_id = -1;
@@ -104,33 +110,20 @@ int hf_shared_secret = -1;
 
 int hf_chunk_data = -1;
 // --------------------
-int hf_position_xzy = -1;
-int hf_position_xz = -1;
-int hf_command_flags = -1;
-int hf_command_arg_limit = -1;
-int hf_command_entity_arg = -1;
-int hf_command_score_holder_arg = -1;
-int hf_advancement_flags = -1;
-int hf_chunk_coords = -1;
-// --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
 int hf_y_12 = -1;
 int hf_x_4 = -1;
 int hf_z_4 = -1;
-int hf_unused_3 = -1;
 int hf_has_custom_suggestions_1 = -1;
 int hf_has_redirect_node_1 = -1;
 int hf_has_command_1 = -1;
 int hf_command_node_type_2 = -1;
-int hf_unused_6 = -1;
 int hf_max_present_1 = -1;
 int hf_min_present_1 = -1;
 int hf_only_allow_players_1 = -1;
 int hf_only_allow_entities_1 = -1;
-int hf_unused_7 = -1;
 int hf_allow_multiple_1 = -1;
-int hf_unused_29 = -1;
 int hf_hidden_1 = -1;
 int hf_show_toast_1 = -1;
 int hf_has_background_texture_1 = -1;
@@ -258,6 +251,12 @@ void proto_register_mcje() {
             DEFINE_HF(hf_registry, "Registry", "mcje.registry", STRING, NONE)
             DEFINE_HF(hf_min, "Min", "mcje.min", INT32, DEC)
             DEFINE_HF(hf_max, "Max", "mcje.max", INT32, DEC)
+            DEFINE_HF(hf_min_i64, "Min", "mcje.min_i64", INT64, DEC)
+            DEFINE_HF(hf_max_i64, "Max", "mcje.max_i64", INT64, DEC)
+            DEFINE_HF(hf_min_f32, "Min", "mcje.min_f32", FLOAT, DEC)
+            DEFINE_HF(hf_max_f32, "Max", "mcje.max_f32", FLOAT, DEC)
+            DEFINE_HF(hf_min_f64, "Min", "mcje.min_f64", DOUBLE, DEC)
+            DEFINE_HF(hf_max_f64, "Max", "mcje.max_f64", DOUBLE, DEC)
             DEFINE_HF(hf_suggestion_type, "Suggestion Type", "mcje.suggestion_type", STRING, NONE)
             DEFINE_HF(hf_reason, "Reason", "mcje.reason", STRING, NONE)
             DEFINE_HF(hf_server_id, "Server ID", "mcje.server_id", STRING, NONE)
@@ -271,20 +270,6 @@ void proto_register_mcje() {
             DEFINE_HF(hf_shared_secret, "Shared Secret", "mcje.shared_secret", BYTES, NONE)
 
             DEFINE_HF(hf_chunk_data, "Chunk Data", "mcje.chunk_data", BYTES, NONE)
-
-            // BITMASK Parents -----------------------------------------------------------------------------------------
-            DEFINE_HF(hf_position_xzy, "Position", "mcje.position_xzy", INT64, NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_position_xz, "Chunk Position", "mcje.position_xz", INT8, NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_command_flags, "Command Flags", "mcje.command_flags", UINT8, NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_command_arg_limit, "Command Argument Limit", "mcje.command_arg_limit", UINT8,
-                      NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_command_entity_arg, "Command Entity Argument", "mcje.command_entity_arg", UINT8,
-                      NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_command_score_holder_arg, "Command Score Holder Argument", "mcje.command_score_holder_arg",
-                      UINT8, NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_advancement_flags, "Advancement Display Flags", "mcje.advancement_flags", UINT32,
-                      NO_DISPLAY_VALUE | BASE_DEC)
-            DEFINE_HF(hf_chunk_coords, "Chunk Coordinates", "mcje.chunk_coords", INT64, NO_DISPLAY_VALUE | BASE_DEC)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -395,6 +380,12 @@ void proto_register_mcje() {
     ADD_HF("command_node/extraNodeData/properties", hf_properties);
     ADD_HF("command_node/extraNodeData/properties/min", hf_min);
     ADD_HF("command_node/extraNodeData/properties/max", hf_max);
+    ADD_HF("command_node/extraNodeData/properties/min[brigadier:long]", hf_min_i64);
+    ADD_HF("command_node/extraNodeData/properties/max[brigadier:long]", hf_max_i64);
+    ADD_HF("command_node/extraNodeData/properties/min[brigadier:float]", hf_min_f32);
+    ADD_HF("command_node/extraNodeData/properties/max[brigadier:float]", hf_max_f32);
+    ADD_HF("command_node/extraNodeData/properties/min[brigadier:double]", hf_min_f64);
+    ADD_HF("command_node/extraNodeData/properties/max[brigadier:double]", hf_max_f64);
     ADD_HF("command_node/extraNodeData/properties/registry", hf_registry);
     ADD_HF("command_node/extraNodeData/suggestionType", hf_suggestion_type);
     ADD_HF("serverId", hf_server_id);
@@ -418,27 +409,18 @@ void proto_register_mcje() {
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[26]x[26]z[12]y"), positionXZY);
-    ADD_HF("[26]x[26]z[12]y", hf_position_xzy);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[4]x[4]z"), positionXZ);
-    ADD_HF("[4]x[4]z", hf_position_xz);
     wmem_map_insert(bitmask_hf_map_je,
                     g_strdup(
                             "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type"),
                     command_flags);
-    ADD_HF("[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type",
-           hf_command_flags);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]max_present[1]min_present"), command_arg_limit);
-    ADD_HF("[6]unused[1]max_present[1]min_present", hf_command_arg_limit);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities"),
                     command_arg_entity);
-    ADD_HF("[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities", hf_command_entity_arg);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[7]unused[1]allowMultiple"), command_arg_score_holder);
-    ADD_HF("[7]unused[1]allowMultiple", hf_command_score_holder_arg);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[29]_unused[1]hidden[1]show_toast[1]has_background_texture"),
                     advancement_display);
-    ADD_HF("[29]_unused[1]hidden[1]show_toast[1]has_background_texture", hf_advancement_flags);
     wmem_map_insert(bitmask_hf_map_je, g_strdup("[22]x[22]z[20]y"), chunk_coordinates);
-    ADD_HF("[22]x[22]z[20]y", hf_chunk_coords);
 
     // Preference ------------------------------------------------------------------------------------------------------
     pref_mcje = prefs_register_protocol(proto_mcje, NULL);
