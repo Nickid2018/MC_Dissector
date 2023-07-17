@@ -7,11 +7,7 @@
 
 #include <epan/proto.h>
 
-typedef struct _data_recorder {
-    wmem_map_t *store_map;
-    gchar *recording_path;
-    gchar *recording;
-} data_recorder_t, *data_recorder;
+typedef struct _data_recorder data_recorder_t, *data_recorder;
 
 data_recorder create_data_recorder();
 
@@ -42,5 +38,9 @@ void record_pop(data_recorder recorder);
 void *record_query(data_recorder recorder, gchar **path);
 
 gchar *record_get_recording(data_recorder recorder);
+
+void record_add_alias(data_recorder recorder, gchar *name, gchar *alias);
+
+void record_clear_alias(data_recorder recorder);
 
 #endif //MC_DISSECTOR_DATA_RECORDER_H

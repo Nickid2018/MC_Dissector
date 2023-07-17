@@ -4,9 +4,17 @@
 
 #include "data_recorder.h"
 
+struct _data_recorder {
+    wmem_map_t *store_map;
+    gchar *recording_path;
+    gchar *recording;
+    wmem_map_t *alias_map;
+};
+
 data_recorder create_data_recorder() {
     data_recorder recorder = wmem_new(wmem_packet_scope(), data_recorder_t);
     recorder->store_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
+    recorder->alias_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
     recorder->recording_path = "";
     recorder->recording = NULL;
     return recorder;
@@ -105,6 +113,9 @@ void *record_query(data_recorder recorder, gchar **path) {
         gchar *key = path[i];
         if (key == NULL)
             break;
+        gchar *alias = wmem_map_lookup(recorder->alias_map, key);
+        if (alias != NULL)
+            key = alias;
         if (strcmp(key, "..") == 0) {
             guint index;
             for (index = strlen(recording_path) - 1;; index--)
@@ -121,4 +132,13 @@ void *record_query(data_recorder recorder, gchar **path) {
 
 gchar *record_get_recording(data_recorder recorder) {
     return recorder->recording;
+}
+
+void record_add_alias(data_recorder recorder, gchar *name, gchar *alias) {
+    wmem_map_insert(recorder->alias_map, name, alias);
+}
+
+void record_clear_alias(data_recorder recorder) {
+    wmem_free(wmem_packet_scope(), recorder->alias_map);
+    recorder->alias_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
 }

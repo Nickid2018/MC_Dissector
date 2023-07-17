@@ -8,6 +8,11 @@
 
 下载后把`libMC_Dissector.dll`文件放入 Wireshark 的解析器目录（`plugins/epan`）并启动 Wireshark 即可。
 
+### 可调选项
+可以在 Wireshark 的`首选项/Protocols`里面找到`MCJE`，在这里可以调整一些选项。
+* Ignore Packets：阻止解析一些包，用于过滤不需要的信息。默认为`c:map_chunk`，即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
+* TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+
 ### 构建项目
 构建此项目需要有 Wireshark 的源码并需要配置依赖。
 
