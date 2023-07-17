@@ -107,3 +107,6 @@ target_link_libraries(MC_Dissector wireshark)
 target_link_libraries(MC_Dissector wsutil)
 target_link_libraries(MC_Dissector glib-2.0)
 
+install(TARGETS MC_Dissector)
+set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
+

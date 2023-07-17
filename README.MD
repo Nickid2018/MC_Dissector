@@ -6,7 +6,7 @@
 ### 使用方法
 构建的文件可以在 Action 里面找到，目前项目仍在开发中所以没有 Release。
 
-下载后把`libMC_Dissector.dll`文件放入 Wireshark 的解析器目录（`plugins/epan`）并启动 Wireshark 即可。
+下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/epan`）并启动 Wireshark 即可。
 
 ### 可调选项
 可以在 Wireshark 的`首选项/Protocols`里面找到`MCJE`，在这里可以调整一些选项。
