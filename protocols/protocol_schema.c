@@ -231,12 +231,6 @@ FIELD_MAKE_TREE(buffer) {
 
 FIELD_MAKE_TREE(mapper) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, "__subfield");
-    if (sub_field->hf_resolved && sub_field->hf_index != -1 && !field->hf_resolved) {
-        field->hf_index = sub_field->hf_index;
-        field->hf_resolved = true;
-    }
-    if (field->hf_resolved && !sub_field->hf_resolved)
-        sub_field->name = field->name;
     gchar *recording = record_get_recording(recorder);
     record_start(recorder, "__mapperValue");
     guint length = sub_field->make_tree(data, NULL, tvb, sub_field, offset, remaining, recorder);
@@ -358,6 +352,31 @@ FIELD_MAKE_TREE(switch) {
     return sub_field_choose->make_tree(data, tree, tvb, sub_field_choose, offset, remaining, recorder);
 }
 
+FIELD_MAKE_TREE(entity_metadata_loop) {
+    protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(0));
+    int end_val_1 = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(1)));
+    guint8 end_val = *(guint8 *) &end_val_1;
+    if (field->hf_resolved && field->hf_index != -1 && !sub_field->hf_resolved) {
+        sub_field->hf_index = field->hf_index;
+        sub_field->name = field->name;
+        sub_field->hf_resolved = true;
+    }
+    int count = 0;
+    guint len = 0;
+    gchar *recording = record_get_recording(recorder);
+    char *name_raw = sub_field->name;
+    while (data[offset] != end_val) {
+        record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", count), "]", NULL));
+        sub_field->name = g_strdup_printf("[%d]", count);
+        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining - len, recorder);
+        offset += sub_length;
+        len += sub_length;
+        count++;
+    }
+    sub_field->name = name_raw;
+    return len + 1;
+}
+
 FIELD_MAKE_TREE(basic_type) {
     int len = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-2)));
     protocol_field sub_field = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1));
@@ -413,6 +432,12 @@ void init_schema_data() {
 
 int search_name(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags) {
     wmem_map_t *search_hf_map = is_je ? name_hf_map_je : name_hf_map_be;
+    if (path_array == NULL) {
+        int get_name = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, name));
+        if (get_name != 0)
+            return get_name;
+        return -1;
+    }
     wmem_list_frame_t *now;
     wmem_list_frame_t *now_flag = wmem_list_head(additional_flags);
     while (now_flag != NULL) {
@@ -546,6 +571,12 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         if (sub_field == NULL)
             return NULL;
         field->make_tree = make_tree_mapper;
+        if (sub_field->hf_resolved) {
+            field->hf_index = sub_field->hf_index;
+            field->hf_resolved = true;
+        } else
+            field->hf_index = GPOINTER_TO_INT(wmem_map_lookup(
+                    is_je ? unknown_hf_map_je : unknown_hf_map_be, "string"));
         wmem_map_insert(field->additional_info, "__subfield", sub_field);
         cJSON *mappings = cJSON_GetObjectItem(fields, "mappings");
         cJSON *now = mappings->child;
@@ -635,6 +666,17 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
             now = now->next;
         }
         field->make_tree = make_tree_switch;
+        return field;
+    } else if (strcmp(type, "entityMetadataLoop") == 0) {
+        protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
+                                                  cJSON_GetObjectItem(fields, "type"),
+                                                  types, is_je, false);
+        if (sub_field == NULL)
+            return NULL;
+        int end_val = cJSON_GetObjectItem(fields, "endVal")->valueint;
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(0), sub_field);
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), GINT_TO_POINTER(end_val));
+        field->make_tree = make_tree_entity_metadata_loop;
         return field;
     } else if (cJSON_HasObjectItem(types, type)) {
         protocol_field_t *type_data = wmem_map_lookup(basic_types, type);

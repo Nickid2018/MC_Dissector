@@ -62,6 +62,8 @@ int hf_ticks = -1;
 int hf_delay_in_ticks_before_shown = -1;
 int hf_id = -1;
 int hf_signature = -1;
+int hf_id_u8 = -1;
+int hf_type_string = -1;
 int hf_pitch_float = -1;
 int hf_yaw_float = -1;
 int hf_roll_float = -1;
@@ -223,6 +225,8 @@ void proto_register_mcje() {
                       UINT32, DEC)
             DEFINE_HF(hf_id, "ID", "mcje.id", UINT32, DEC)
             DEFINE_HF(hf_signature, "Signature", "mcje.signature", BYTES, NONE)
+            DEFINE_HF(hf_id_u8, "ID", "mcje.id", UINT8, DEC)
+            DEFINE_HF(hf_type_string, "Type", "mcje.type", STRING, NONE)
             DEFINE_HF(hf_pitch_float, "Pitch", "mcje.pitch", FLOAT, DEC)
             DEFINE_HF(hf_yaw_float, "Yaw", "mcje.yaw", FLOAT, DEC)
             DEFINE_HF(hf_roll_float, "Roll", "mcje.roll", FLOAT, DEC)
@@ -350,6 +354,8 @@ void proto_register_mcje() {
     ADD_HF("particleData/delayInTicksBeforeShown", hf_delay_in_ticks_before_shown);
     ADD_HF("previousMessages/id", hf_id);
     ADD_HF("previousMessages/signature", hf_signature);
+    ADD_HF("entityMetadata/key", hf_id_u8);
+    ADD_HF("entityMetadata/type", hf_type_string);
     ADD_HF("entityMetadataItem/pitch", hf_pitch_float);
     ADD_HF("entityMetadataItem/yaw", hf_yaw_float);
     ADD_HF("entityMetadataItem/roll", hf_roll_float);
