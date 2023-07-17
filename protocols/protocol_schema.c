@@ -250,14 +250,14 @@ FIELD_MAKE_TREE(array) {
         sub_field->hf_index = field->hf_index;
         sub_field->hf_resolved = true;
     }
-    char *len_data = wmem_map_lookup(field->additional_info, 0);
+    char **len_data = wmem_map_lookup(field->additional_info, 0);
     guint len = 0;
     guint data_count = 0;
     if (len_data == NULL)
         len = read_var_int(data + offset, remaining, &data_count);
     else {
-        char *path[] = {len_data, NULL};
-        data_count = GPOINTER_TO_UINT(record_query(recorder, path));
+        char *end_ptr;
+        data_count = strtol(record_query(recorder, len_data), &end_ptr, 10);
     }
     offset += len;
     remaining -= len;
@@ -588,12 +588,16 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         }
         return field;
     } else if (strcmp(type, "array") == 0) { // array
-        cJSON *count_type = cJSON_GetObjectItem(fields, "countType");
-        if (count_type == NULL)
-            return NULL;
-        char *count_type_str = count_type->valuestring;
-        if (strcmp(count_type_str, "varint") != 0)
-            wmem_map_insert(field->additional_info, 0, strdup(count_type_str));
+        cJSON *count = cJSON_GetObjectItem(fields, "count");
+        if (count != NULL)
+            wmem_map_insert(field->additional_info, 0,
+                            g_strsplit(count->valuestring, "/", 10));
+        else {
+            cJSON *count_type = cJSON_GetObjectItem(fields, "countType");
+            if (count_type == NULL || strcmp(count_type->valuestring, "varint") != 0)
+                return NULL;
+        }
+
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
                                                   type_data, types, is_je, false);
