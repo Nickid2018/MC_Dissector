@@ -283,9 +283,13 @@ guint make_tree_bitfield(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, pr
                          guint remaining, data_recorder recorder, bool is_je) {
     int size = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)));
     int *const *bitfields = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-2));
+    int total_bytes = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-3)));
     if (tree)
-        proto_tree_add_bitmask(tree, tvb, offset, field->hf_index,
-                               is_je ? ett_sub_je : ett_sub_be, bitfields, ENC_BIG_ENDIAN);
+        for (int i = 0; i < size; i++) {
+            int *hf_index = bitfields[i];
+            if (hf_index != NULL)
+                proto_tree_add_item(tree, *hf_index, tvb, offset, total_bytes, ENC_NA);
+        }
     record_push(recorder);
     int offset_bit = 0;
     for (int i = 0; i < size; i++) {
@@ -399,7 +403,7 @@ int search_name(bool is_je, wmem_list_t *path_array, gchar *name) {
     wmem_list_frame_t *now = wmem_list_head(path_array);
     while (now != NULL) {
         int get_name = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map,
-                                      name + GPOINTER_TO_UINT(wmem_list_frame_data(now))));
+                                                       name + GPOINTER_TO_UINT(wmem_list_frame_data(now))));
         if (get_name != 0)
             return get_name;
         now = wmem_list_frame_next(now);
@@ -414,7 +418,8 @@ int search_name(bool is_je, wmem_list_t *path_array, gchar *name) {
     wmem_list_remove_frame(path_array, wmem_list_tail(path_array)); \
     path_name[path_length] = '\0';
 
-protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *data, cJSON *types, bool is_je, bool on_top) {
+protocol_field
+parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *data, cJSON *types, bool is_je, bool on_top) {
     if (data == NULL)
         return NULL;
     guint path_length = strlen(path_name);
@@ -423,7 +428,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *
         void *make_tree_func = wmem_map_lookup(native_make_tree_map, type);
         if (make_tree_func != NULL) {
             protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
-            field-> hf_index = search_name(is_je, path_array, path_name);
+            field->hf_index = search_name(is_je, path_array, path_name);
             if (field->hf_index != -1)
                 field->hf_resolved = true;
             else {
@@ -439,7 +444,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *
         }
         NAME_PUSH(type)
         protocol_field field = parse_protocol(path_array, path_name, cJSON_GetObjectItem(types, data->valuestring),
-                              types, is_je, false);
+                                              types, is_je, false);
         NAME_POP
         return field;
     }
@@ -487,7 +492,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *
         wmem_map_insert(field->additional_info, 0, sub_field);
         return field;
     } else if (strcmp(type, "buffer") == 0) { // buffer
-        field-> hf_index = search_name(is_je, path_array, path_name);
+        field->hf_index = search_name(is_je, path_array, path_name);
         if (field->hf_index != -1)
             field->hf_resolved = true;
         else
@@ -536,6 +541,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *
         int size = cJSON_GetArraySize(fields);
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), GINT_TO_POINTER(size));
         char *bitmask_name = "";
+        int total_bits = 0;
         for (int i = 0; i < size; i++) {
             cJSON *field_data = cJSON_GetArrayItem(fields, i);
             bool signed_ = cJSON_GetObjectItem(field_data, "signed")->valueint;
@@ -545,7 +551,9 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, cJSON *
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3), GINT_TO_POINTER(bits));
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3 + 1), GINT_TO_POINTER(signed_));
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(i * 3 + 2), strdup(name));
+            total_bits += bits;
         }
+        wmem_map_insert(field->additional_info, GINT_TO_POINTER(-3), GINT_TO_POINTER(total_bits / 8));
         int **hf_data = wmem_map_lookup(is_je ? bitmask_hf_map_je : bitmask_hf_map_be, bitmask_name);
         if (hf_data == NULL)
             return NULL;

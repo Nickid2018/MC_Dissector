@@ -15,8 +15,9 @@
 #define MCBE_FILTER "mcbe"
 
 #define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}},
-#define DEFINE_HF_NO_BASE(name, desc, key, type, dis) {&name, {desc, key, FT_##type, dis, NULL, 0x0, NULL, HFILL}},
 #define DEFINE_HF_BITMASK(name, desc, key, type, dis, bitmask) {&name, {desc, key, FT_##type, BASE_##dis, NULL, bitmask, NULL, HFILL}},
+#define DEFINE_HF_BITMASK_VAL(name, desc, key, type, dis, bitmask, val) {&name, {desc, key, FT_##type, BASE_##dis, VALS(val), bitmask, NULL, HFILL}},
+#define DEFINE_HF_BITMASK_TF(name, desc, key, bitmask, tf) {&name, {desc, key, FT_BOOLEAN, 8, TFS(tf), bitmask, NULL, HFILL}},
 
 extern int proto_mcje;
 extern int proto_mcbe;

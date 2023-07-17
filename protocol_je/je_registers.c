@@ -86,6 +86,10 @@ int hf_signature_string = -1;
 int hf_children_int = -1;
 int hf_redirect_node = -1;
 int hf_parser = -1;
+int hf_properties = -1;
+int hf_registry = -1;
+int hf_min = -1;
+int hf_max = -1;
 int hf_suggestion_type = -1;
 int hf_reason = -1;
 int hf_server_id = -1;
@@ -134,17 +138,25 @@ int hf_x_22 = -1;
 int hf_z_22 = -1;
 int hf_y_20 = -1;
 // --------------------
-int *positionXZY[] = {&hf_x_26, &hf_z_26, &hf_y_12, NULL};
-int *positionXZ[] = {&hf_x_4, &hf_z_4, NULL};
-int *command_flags[] = {&hf_unused_3, &hf_has_custom_suggestions_1, &hf_has_redirect_node_1,
-                        &hf_has_command_1, &hf_command_node_type_2, NULL};
-int *command_arg_limit[] = {&hf_unused_6, &hf_max_present_1, &hf_min_present_1, NULL};
-int *command_arg_entity[] = {&hf_unused_6, &hf_only_allow_players_1, &hf_only_allow_entities_1, NULL};
-int *command_arg_score_holder[] = {&hf_unused_7, &hf_allow_multiple_1, NULL};
-int *advancement_display[] = {&hf_unused_29, &hf_hidden_1, &hf_show_toast_1, &hf_has_background_texture_1,
-                              NULL};
-int *chunk_coordinates[] = {&hf_x_22, &hf_z_22, &hf_y_20, NULL};
+int *positionXZY[] = {&hf_x_26, &hf_z_26, &hf_y_12};
+int *positionXZ[] = {&hf_x_4, &hf_z_4};
+int *command_flags[] = {NULL, &hf_has_custom_suggestions_1, &hf_has_redirect_node_1,
+                        &hf_has_command_1, &hf_command_node_type_2};
+int *command_arg_limit[] = {NULL, &hf_max_present_1, &hf_min_present_1};
+int *command_arg_entity[] = {NULL, &hf_only_allow_players_1, &hf_only_allow_entities_1};
+int *command_arg_score_holder[] = {NULL, &hf_allow_multiple_1};
+int *advancement_display[] = {NULL, &hf_hidden_1, &hf_show_toast_1, &hf_has_background_texture_1};
+int *chunk_coordinates[] = {&hf_x_22, &hf_z_22, &hf_y_20};
 // --------------------
+true_false_string tf_string[] = {
+        {"true", "false"},
+};
+value_string command_node_string[] = {
+        {0, "root"},
+        {1, "literal"},
+        {2, "argument"},
+        {0, NULL}
+};
 
 int ett_mcje = -1;
 int ett_je_proto = -1;
@@ -242,6 +254,10 @@ void proto_register_mcje() {
             DEFINE_HF(hf_children_int, "Children", "mcje.children_int", UINT32, DEC)
             DEFINE_HF(hf_redirect_node, "Redirect Node", "mcje.redirect_node", UINT32, DEC)
             DEFINE_HF(hf_parser, "Parser", "mcje.parser", STRING, NONE)
+            DEFINE_HF(hf_properties, "Properties", "mcje.properties", STRING, NONE)
+            DEFINE_HF(hf_registry, "Registry", "mcje.registry", STRING, NONE)
+            DEFINE_HF(hf_min, "Min", "mcje.min", INT32, DEC)
+            DEFINE_HF(hf_max, "Max", "mcje.max", INT32, DEC)
             DEFINE_HF(hf_suggestion_type, "Suggestion Type", "mcje.suggestion_type", STRING, NONE)
             DEFINE_HF(hf_reason, "Reason", "mcje.reason", STRING, NONE)
             DEFINE_HF(hf_server_id, "Server ID", "mcje.server_id", STRING, NONE)
@@ -276,27 +292,23 @@ void proto_register_mcje() {
             DEFINE_HF_BITMASK(hf_y_12, "Y", "mcje.y12", INT64, DEC, 0x0000000000000FFF)
             DEFINE_HF_BITMASK(hf_x_4, "X", "mcje.x4", INT8, DEC, 0xF0)
             DEFINE_HF_BITMASK(hf_z_4, "Z", "mcje.z4", INT8, DEC, 0x0F)
-            DEFINE_HF_BITMASK(hf_unused_3, "Unused Bits", "mcje.unused3", UINT8, NO_DISPLAY_VALUE | BASE_DEC, 0xE0)
-            DEFINE_HF_BITMASK(hf_has_custom_suggestions_1, "Has Custom Suggestions", "mcje.has_custom_suggestions",
-                              BOOLEAN, NONE, 0x10)
-            DEFINE_HF_BITMASK(hf_has_redirect_node_1, "Has Redirect Node", "mcje.has_redirect_node", BOOLEAN, NONE,
-                              0x08)
-            DEFINE_HF_BITMASK(hf_has_command_1, "Executable", "mcje.has_command", BOOLEAN, NONE, 0x04)
-            DEFINE_HF_BITMASK(hf_command_node_type_2, "Command Node Type", "mcje.command_node_type", UINT8, DEC, 0x03)
-            DEFINE_HF_BITMASK(hf_unused_6, "Unused Bits", "mcje.unused6", UINT8, NO_DISPLAY_VALUE | BASE_DEC, 0xFC)
-            DEFINE_HF_BITMASK(hf_max_present_1, "Max Present", "mcje.max_present", BOOLEAN, NONE, 0x02)
-            DEFINE_HF_BITMASK(hf_min_present_1, "Min Present", "mcje.min_present", BOOLEAN, NONE, 0x01)
-            DEFINE_HF_BITMASK(hf_only_allow_players_1, "Only Allow Players", "mcje.only_allow_players", BOOLEAN, NONE,
-                              0x02)
-            DEFINE_HF_BITMASK(hf_only_allow_entities_1, "Only Allow Entities", "mcje.only_allow_entities", BOOLEAN,
-                              NONE, 0x01)
-            DEFINE_HF_BITMASK(hf_unused_7, "Unused Bits", "mcje.unused7", UINT8, NO_DISPLAY_VALUE | BASE_DEC, 0xFE)
-            DEFINE_HF_BITMASK(hf_allow_multiple_1, "Allow Multiple", "mcje.allow_multiple", BOOLEAN, NONE, 0x01)
-            DEFINE_HF_BITMASK(hf_unused_29, "Unused Bits", "mcje.unused29", UINT8, NO_DISPLAY_VALUE | BASE_DEC, 0xFFF8)
-            DEFINE_HF_BITMASK(hf_hidden_1, "Hidden", "mcje.hidden1", BOOLEAN, NONE, 0x04)
-            DEFINE_HF_BITMASK(hf_show_toast_1, "Show Toast", "mcje.show_toast", BOOLEAN, NONE, 0x02)
-            DEFINE_HF_BITMASK(hf_has_background_texture_1, "Has Background Texture", "mcje.has_background_texture",
-                              BOOLEAN, NONE, 0x01)
+            DEFINE_HF_BITMASK_TF(hf_has_custom_suggestions_1, "Has Custom Suggestions", "mcje.has_custom_suggestions",
+                                 0x10, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_has_redirect_node_1, "Has Redirect Node", "mcje.has_redirect_node", 0x08, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_has_command_1, "Executable", "mcje.has_command", 0x04, tf_string)
+            DEFINE_HF_BITMASK_VAL(hf_command_node_type_2, "Command Node Type", "mcje.command_node_type", UINT8, DEC,
+                                  0x03, command_node_string)
+            DEFINE_HF_BITMASK_TF(hf_max_present_1, "Max Present", "mcje.max_present", 0x02, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_min_present_1, "Min Present", "mcje.min_present", 0x01, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_only_allow_players_1, "Only Allow Players", "mcje.only_allow_players", 0x02,
+                                 tf_string)
+            DEFINE_HF_BITMASK_TF(hf_only_allow_entities_1, "Only Allow Entities", "mcje.only_allow_entities", 0x01,
+                                 tf_string)
+            DEFINE_HF_BITMASK_TF(hf_allow_multiple_1, "Allow Multiple", "mcje.allow_multiple", 0x01, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_hidden_1, "Hidden", "mcje.hidden1", 0x04, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_show_toast_1, "Show Toast", "mcje.show_toast", 0x02, tf_string)
+            DEFINE_HF_BITMASK_TF(hf_has_background_texture_1, "Has Background Texture", "mcje.has_background_texture",
+                                 0x01, tf_string)
             DEFINE_HF_BITMASK(hf_x_22, "X", "mcje.x22", INT64, DEC, 0xFFFFFC0000000000)
             DEFINE_HF_BITMASK(hf_z_22, "Z", "mcje.z22", INT64, DEC, 0x000003FFFFF00000)
             DEFINE_HF_BITMASK(hf_y_20, "Y", "mcje.y20", INT64, DEC, 0x00000000000FFFFF)
@@ -380,6 +392,10 @@ void proto_register_mcje() {
     ADD_HF("command_node/redirectNode", hf_redirect_node);
     ADD_HF("command_node/extraNodeData/name", hf_name);
     ADD_HF("command_node/extraNodeData/parser", hf_parser);
+    ADD_HF("command_node/extraNodeData/properties", hf_properties);
+    ADD_HF("command_node/extraNodeData/properties/min", hf_min);
+    ADD_HF("command_node/extraNodeData/properties/max", hf_max);
+    ADD_HF("command_node/extraNodeData/properties/registry", hf_registry);
     ADD_HF("command_node/extraNodeData/suggestionType", hf_suggestion_type);
     ADD_HF("serverId", hf_server_id);
     ADD_HF("publicKey", hf_public_key);
