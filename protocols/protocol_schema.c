@@ -271,7 +271,7 @@ FIELD_MAKE_TREE(array) {
     char *name_raw = sub_field->name;
     for (int i = 0; i < data_count; i++) {
         record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", i), "]", NULL));
-        sub_field->name = g_strdup_printf("%s[%d]", field->name, i);
+        sub_field->name = g_strdup_printf("[%d]", i);
         guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
         offset += sub_length;
         len += sub_length;
@@ -281,8 +281,7 @@ FIELD_MAKE_TREE(array) {
     return len;
 }
 
-guint make_tree_bitfield(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, protocol_field field, guint offset,
-                         guint remaining, data_recorder recorder, bool is_je) {
+FIELD_MAKE_TREE(bitfield) {
     int size = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)));
     int *const *bitfields = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-2));
     int total_bytes = GPOINTER_TO_INT(wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-3)));
@@ -318,14 +317,6 @@ guint make_tree_bitfield(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, pr
     return (offset_bit + 7) / 8;
 }
 
-FIELD_MAKE_TREE(bitfield_je) {
-    return make_tree_bitfield(data, tree, tvb, field, offset, remaining, recorder, true);
-}
-
-FIELD_MAKE_TREE(bitfield_be) {
-    return make_tree_bitfield(data, tree, tvb, field, offset, remaining, recorder, false);
-}
-
 FIELD_MAKE_TREE(top_bit_set_terminated_array) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, 0);
     if (field->hf_resolved && field->hf_index != -1 && !sub_field->hf_resolved) {
@@ -342,8 +333,8 @@ FIELD_MAKE_TREE(top_bit_set_terminated_array) {
         len++;
         guint ord = now & 0x7F;
         record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", ord), "]", NULL));
-        sub_field->name = g_strdup_printf("%s[%d]", field->name, ord);
-        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
+        sub_field->name = g_strdup_printf("[%d]", ord);
+        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining - len, recorder);
         offset += sub_length;
         len += sub_length;
     } while ((now & 0x80) != 0);
@@ -601,12 +592,13 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         if (hf_data == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(-2), hf_data);
-        field->make_tree = is_je ? make_tree_bitfield_je : make_tree_bitfield_be;
+        field->make_tree = make_tree_bitfield;
         field->hf_resolved = true;
         return field;
     } else if (strcmp(type, "topBitSetTerminatedArray") == 0) {
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                  fields, types, is_je, false);
+                                                  cJSON_GetObjectItem(fields, "type"),
+                                                  types, is_je, false);
         if (sub_field == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
