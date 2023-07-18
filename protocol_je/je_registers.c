@@ -64,12 +64,27 @@ int hf_id = -1;
 int hf_signature = -1;
 int hf_id_u8 = -1;
 int hf_type_string = -1;
+int hf_byte = -1;
+int hf_int = -1;
+int hf_long = -1;
+int hf_float = -1;
+int hf_string = -1;
+int hf_component = -1;
+int hf_boolean = -1;
 int hf_pitch_float = -1;
 int hf_yaw_float = -1;
 int hf_roll_float = -1;
+int hf_direction = -1;
 int hf_villager_type = -1;
 int hf_villager_profession = -1;
 int hf_level = -1;
+int hf_uint = -1;
+int hf_pose = -1;
+int hf_cat_variant = -1;
+int hf_frog_variant = -1;
+int hf_global_pos = -1;
+int hf_painting_variant = -1;
+int hf_sniffer_state = -1;
 int hf_category = -1;
 int hf_group = -1;
 int hf_experience = -1;
@@ -109,8 +124,46 @@ int hf_message_id = -1;
 int hf_channel_str = -1;
 int hf_data = -1;
 int hf_shared_secret = -1;
-
+int hf_pitch_i8 = -1;
+int hf_yaw_i8 = -1;
+int hf_head_pitch_i8 = -1;
 int hf_chunk_data = -1;
+int hf_object_data = -1;
+int hf_vx_i16 = -1;
+int hf_vy_i16 = -1;
+int hf_vz_i16 = -1;
+int hf_count = -1;
+int hf_animation = -1;
+int hf_category_id = -1;
+int hf_stat_id = -1;
+int hf_value = -1;
+int hf_reset = -1;
+int hf_parent_id_string = -1;
+int hf_title = -1;
+int hf_desc = -1;
+int hf_frame_type = -1;
+int hf_background_texture = -1;
+int hf_send_telemetry_data = -1;
+int hf_id_string = -1;
+int hf_criterion_id = -1;
+int hf_criterion_progress = -1;
+int hf_destroy_stage = -1;
+int hf_action = -1;
+int hf_byte1 = -1;
+int hf_byte2 = -1;
+int hf_block_id = -1;
+int hf_health = -1;
+int hf_color = -1;
+int hf_dividers = -1;
+int hf_flags = -1;
+int hf_difficulty = -1;
+int hf_difficulty_locked = -1;
+int hf_transaction_id = -1;
+int hf_completion_start = -1;
+int hf_length = -1;
+int hf_match = -1;
+int hf_tooltip = -1;
+int hf_root_index = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -227,12 +280,27 @@ void proto_register_mcje() {
             DEFINE_HF(hf_signature, "Signature", "mcje.signature", BYTES, NONE)
             DEFINE_HF(hf_id_u8, "ID", "mcje.id", UINT8, DEC)
             DEFINE_HF(hf_type_string, "Type", "mcje.type", STRING, NONE)
+            DEFINE_HF(hf_byte, "Byte", "mcje.byte", INT8, DEC)
+            DEFINE_HF(hf_int, "Integer", "mcje.int", INT32, DEC)
+            DEFINE_HF(hf_long, "Long Integer", "mcje.long", INT64, DEC)
+            DEFINE_HF(hf_float, "Float", "mcje.float", FLOAT, DEC)
+            DEFINE_HF(hf_string, "String", "mcje.string", STRING, NONE)
+            DEFINE_HF(hf_component, "Component", "mcje.component", STRING, NONE)
+            DEFINE_HF(hf_boolean, "Boolean", "mcje.boolean", BOOLEAN, NONE)
+            DEFINE_HF(hf_direction, "Direction", "mcje.direction", UINT32, DEC)
             DEFINE_HF(hf_pitch_float, "Pitch", "mcje.pitch", FLOAT, DEC)
             DEFINE_HF(hf_yaw_float, "Yaw", "mcje.yaw", FLOAT, DEC)
             DEFINE_HF(hf_roll_float, "Roll", "mcje.roll", FLOAT, DEC)
             DEFINE_HF(hf_villager_type, "Villager Type", "mcje.villager_type", UINT32, DEC)
             DEFINE_HF(hf_villager_profession, "Villager Profession", "mcje.villager_profession", UINT32, DEC)
             DEFINE_HF(hf_level, "Level", "mcje.level", UINT32, DEC)
+            DEFINE_HF(hf_uint, "Unsigned Integer", "mcje.uint", UINT32, DEC)
+            DEFINE_HF(hf_pose, "Pose", "mcje.pose", UINT32, DEC)
+            DEFINE_HF(hf_cat_variant, "Cat Variant", "mcje.cat_variant", UINT32, DEC)
+            DEFINE_HF(hf_frog_variant, "Frog Variant", "mcje.frog_variant", UINT32, DEC)
+            DEFINE_HF(hf_global_pos, "Global Position", "mcje.global_pos", STRING, NONE)
+            DEFINE_HF(hf_painting_variant, "Painting Variant", "mcje.painting_variant", UINT32, DEC)
+            DEFINE_HF(hf_sniffer_state, "Sniffer State", "mcje.sniffer_state", UINT32, DEC)
             DEFINE_HF(hf_category, "Category", "mcje.category", UINT32, DEC)
             DEFINE_HF(hf_group, "Group", "mcje.group", STRING, NONE)
             DEFINE_HF(hf_experience, "Experience", "mcje.experience", FLOAT, DEC)
@@ -272,6 +340,45 @@ void proto_register_mcje() {
             DEFINE_HF(hf_channel_str, "Channel", "mcje.channel_str", STRING, NONE)
             DEFINE_HF(hf_data, "Data", "mcje.data", BYTES, NONE)
             DEFINE_HF(hf_shared_secret, "Shared Secret", "mcje.shared_secret", BYTES, NONE)
+            DEFINE_HF(hf_pitch_i8, "Pitch", "mcje.pitch_i8", INT8, DEC)
+            DEFINE_HF(hf_yaw_i8, "Yaw", "mcje.yaw_i8", INT8, DEC)
+            DEFINE_HF(hf_head_pitch_i8, "Head Pitch", "mcje.head_pitch_i8", INT8, DEC)
+            DEFINE_HF(hf_object_data, "Object Data", "mcje.object_data", UINT32, DEC)
+            DEFINE_HF(hf_vx_i16, "Velocity X", "mcje.vx_i16", INT16, DEC)
+            DEFINE_HF(hf_vy_i16, "Velocity Y", "mcje.vy_i16", INT16, DEC)
+            DEFINE_HF(hf_vz_i16, "Velocity Z", "mcje.vz_i16", INT16, DEC)
+            DEFINE_HF(hf_count, "Count", "mcje.count", INT16, DEC)
+            DEFINE_HF(hf_animation, "Animation", "mcje.animation", UINT8, DEC)
+            DEFINE_HF(hf_category_id, "Category ID", "mcje.category_id", UINT32, DEC)
+            DEFINE_HF(hf_stat_id, "Statistic ID", "mcje.stat_id", UINT32, DEC)
+            DEFINE_HF(hf_value, "Value", "mcje.value", UINT32, DEC)
+            DEFINE_HF(hf_reset, "Reset", "mcje.reset", BOOLEAN, DEC)
+            DEFINE_HF(hf_parent_id_string, "Parent ID", "mcje.parent_id_string", STRING, NONE)
+            DEFINE_HF(hf_title, "Title", "mcje.title", STRING, NONE)
+            DEFINE_HF(hf_desc, "Description", "mcje.desc", STRING, NONE)
+            DEFINE_HF(hf_frame_type, "Frame Type", "mcje.frame_type", UINT32, DEC)
+            DEFINE_HF(hf_background_texture, "Background Texture", "mcje.background_texture", STRING, NONE)
+            DEFINE_HF(hf_send_telemetry_data, "Send Telemetry Data", "mcje.send_telemetry_data", BOOLEAN, DEC)
+            DEFINE_HF(hf_id_string, "ID", "mcje.id_string", STRING, NONE)
+            DEFINE_HF(hf_criterion_id, "Criterion ID", "mcje.criterion_id", STRING, NONE)
+            DEFINE_HF(hf_criterion_progress, "Criterion Progress", "mcje.criterion_progress", INT64, DEC)
+            DEFINE_HF(hf_destroy_stage, "Destroy Stage", "mcje.destroy_stage", INT8, DEC)
+            DEFINE_HF(hf_action, "Action", "mcje.action", UINT32, DEC)
+            DEFINE_HF(hf_byte1, "Byte 1", "mcje.byte1", UINT8, DEC)
+            DEFINE_HF(hf_byte2, "Byte 2", "mcje.byte2", UINT8, DEC)
+            DEFINE_HF(hf_block_id, "Block ID", "mcje.block_id", UINT32, DEC)
+            DEFINE_HF(hf_health, "Health", "mcje.health", FLOAT, DEC)
+            DEFINE_HF(hf_color, "Color", "mcje.color", UINT32, DEC)
+            DEFINE_HF(hf_dividers, "Dividers", "mcje.dividers", UINT32, DEC)
+            DEFINE_HF(hf_flags, "Flags", "mcje.flags", UINT8, DEC)
+            DEFINE_HF(hf_difficulty, "Difficulty", "mcje.difficulty", UINT8, DEC)
+            DEFINE_HF(hf_difficulty_locked, "Difficulty Locked", "mcje.difficulty_locked", BOOLEAN, DEC)
+            DEFINE_HF(hf_transaction_id, "Transaction ID", "mcje.transaction_id", UINT32, DEC)
+            DEFINE_HF(hf_completion_start, "Completion Start", "mcje.completion_start", UINT32, DEC)
+            DEFINE_HF(hf_length, "Length", "mcje.length", UINT32, DEC)
+            DEFINE_HF(hf_match, "Match", "mcje.match", STRING, NONE)
+            DEFINE_HF(hf_tooltip, "Tooltip", "mcje.tooltip", STRING, NONE)
+            DEFINE_HF(hf_root_index, "Root Index", "mcje.root_index", UINT32, DEC)
 
             DEFINE_HF(hf_chunk_data, "Chunk Data", "mcje.chunk_data", BYTES, NONE)
 
@@ -354,14 +461,34 @@ void proto_register_mcje() {
     ADD_HF("particleData/delayInTicksBeforeShown", hf_delay_in_ticks_before_shown);
     ADD_HF("previousMessages/id", hf_id);
     ADD_HF("previousMessages/signature", hf_signature);
-    ADD_HF("entityMetadata/key", hf_id_u8);
-    ADD_HF("entityMetadata/type", hf_type_string);
+    ADD_HF("entityMetadataItem[byte]", hf_byte);
+    ADD_HF("entityMetadataItem[int]", hf_int);
+    ADD_HF("entityMetadataItem[long]", hf_long);
+    ADD_HF("entityMetadataItem[float]", hf_float);
+    ADD_HF("entityMetadataItem[string]", hf_string);
+    ADD_HF("entityMetadataItem[component]", hf_component);
+    ADD_HF("entityMetadataItem[optional_component]", hf_component);
+    ADD_HF("entityMetadataItem[boolean]", hf_boolean);
     ADD_HF("entityMetadataItem/pitch", hf_pitch_float);
     ADD_HF("entityMetadataItem/yaw", hf_yaw_float);
     ADD_HF("entityMetadataItem/roll", hf_roll_float);
-    ADD_HF("villagerType", hf_villager_type);
-    ADD_HF("villagerProfession", hf_villager_profession);
-    ADD_HF("level", hf_level);
+    ADD_HF("entityMetadataItem[direction]", hf_direction);
+    ADD_HF("entityMetadataItem[optional_uuid]", hf_uuid);
+    ADD_HF("entityMetadataItem[block_state]", hf_varint_blockstate);
+    ADD_HF("entityMetadataItem[optional_block_state]", hf_varint_blockstate);
+    ADD_HF("entityMetadataItem[compound_tag]", hf_nbt_data);
+    ADD_HF("entityMetadataItem/villagerType", hf_villager_type);
+    ADD_HF("entityMetadataItem/villagerProfession", hf_villager_profession);
+    ADD_HF("entityMetadataItem/level", hf_level);
+    ADD_HF("entityMetadataItem[optional_unsigned_int]", hf_uint);
+    ADD_HF("entityMetadataItem[pose]", hf_pose);
+    ADD_HF("entityMetadataItem[cat_variant]", hf_cat_variant);
+    ADD_HF("entityMetadataItem[frog_variant]", hf_frog_variant);
+    ADD_HF("entityMetadataItem[optional_global_pos]", hf_global_pos);
+    ADD_HF("entityMetadataItem[painting_variant]", hf_painting_variant);
+    ADD_HF("entityMetadataItem[sniffer_state]", hf_sniffer_state);
+    ADD_HF("entityMetadata/key", hf_id_u8);
+    ADD_HF("entityMetadata/type", hf_type_string);
     ADD_HF("minecraft_simple_recipe_format/category", hf_category);
     ADD_HF("minecraft_smelting_format/group", hf_group);
     ADD_HF("minecraft_smelting_format/category", hf_category);
@@ -409,6 +536,75 @@ void proto_register_mcje() {
     ADD_HF("sharedSecret", hf_shared_secret);
     ADD_HF("login_plugin_response/messageId", hf_message_id);
     ADD_HF("login_plugin_response/data", hf_data);
+    ADD_HF("spawn_entity/entityId", hf_entity_id);
+    ADD_HF("spawn_entity/objectUUID", hf_uuid);
+    ADD_HF("spawn_entity/type", hf_varint_type);
+    ADD_HF("spawn_entity/x", hf_f64_x);
+    ADD_HF("spawn_entity/y", hf_f64_y);
+    ADD_HF("spawn_entity/z", hf_f64_z);
+    ADD_HF("spawn_entity/pitch", hf_pitch_i8);
+    ADD_HF("spawn_entity/yaw", hf_yaw_i8);
+    ADD_HF("spawn_entity/headPitch", hf_head_pitch_i8);
+    ADD_HF("spawn_entity/objectData", hf_object_data);
+    ADD_HF("spawn_entity/velocityX", hf_vx_i16);
+    ADD_HF("spawn_entity/velocityY", hf_vy_i16);
+    ADD_HF("spawn_entity/velocityZ", hf_vz_i16);
+    ADD_HF("spawn_entity_experience_orb/entityId", hf_entity_id);
+    ADD_HF("spawn_entity_experience_orb/x", hf_f64_x);
+    ADD_HF("spawn_entity_experience_orb/y", hf_f64_y);
+    ADD_HF("spawn_entity_experience_orb/z", hf_f64_z);
+    ADD_HF("spawn_entity_experience_orb/count", hf_count);
+    ADD_HF("named_entity_spawn/entityId", hf_entity_id);
+    ADD_HF("named_entity_spawn/playerUUID", hf_uuid);
+    ADD_HF("named_entity_spawn/x", hf_f64_x);
+    ADD_HF("named_entity_spawn/y", hf_f64_y);
+    ADD_HF("named_entity_spawn/z", hf_f64_z);
+    ADD_HF("spawn_entity/yaw", hf_yaw_i8);
+    ADD_HF("spawn_entity/pitch", hf_pitch_i8);
+    ADD_HF("animation/entityId", hf_entity_id);
+    ADD_HF("animation/animation", hf_animation);
+    ADD_HF("statistics/entries/categoryId", hf_category_id);
+    ADD_HF("statistics/entries/statisticId", hf_stat_id);
+    ADD_HF("statistics/entries/value", hf_value);
+    ADD_HF("advancements/reset", hf_reset);
+    ADD_HF("advancements/advancementMapping/key", hf_key_string);
+    ADD_HF("advancements/advancementMapping/value/parentId", hf_parent_id_string);
+    ADD_HF("advancements/advancementMapping/value/displayData/title", hf_title);
+    ADD_HF("advancements/advancementMapping/value/displayData/description", hf_desc);
+    ADD_HF("advancements/advancementMapping/value/displayData/frameType", hf_frame_type);
+    ADD_HF("advancements/advancementMapping/value/displayData/backgroundTexture", hf_background_texture);
+    ADD_HF("advancements/advancementMapping/value/displayData/xCord", hf_f32_x);
+    ADD_HF("advancements/advancementMapping/value/displayData/yCord", hf_f32_y);
+    ADD_HF("advancements/advancementMapping/value/criteria/key", hf_key_string);
+    ADD_HF("advancements/advancementMapping/value/criteria/value", hf_value_string);
+    ADD_HF("advancements/advancementMapping/value/sendsTelemtryData", hf_send_telemetry_data);
+    ADD_HF("advancements/identifiers", hf_id_string);
+    ADD_HF("advancements/progressMapping/key", hf_key_string);
+    ADD_HF("advancements/progressMapping/value/criterionIdentifier", hf_criterion_id);
+    ADD_HF("advancements/progressMapping/value/criterionProgress", hf_criterion_progress);
+    ADD_HF("block_break_animation/entityId", hf_entity_id);
+    ADD_HF("block_break_animation/destroyStage", hf_destroy_stage);
+    ADD_HF("tile_entity_data/action", hf_action);
+    ADD_HF("tile_entity_data/nbtData", hf_nbt_data);
+    ADD_HF("block_action/byte1", hf_byte1);
+    ADD_HF("block_action/byte2", hf_byte2);
+    ADD_HF("block_action/blockId", hf_block_id);
+    ADD_HF("block_change/type", hf_varint_blockstate);
+    ADD_HF("boss_bar/entityUUID", hf_uuid);
+    ADD_HF("boss_bar/action", hf_action);
+    ADD_HF("boss_bar/title", hf_title);
+    ADD_HF("boss_bar/health", hf_health);
+    ADD_HF("boss_bar/color", hf_color);
+    ADD_HF("boss_bar/dividers", hf_dividers);
+    ADD_HF("boss_bar/flags", hf_flags);
+    ADD_HF("difficulty/difficulty", hf_difficulty);
+    ADD_HF("difficulty/difficultyLocked", hf_difficulty_locked);
+    ADD_HF("tab_complete/transactionId", hf_transaction_id);
+    ADD_HF("tab_complete/start", hf_completion_start);
+    ADD_HF("tab_complete/length", hf_length);
+    ADD_HF("tab_complete/matches/match", hf_match);
+    ADD_HF("tab_complete/matches/tooltip", hf_tooltip);
+    ADD_HF("declare_commands/rootIndex", hf_root_index);
 
     ADD_HF("chunkData", hf_chunk_data);
 
