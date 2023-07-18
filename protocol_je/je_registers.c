@@ -288,6 +288,70 @@ int hf_chunk_x_uint = -1;
 int hf_chunk_z_uint = -1;
 int hf_position_i8 = -1;
 int hf_vehicle_id = -1;
+int hf_experience_bar = -1;
+int hf_total_experience = -1;
+int hf_food = -1;
+int hf_food_saturation = -1;
+int hf_display_text = -1;
+int hf_team = -1;
+int hf_mode = -1;
+int hf_friendly_fire = -1;
+int hf_name_tag_visibility = -1;
+int hf_collision_rule = -1;
+int hf_formatting = -1;
+int hf_prefix = -1;
+int hf_suffix = -1;
+int hf_item_name = -1;
+int hf_score_name = -1;
+int hf_angle = -1;
+int hf_age = -1;
+int hf_time = -1;
+int hf_sound_id = -1;
+int hf_resource = -1;
+int hf_range = -1;
+int hf_sound_category = -1;
+int hf_volume = -1;
+int hf_pitch_sound = -1;
+int hf_seed = -1;
+int hf_source = -1;
+int hf_sound = -1;
+int hf_i32_y = -1;
+int hf_content = -1;
+int hf_is_action_bar = -1;
+int hf_header = -1;
+int hf_footer = -1;
+int hf_collected_entity_id = -1;
+int hf_collector_entity_id = -1;
+int hf_pickup_item_count = -1;
+int hf_value_f64 = -1;
+int hf_amount = -1;
+int hf_operation = -1;
+int hf_amplifier = -1;
+int hf_hide_particles = -1;
+int hf_factor_codec = -1;
+int hf_motd = -1;
+int hf_icon_bytes = -1;
+int hf_enforces_secure_chat = -1;
+int hf_recipe_id = -1;
+int hf_width = -1;
+int hf_height = -1;
+int hf_show_notification = -1;
+int hf_tag_type = -1;
+int hf_sequence_id = -1;
+int hf_old_diameter = -1;
+int hf_new_diameter = -1;
+int hf_speed = -1;
+int hf_portal_teleport_boundary = -1;
+int hf_warning_blocks = -1;
+int hf_warning_time = -1;
+int hf_text = -1;
+int hf_diameter = -1;
+int hf_fade_in = -1;
+int hf_stay = -1;
+int hf_fade_out = -1;
+int hf_source_type_id = -1;
+int hf_source_cause_id = -1;
+int hf_source_direct_id = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -405,7 +469,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_id_u8, "ID", "mcje.id", UINT8, DEC)
             DEFINE_HF(hf_type_string, "Type", "mcje.type", STRING, NONE)
             DEFINE_HF(hf_byte, "Byte", "mcje.byte", INT8, DEC)
-            DEFINE_HF(hf_int, "Integer", "mcje.int", INT32, DEC)
+            DEFINE_HF(hf_int, "Integer", "mcje.int", UINT32, DEC)
             DEFINE_HF(hf_long, "Long Integer", "mcje.long", INT64, DEC)
             DEFINE_HF(hf_float, "Float", "mcje.float", FLOAT, DEC)
             DEFINE_HF(hf_string, "String", "mcje.string", STRING, NONE)
@@ -629,6 +693,70 @@ void proto_register_mcje() {
             DEFINE_HF(hf_chunk_z_uint, "Chunk Z", "mcje.chunk_z_uint", UINT32, DEC)
             DEFINE_HF(hf_position_i8, "Position", "mcje.position_i8", INT8, DEC)
             DEFINE_HF(hf_vehicle_id, "Vehicle ID", "mcje.vehicle_id", INT32, DEC)
+            DEFINE_HF(hf_experience_bar, "Experience Bar", "mcje.experience_bar", FLOAT, DEC)
+            DEFINE_HF(hf_total_experience, "Total Experience", "mcje.total_experience", UINT32, DEC)
+            DEFINE_HF(hf_food, "Food", "mcje.food", UINT32, DEC)
+            DEFINE_HF(hf_food_saturation, "Food Saturation", "mcje.food_saturation", FLOAT, DEC)
+            DEFINE_HF(hf_display_text, "Display Text", "mcje.display_text", STRING, NONE)
+            DEFINE_HF(hf_team, "Team", "mcje.team", STRING, NONE)
+            DEFINE_HF(hf_mode, "Mode", "mcje.mode", UINT8, DEC)
+            DEFINE_HF(hf_friendly_fire, "Friendly Fire", "mcje.friendly_fire", UINT8, DEC)
+            DEFINE_HF(hf_name_tag_visibility, "Name Tag Visibility", "mcje.name_tag_visibility", STRING, NONE)
+            DEFINE_HF(hf_collision_rule, "Collision Rule", "mcje.collision_rule", STRING, NONE)
+            DEFINE_HF(hf_formatting, "Formatting", "mcje.formatting", UINT32, DEC)
+            DEFINE_HF(hf_prefix, "Prefix", "mcje.prefix", STRING, NONE)
+            DEFINE_HF(hf_suffix, "Suffix", "mcje.suffix", STRING, NONE)
+            DEFINE_HF(hf_item_name, "Item Name", "mcje.item_name", STRING, NONE)
+            DEFINE_HF(hf_score_name, "Score Name", "mcje.score_name", STRING, NONE)
+            DEFINE_HF(hf_angle, "Angle", "mcje.angle", FLOAT, DEC)
+            DEFINE_HF(hf_age, "Age", "mcje.age", INT64, DEC)
+            DEFINE_HF(hf_time, "Time", "mcje.time", INT64, DEC)
+            DEFINE_HF(hf_sound_id, "Sound ID", "mcje.sound_id", UINT32, DEC)
+            DEFINE_HF(hf_resource, "Resource", "mcje.resource", STRING, NONE)
+            DEFINE_HF(hf_range, "Range", "mcje.range", FLOAT, DEC)
+            DEFINE_HF(hf_sound_category, "Sound Category", "mcje.sound_category", UINT32, DEC)
+            DEFINE_HF(hf_volume, "Volume", "mcje.volume", FLOAT, DEC)
+            DEFINE_HF(hf_pitch_sound, "Pitch", "mcje.pitch_sound", FLOAT, DEC)
+            DEFINE_HF(hf_seed, "Seed", "mcje.seed", INT64, DEC)
+            DEFINE_HF(hf_source, "Source", "mcje.source", UINT32, DEC)
+            DEFINE_HF(hf_sound, "Sound", "mcje.sound", STRING, NONE)
+            DEFINE_HF(hf_i32_y, "Y", "mcje.i32_y", INT32, DEC)
+            DEFINE_HF(hf_content, "Content", "mcje.content", STRING, NONE)
+            DEFINE_HF(hf_is_action_bar, "Is Action Bar", "mcje.is_action_bar", BOOLEAN, NONE)
+            DEFINE_HF(hf_header, "Header", "mcje.header", STRING, NONE)
+            DEFINE_HF(hf_footer, "Footer", "mcje.footer", STRING, NONE)
+            DEFINE_HF(hf_collected_entity_id, "Collected Entity ID", "mcje.collected_entity_id", UINT32, DEC)
+            DEFINE_HF(hf_collector_entity_id, "Collector Entity ID", "mcje.collector_entity_id", UINT32, DEC)
+            DEFINE_HF(hf_pickup_item_count, "Pickup Item Count", "mcje.pickup_item_count", UINT32, DEC)
+            DEFINE_HF(hf_value_f64, "Value", "mcje.value_f64", DOUBLE, DEC)
+            DEFINE_HF(hf_amount, "Amount", "mcje.amount", DOUBLE, DEC)
+            DEFINE_HF(hf_operation, "Operation", "mcje.operation", INT8, DEC)
+            DEFINE_HF(hf_amplifier, "Amplifier", "mcje.amplifier", INT8, DEC)
+            DEFINE_HF(hf_hide_particles, "Hide Particles", "mcje.hide_particles", INT8, DEC)
+            DEFINE_HF(hf_factor_codec, "Factor Codec", "mcje.factor_codec", BYTES, NONE)
+            DEFINE_HF(hf_motd, "MOTD", "mcje.motd", STRING, NONE)
+            DEFINE_HF(hf_icon_bytes, "Icon Bytes", "mcje.icon_bytes", BYTES, NONE)
+            DEFINE_HF(hf_enforces_secure_chat, "Enforces Secure Chat", "mcje.enforces_secure_chat", BOOLEAN, NONE)
+            DEFINE_HF(hf_recipe_id, "Recipe ID", "mcje.recipe_id", STRING, NONE)
+            DEFINE_HF(hf_width, "Width", "mcje.width", UINT32, DEC)
+            DEFINE_HF(hf_height, "Height", "mcje.height", UINT32, DEC)
+            DEFINE_HF(hf_show_notification, "Show Notification", "mcje.show_notification", BOOLEAN, NONE)
+            DEFINE_HF(hf_tag_type, "Tag Type", "mcje.tag_type", STRING, NONE)
+            DEFINE_HF(hf_sequence_id, "Sequence ID", "mcje.sequence_id", UINT32, DEC)
+            DEFINE_HF(hf_old_diameter, "Old Diameter", "mcje.old_diameter", DOUBLE, DEC)
+            DEFINE_HF(hf_new_diameter, "New Diameter", "mcje.new_diameter", DOUBLE, DEC)
+            DEFINE_HF(hf_speed, "Speed", "mcje.speed", UINT32, DEC)
+            DEFINE_HF(hf_portal_teleport_boundary, "Portal Teleport Boundary", "mcje.portal_teleport_boundary", UINT32, DEC)
+            DEFINE_HF(hf_warning_blocks, "Warning Blocks", "mcje.warning_blocks", UINT32, DEC)
+            DEFINE_HF(hf_warning_time, "Warning Time", "mcje.warning_time", UINT32, DEC)
+            DEFINE_HF(hf_text, "Text", "mcje.text", STRING, NONE)
+            DEFINE_HF(hf_diameter, "Diameter", "mcje.diameter", DOUBLE, DEC)
+            DEFINE_HF(hf_fade_in, "Fade In", "mcje.fade_in", INT32, DEC)
+            DEFINE_HF(hf_stay, "Stay", "mcje.stay", INT32, DEC)
+            DEFINE_HF(hf_fade_out, "Fade Out", "mcje.fade_out", INT32, DEC)
+            DEFINE_HF(hf_source_type_id, "Source Type ID", "mcje.source_type_id", UINT32, DEC)
+            DEFINE_HF(hf_source_cause_id, "Source Cause ID", "mcje.source_cause_id", UINT32, DEC)
+            DEFINE_HF(hf_source_direct_id, "Source Direct ID", "mcje.source_direct_id", UINT32, DEC)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -1005,7 +1133,7 @@ void proto_register_mcje() {
     ADD_HF("open_sign_entity/isFrontText", hf_is_front_text);
     ADD_HF("craft_recipe_response/windowId", hf_window_id);
     ADD_HF("craft_recipe_response/recipe", hf_recipe);
-    ADD_HF("abilities/flags", hf_flags);
+    ADD_HF("abilities/flags", hf_flags_i8);
     ADD_HF("abilities/flyingSpeed", hf_flying_speed);
     ADD_HF("abilities/walkingSpeed", hf_walking_speed);
     ADD_HF("player_chat/senderUuid", hf_uuid);
@@ -1077,6 +1205,125 @@ void proto_register_mcje() {
     ADD_HF("entity_velocity/velocityZ", hf_vz_i16);
     ADD_HF("entity_equipment/entityId", hf_entity_id);
     ADD_HF("entity_equipment/equipments/slot", hf_slot);
+    ADD_HF("experience/experienceBar", hf_experience_bar);
+    ADD_HF("experience/totalExperience", hf_total_experience);
+    ADD_HF("experience/level", hf_level);
+    ADD_HF("update_health/health", hf_health);
+    ADD_HF("update_health/food", hf_food);
+    ADD_HF("update_health/foodSaturation", hf_food_saturation);
+    ADD_HF("scoreboard_objective/name", hf_name);
+    ADD_HF("scoreboard_objective/action", hf_action_i8);
+    ADD_HF("scoreboard_objective/displayText", hf_display_text);
+    ADD_HF("scoreboard_objective/type", hf_type);
+    ADD_HF("set_passengers/entityId", hf_entity_id);
+    ADD_HF("teams/team", hf_team);
+    ADD_HF("teams/mode", hf_mode);
+    ADD_HF("teams/name", hf_name);
+    ADD_HF("teams/friendlyFire", hf_friendly_fire);
+    ADD_HF("teams/nameTagVisibility", hf_name_tag_visibility);
+    ADD_HF("teams/collisionRule", hf_collision_rule);
+    ADD_HF("teams/formatting", hf_formatting);
+    ADD_HF("teams/prefix", hf_prefix);
+    ADD_HF("teams/suffix", hf_suffix);
+    ADD_HF("scoreboard_score/itemName", hf_item_name);
+    ADD_HF("scoreboard_score/action", hf_action);
+    ADD_HF("scoreboard_score/scoreName", hf_score_name);
+    ADD_HF("scoreboard_score/value", hf_value);
+    ADD_HF("spawn_position/angle", hf_angle);
+    ADD_HF("update_time/age", hf_age);
+    ADD_HF("update_time/time", hf_time);
+    ADD_HF("entity_sound_effect/soundId", hf_sound_id);
+    ADD_HF("entity_sound_effect/soundEvent/resource", hf_resource);
+    ADD_HF("entity_sound_effect/soundEvent/range", hf_range);
+    ADD_HF("entity_sound_effect/soundCategory", hf_sound_category);
+    ADD_HF("entity_sound_effect/entityId", hf_entity_id);
+    ADD_HF("entity_sound_effect/volume", hf_volume);
+    ADD_HF("entity_sound_effect/pitch", hf_pitch_sound);
+    ADD_HF("entity_sound_effect/seed", hf_seed);
+    ADD_HF("stop_sound/flags", hf_flags_i8);
+    ADD_HF("stop_sound/source", hf_source);
+    ADD_HF("stop_sound/sound", hf_sound);
+    ADD_HF("sound_effect/soundId", hf_sound_id);
+    ADD_HF("sound_effect/soundEvent/resource", hf_resource);
+    ADD_HF("sound_effect/soundEvent/range", hf_range);
+    ADD_HF("sound_effect/soundCategory", hf_sound_category);
+    ADD_HF("sound_effect/x", hf_i32_x);
+    ADD_HF("sound_effect/y", hf_i32_y);
+    ADD_HF("sound_effect/z", hf_i32_z);
+    ADD_HF("sound_effect/volume", hf_volume);
+    ADD_HF("sound_effect/pitch", hf_pitch_sound);
+    ADD_HF("sound_effect/seed", hf_seed);
+    ADD_HF("system_chat/content", hf_content);
+    ADD_HF("system_chat/isActionBar", hf_is_action_bar);
+    ADD_HF("playerlist_header/header", hf_header);
+    ADD_HF("playerlist_header/footer", hf_footer);
+    ADD_HF("collect/collectedEntityId", hf_collected_entity_id);
+    ADD_HF("collect/collectorEntityId", hf_collector_entity_id);
+    ADD_HF("collect/pickupItemCount", hf_pickup_item_count);
+    ADD_HF("entity_teleport/entityId", hf_entity_id);
+    ADD_HF("entity_teleport/x", hf_f64_x);
+    ADD_HF("entity_teleport/y", hf_f64_y);
+    ADD_HF("entity_teleport/z", hf_f64_z);
+    ADD_HF("entity_teleport/yaw", hf_yaw_i8);
+    ADD_HF("entity_teleport/pitch", hf_pitch_i8);
+    ADD_HF("entity_teleport/onGround", hf_on_ground);
+    ADD_HF("entity_update_attributes/entityId", hf_entity_id);
+    ADD_HF("entity_update_attributes/properties/key", hf_key_string);
+    ADD_HF("entity_update_attributes/properties/value", hf_value_f64);
+    ADD_HF("entity_update_attributes/properties/modifiers/uuid", hf_uuid);
+    ADD_HF("entity_update_attributes/properties/modifiers/amount", hf_amount);
+    ADD_HF("entity_update_attributes/properties/modifiers/operation", hf_operation);
+    ADD_HF("entity_effect/entityId", hf_entity_id);
+    ADD_HF("entity_effect/effectId", hf_effect_id);
+    ADD_HF("entity_effect/amplifier", hf_amplifier);
+    ADD_HF("entity_effect/duration", hf_duration);
+    ADD_HF("entity_effect/hideParticles", hf_hide_particles);
+    ADD_HF("entity_effect/factorCodec", hf_factor_codec);
+    ADD_HF("select_advancement_tab/id", hf_id_string);
+    ADD_HF("server_data/motd", hf_motd);
+    ADD_HF("server_data/iconBytes", hf_icon_bytes);
+    ADD_HF("server_data/enforcesSecureChat", hf_enforces_secure_chat);
+    ADD_HF("type", hf_type_string);
+    ADD_HF("recipeId", hf_recipe_id);
+    ADD_HF("declare_recipes/data/group", hf_group);
+    ADD_HF("declare_recipes/data/category", hf_category);
+    ADD_HF("declare_recipes/data/width", hf_width);
+    ADD_HF("declare_recipes/data/height", hf_height);
+    ADD_HF("declare_recipes/data/showNotification", hf_show_notification);
+    ADD_HF("tags/tags/tagType", hf_tag_type);
+    ADD_HF("acknowledge_player_digging/sequenceId", hf_sequence_id);
+    ADD_HF("clear_titles/reset", hf_reset);
+    ADD_HF("initialize_world_border/x", hf_f64_x);
+    ADD_HF("initialize_world_border/z", hf_f64_z);
+    ADD_HF("initialize_world_border/oldDiameter", hf_old_diameter);
+    ADD_HF("initialize_world_border/newDiameter", hf_new_diameter);
+    ADD_HF("initialize_world_border/speed", hf_speed);
+    ADD_HF("initialize_world_border/portalTeleportBoundary", hf_portal_teleport_boundary);
+    ADD_HF("initialize_world_border/warningBlocks", hf_warning_blocks);
+    ADD_HF("initialize_world_border/warningTime", hf_warning_time);
+    ADD_HF("action_bar/text", hf_text);
+    ADD_HF("world_border_center/x", hf_f64_x);
+    ADD_HF("world_border_center/z", hf_f64_z);
+    ADD_HF("world_border_lerp_size/oldDiameter", hf_old_diameter);
+    ADD_HF("world_border_lerp_size/newDiameter", hf_new_diameter);
+    ADD_HF("world_border_lerp_size/speed", hf_speed);
+    ADD_HF("world_border_size/diameter", hf_diameter);
+    ADD_HF("world_border_warning_delay/warningTime", hf_warning_time);
+    ADD_HF("world_border_warning_reach/warningBlocks", hf_warning_blocks);
+    ADD_HF("ping/id", hf_id);
+    ADD_HF("set_title_subtitle/text", hf_text);
+    ADD_HF("set_title_text/text", hf_text);
+    ADD_HF("set_title_time/fadeIn", hf_fade_in);
+    ADD_HF("set_title_time/stay", hf_stay);
+    ADD_HF("set_title_time/fadeOut", hf_fade_out);
+    ADD_HF("simulation_distance/distance", hf_simulation_distance);
+    ADD_HF("chunk_biomes/biomes/data", hf_data);
+    ADD_HF("damage_event/entityId", hf_entity_id);
+    ADD_HF("damage_event/sourceTypeId", hf_source_type_id);
+    ADD_HF("damage_event/sourceCauseId", hf_source_cause_id);
+    ADD_HF("damage_event/sourceDirectId", hf_source_direct_id);
+    ADD_HF("hurt_animation/entityId", hf_entity_id);
+    ADD_HF("hurt_animation/yaw", hf_yaw_float);
 
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
