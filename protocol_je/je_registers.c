@@ -164,6 +164,69 @@ int hf_length = -1;
 int hf_match = -1;
 int hf_tooltip = -1;
 int hf_root_index = -1;
+int hf_feet_eyes = -1;
+int hf_is_entity = -1;
+int hf_entity_feet_eyes = -1;
+int hf_window_id = -1;
+int hf_inventory_type = -1;
+int hf_state_id = -1;
+int hf_property_i16 = -1;
+int hf_value_i16 = -1;
+int hf_slot = -1;
+int hf_cooldown_ticks = -1;
+int hf_message = -1;
+int hf_type = -1;
+int hf_target = -1;
+int hf_entity_id_i32 = -1;
+int hf_entity_status = -1;
+int hf_radius = -1;
+int hf_i8_x = -1;
+int hf_i8_y = -1;
+int hf_i8_z = -1;
+int hf_player_motion_x = -1;
+int hf_player_motion_y = -1;
+int hf_player_motion_z = -1;
+int hf_chunk_x = -1;
+int hf_chunk_z = -1;
+int hf_event = -1;
+int hf_event_param = -1;
+int hf_nb_slots = -1;
+int hf_keep_alive_id = -1;
+int hf_i32_x = -1;
+int hf_i32_z = -1;
+int hf_heightmaps = -1;
+int hf_sky_light_mask = -1;
+int hf_block_light_mask = -1;
+int hf_empty_sky_light_mask = -1;
+int hf_empty_block_light_mask = -1;
+int hf_skylight = -1;
+int hf_blocklight = -1;
+int hf_type_i32 = -1;
+int hf_data_i32 = -1;
+int hf_global = -1;
+int hf_long_distance = -1;
+int hf_offset_x = -1;
+int hf_offset_y = -1;
+int hf_offset_z = -1;
+int hf_particle_data = -1;
+int hf_particles = -1;
+int hf_is_hardcore = -1;
+int hf_gamemode = -1;
+int hf_previous_gamemode = -1;
+int hf_world_names = -1;
+int hf_dimension_codec = -1;
+int hf_world_type = -1;
+int hf_world_name = -1;
+int hf_hashed_seed = -1;
+int hf_max_players = -1;
+int hf_view_distance = -1;
+int hf_simulation_distance = -1;
+int hf_reduced_debug_info = -1;
+int hf_enable_respawn_screen = -1;
+int hf_is_debug = -1;
+int hf_is_flat = -1;
+int hf_dimension_name = -1;
+int hf_portal_cooldown = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -379,8 +442,70 @@ void proto_register_mcje() {
             DEFINE_HF(hf_match, "Match", "mcje.match", STRING, NONE)
             DEFINE_HF(hf_tooltip, "Tooltip", "mcje.tooltip", STRING, NONE)
             DEFINE_HF(hf_root_index, "Root Index", "mcje.root_index", UINT32, DEC)
-
+            DEFINE_HF(hf_feet_eyes, "Feet Eyes", "mcje.feet_eyes", UINT32, DEC)
+            DEFINE_HF(hf_is_entity, "Is Entity", "mcje.is_entity", BOOLEAN, DEC)
+            DEFINE_HF(hf_entity_feet_eyes, "Entity Feet Eyes", "mcje.entity_feet_eyes", STRING, NONE)
+            DEFINE_HF(hf_window_id, "Window ID", "mcje.window_id", UINT32, DEC)
+            DEFINE_HF(hf_inventory_type, "Inventory Type", "mcje.inventory_type", UINT32, DEC)
+            DEFINE_HF(hf_state_id, "State ID", "mcje.state_id", UINT32, DEC)
+            DEFINE_HF(hf_property_i16, "Property", "mcje.property_i16", INT16, DEC)
+            DEFINE_HF(hf_value_i16, "Value", "mcje.value_i16", INT16, DEC)
+            DEFINE_HF(hf_slot, "Slot", "mcje.slot", INT16, DEC)
+            DEFINE_HF(hf_cooldown_ticks, "Cooldown Ticks", "mcje.cooldown_ticks", UINT32, DEC)
+            DEFINE_HF(hf_message, "Message", "mcje.message", STRING, NONE)
+            DEFINE_HF(hf_type, "Type", "mcje.type", UINT32, DEC)
+            DEFINE_HF(hf_target, "Target", "mcje.target", STRING, NONE)
+            DEFINE_HF(hf_entity_id_i32, "Entity ID", "mcje.entity_id_i32", INT32, DEC)
+            DEFINE_HF(hf_entity_status, "Entity Status", "mcje.entity_status", INT8, DEC)
+            DEFINE_HF(hf_radius, "Radius", "mcje.radius", FLOAT, DEC)
+            DEFINE_HF(hf_i8_x, "X", "mcje.x_i8", INT8, DEC)
+            DEFINE_HF(hf_i8_y, "Y", "mcje.y_i8", INT8, DEC)
+            DEFINE_HF(hf_i8_z, "Z", "mcje.z_i8", INT8, DEC)
+            DEFINE_HF(hf_player_motion_x, "Player Motion X", "mcje.player_motion_x", FLOAT, DEC)
+            DEFINE_HF(hf_player_motion_y, "Player Motion Y", "mcje.player_motion_y", FLOAT, DEC)
+            DEFINE_HF(hf_player_motion_z, "Player Motion Z", "mcje.player_motion_z", FLOAT, DEC)
+            DEFINE_HF(hf_chunk_x, "Chunk X", "mcje.chunk_x", INT32, DEC)
+            DEFINE_HF(hf_chunk_z, "Chunk Z", "mcje.chunk_z", INT32, DEC)
+            DEFINE_HF(hf_event, "Event", "mcje.event", UINT8, DEC)
+            DEFINE_HF(hf_event_param, "Event Param", "mcje.event_param", FLOAT, DEC)
+            DEFINE_HF(hf_nb_slots, "Slot Count", "mcje.nb_slots", UINT32, DEC)
+            DEFINE_HF(hf_keep_alive_id, "Keep Alive ID", "mcje.keep_alive_id", INT64, DEC)
+            DEFINE_HF(hf_i32_x, "X", "mcje.x_i32", INT32, DEC)
+            DEFINE_HF(hf_i32_z, "Z", "mcje.z_i32", INT32, DEC)
+            DEFINE_HF(hf_heightmaps, "Heightmaps", "mcje.heightmaps", BYTES, NONE)
             DEFINE_HF(hf_chunk_data, "Chunk Data", "mcje.chunk_data", BYTES, NONE)
+            DEFINE_HF(hf_sky_light_mask, "Sky Light Mask", "mcje.sky_light_mask", INT64, DEC)
+            DEFINE_HF(hf_block_light_mask, "Block Light Mask", "mcje.block_light_mask", INT64, DEC)
+            DEFINE_HF(hf_empty_sky_light_mask, "Empty Sky Light Mask", "mcje.empty_sky_light_mask", INT64, DEC)
+            DEFINE_HF(hf_empty_block_light_mask, "Empty Block Light Mask", "mcje.empty_block_light_mask", INT64, DEC)
+            DEFINE_HF(hf_skylight, "Sky Light", "mcje.skylight", UINT8, DEC)
+            DEFINE_HF(hf_blocklight, "Block Light", "mcje.blocklight", UINT8, DEC)
+            DEFINE_HF(hf_type_i32, "Type", "mcje.type_i32", INT32, DEC)
+            DEFINE_HF(hf_data_i32, "Data", "mcje.data_i32", INT32, DEC)
+            DEFINE_HF(hf_global, "Global", "mcje.global", BOOLEAN, NONE)
+            DEFINE_HF(hf_long_distance, "Look Distance", "mcje.look_distance", BOOLEAN, NONE)
+            DEFINE_HF(hf_offset_x, "Offset X", "mcje.offset_x", FLOAT, DEC)
+            DEFINE_HF(hf_offset_y, "Offset Y", "mcje.offset_y", FLOAT, DEC)
+            DEFINE_HF(hf_offset_z, "Offset Z", "mcje.offset_z", FLOAT, DEC)
+            DEFINE_HF(hf_particle_data, "Particle Data", "mcje.particle_data", FLOAT, DEC)
+            DEFINE_HF(hf_particles, "Particles", "mcje.particles", INT32, DEC)
+            DEFINE_HF(hf_is_hardcore, "Is Hardcore", "mcje.is_hardcore", BOOLEAN, NONE)
+            DEFINE_HF(hf_gamemode, "Game Mode", "mcje.gamemode", UINT8, DEC)
+            DEFINE_HF(hf_previous_gamemode, "Previous Game Mode", "mcje.previous_gamemode", UINT8, DEC)
+            DEFINE_HF(hf_world_names, "World Names", "mcje.world_names", STRING, NONE)
+            DEFINE_HF(hf_dimension_codec, "Dimension Codec", "mcje.dimension_codec", BYTES, NONE)
+            DEFINE_HF(hf_world_type, "World Type", "mcje.world_type", STRING, NONE)
+            DEFINE_HF(hf_world_name, "World Name", "mcje.world_name", STRING, NONE)
+            DEFINE_HF(hf_hashed_seed, "Hashed Seed", "mcje.hashed_seed", INT64, DEC)
+            DEFINE_HF(hf_max_players, "Max Players", "mcje.max_players", UINT32, DEC)
+            DEFINE_HF(hf_view_distance, "View Distance", "mcje.view_distance", UINT32, DEC)
+            DEFINE_HF(hf_simulation_distance, "Simulation Distance", "mcje.simulation_distance", UINT32, DEC)
+            DEFINE_HF(hf_reduced_debug_info, "Reduced Debug Info", "mcje.reduced_debug_info", BOOLEAN, NONE)
+            DEFINE_HF(hf_enable_respawn_screen, "Enable Respawn Screen", "mcje.enable_respawn_screen", BOOLEAN, NONE)
+            DEFINE_HF(hf_is_debug, "Is Debug", "mcje.is_debug", BOOLEAN, NONE)
+            DEFINE_HF(hf_is_flat, "Is Flat", "mcje.is_flat", BOOLEAN, NONE)
+            DEFINE_HF(hf_dimension_name, "Dimension Name", "mcje.dimension_name", STRING, NONE)
+            DEFINE_HF(hf_portal_cooldown, "Portal Cooldown", "mcje.portal_cooldown", INT32, DEC)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -605,24 +730,122 @@ void proto_register_mcje() {
     ADD_HF("tab_complete/matches/match", hf_match);
     ADD_HF("tab_complete/matches/tooltip", hf_tooltip);
     ADD_HF("declare_commands/rootIndex", hf_root_index);
-
-    ADD_HF("chunkData", hf_chunk_data);
+    ADD_HF("face_player/feet_eyes", hf_feet_eyes);
+    ADD_HF("face_player/x", hf_f64_x);
+    ADD_HF("face_player/y", hf_f64_y);
+    ADD_HF("face_player/z", hf_f64_z);
+    ADD_HF("face_player/isEntity", hf_is_entity);
+    ADD_HF("face_player/entityId", hf_entity_id);
+    ADD_HF("face_player/entity_feet_eyes", hf_entity_feet_eyes);
+    ADD_HF("nbt_query_response/transactionId", hf_transaction_id);
+    ADD_HF("nbt_query_response/nbt", hf_nbt_data);
+    ADD_HF("close_window/windowId", hf_window_id);
+    ADD_HF("open_window/windowId", hf_window_id);
+    ADD_HF("open_window/inventoryType", hf_inventory_type);
+    ADD_HF("open_window/windowTitle", hf_title);
+    ADD_HF("window_items/windowId", hf_window_id);
+    ADD_HF("window_items/stateId", hf_state_id);
+    ADD_HF("craft_progress_bar/windowId", hf_window_id);
+    ADD_HF("craft_progress_bar/property", hf_property_i16);
+    ADD_HF("craft_progress_bar/value", hf_value_i16);
+    ADD_HF("set_slot/windowId", hf_window_id);
+    ADD_HF("set_slot/stateId", hf_state_id);
+    ADD_HF("set_slot/slot", hf_slot);
+    ADD_HF("set_cooldown/itemID", hf_item_id);
+    ADD_HF("set_cooldown/cooldownTicks", hf_cooldown_ticks);
+    ADD_HF("chat_suggestions/action", hf_action);
+    ADD_HF("custom_payload/channel", hf_channel_str);
+    ADD_HF("custom_payload/data", hf_data);
+    ADD_HF("hide_message/id", hf_id);
+    ADD_HF("hide_message/signature", hf_signature);
+    ADD_HF("kick_disconnect/reason", hf_reason);
+    ADD_HF("profileless_chat/message", hf_message);
+    ADD_HF("profileless_chat/type", hf_type);
+    ADD_HF("profileless_chat/name", hf_name);
+    ADD_HF("profileless_chat/target", hf_target);
+    ADD_HF("entity_status/entityId", hf_entity_id_i32);
+    ADD_HF("entity_status/entityStatus", hf_entity_status);
+    ADD_HF("explosion/x", hf_f64_x);
+    ADD_HF("explosion/y", hf_f64_y);
+    ADD_HF("explosion/z", hf_f64_z);
+    ADD_HF("explosion/radius", hf_radius);
+    ADD_HF("explosion/affectedBlockOffsets/x", hf_i8_x);
+    ADD_HF("explosion/affectedBlockOffsets/y", hf_i8_y);
+    ADD_HF("explosion/affectedBlockOffsets/z", hf_i8_z);
+    ADD_HF("explosion/playerMotionX", hf_player_motion_x);
+    ADD_HF("explosion/playerMotionY", hf_player_motion_y);
+    ADD_HF("explosion/playerMotionZ", hf_player_motion_z);
+    ADD_HF("unload_chunk/chunkX", hf_chunk_x);
+    ADD_HF("unload_chunk/chunkZ", hf_chunk_z);
+    ADD_HF("game_state_change/reason", hf_event);
+    ADD_HF("game_state_change/gameMode", hf_event_param);
+    ADD_HF("open_horse_window/windowId", hf_window_id);
+    ADD_HF("open_horse_window/nbSlots", hf_nb_slots);
+    ADD_HF("open_horse_window/entityId", hf_entity_id_i32);
+    ADD_HF("keep_alive/keepAliveId", hf_keep_alive_id);
+    ADD_HF("map_chunk/x", hf_i32_x);
+    ADD_HF("map_chunk/z", hf_i32_z);
+    ADD_HF("map_chunk/heightmaps", hf_heightmaps);
+    ADD_HF("map_chunk/chunkData", hf_chunk_data);
+    ADD_HF("map_chunk/skyLightMask", hf_sky_light_mask);
+    ADD_HF("map_chunk/blockLightMask", hf_block_light_mask);
+    ADD_HF("map_chunk/emptySkyLightMask", hf_empty_sky_light_mask);
+    ADD_HF("map_chunk/emptyBlockLightMask", hf_empty_block_light_mask);
+    ADD_HF("map_chunk/skyLight", hf_skylight);
+    ADD_HF("map_chunk/blockLight", hf_blocklight);
+    ADD_HF("world_event/effectId", hf_type_i32);
+    ADD_HF("world_event/data", hf_data_i32);
+    ADD_HF("world_event/global", hf_global);
+    ADD_HF("world_particles/particleId", hf_particle_id);
+    ADD_HF("world_particles/longDistance", hf_long_distance);
+    ADD_HF("world_particles/x", hf_f64_x);
+    ADD_HF("world_particles/y", hf_f64_y);
+    ADD_HF("world_particles/z", hf_f64_z);
+    ADD_HF("world_particles/offsetX", hf_offset_x);
+    ADD_HF("world_particles/offsetY", hf_offset_y);
+    ADD_HF("world_particles/offsetZ", hf_offset_z);
+    ADD_HF("world_particles/particleData", hf_particle_data);
+    ADD_HF("world_particles/particles", hf_particles);
+    ADD_HF("update_light/chunkX", hf_chunk_x);
+    ADD_HF("update_light/chunkZ", hf_chunk_z);
+    ADD_HF("update_light/skyLightMask", hf_sky_light_mask);
+    ADD_HF("update_light/blockLightMask", hf_block_light_mask);
+    ADD_HF("update_light/emptySkyLightMask", hf_empty_sky_light_mask);
+    ADD_HF("update_light/emptyBlockLightMask", hf_empty_block_light_mask);
+    ADD_HF("update_light/skyLight", hf_skylight);
+    ADD_HF("update_light/blockLight", hf_blocklight);
+    ADD_HF("login/entityId", hf_entity_id_i32);
+    ADD_HF("login/isHardcore", hf_is_hardcore);
+    ADD_HF("login/gameMode", hf_gamemode);
+    ADD_HF("login/previousGameMode", hf_previous_gamemode);
+    ADD_HF("login/worldNames", hf_world_names);
+    ADD_HF("login/dimensionCodec", hf_dimension_codec);
+    ADD_HF("login/worldType", hf_world_type);
+    ADD_HF("login/worldName", hf_world_name);
+    ADD_HF("login/hashedSeed", hf_hashed_seed);
+    ADD_HF("login/maxPlayers", hf_max_players);
+    ADD_HF("login/viewDistance", hf_view_distance);
+    ADD_HF("login/simulationDistance", hf_simulation_distance);
+    ADD_HF("login/reducedDebugInfo", hf_reduced_debug_info);
+    ADD_HF("login/enableRespawnScreen", hf_enable_respawn_screen);
+    ADD_HF("login/isDebug", hf_is_debug);
+    ADD_HF("login/isFlat", hf_is_flat);
+    ADD_HF("login/dimensionName", hf_dimension_name);
+    ADD_HF("login/portalCooldown", hf_portal_cooldown);
 
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[26]x[26]z[12]y"), positionXZY);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[4]x[4]z"), positionXZ);
+    wmem_map_insert(bitmask_hf_map_je, "[26]x[26]z[12]y", positionXZY);
+    wmem_map_insert(bitmask_hf_map_je, "[4]x[4]z", positionXZ);
     wmem_map_insert(bitmask_hf_map_je,
-                    g_strdup(
-                            "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type"),
+                    "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type",
                     command_flags);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]max_present[1]min_present"), command_arg_limit);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities"),
-                    command_arg_entity);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[7]unused[1]allowMultiple"), command_arg_score_holder);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[29]_unused[1]hidden[1]show_toast[1]has_background_texture"),
+    wmem_map_insert(bitmask_hf_map_je, "[6]unused[1]max_present[1]min_present", command_arg_limit);
+    wmem_map_insert(bitmask_hf_map_je, "[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities", command_arg_entity);
+    wmem_map_insert(bitmask_hf_map_je, "[7]unused[1]allowMultiple", command_arg_score_holder);
+    wmem_map_insert(bitmask_hf_map_je, "[29]_unused[1]hidden[1]show_toast[1]has_background_texture",
                     advancement_display);
-    wmem_map_insert(bitmask_hf_map_je, g_strdup("[22]x[22]z[20]y"), chunk_coordinates);
+    wmem_map_insert(bitmask_hf_map_je, "[22]x[22]z[20]y", chunk_coordinates);
 
     // Preference ------------------------------------------------------------------------------------------------------
     pref_mcje = prefs_register_protocol(proto_mcje, NULL);
