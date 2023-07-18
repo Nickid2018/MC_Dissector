@@ -227,6 +227,67 @@ int hf_is_debug = -1;
 int hf_is_flat = -1;
 int hf_dimension_name = -1;
 int hf_portal_cooldown = -1;
+int hf_map_id = -1;
+int hf_scale_i8 = -1;
+int hf_locked = -1;
+int hf_columns = -1;
+int hf_rows = -1;
+int hf_u8_x = -1;
+int hf_u8_y = -1;
+int hf_trade_disabled = -1;
+int hf_nb_trade_uses = -1;
+int hf_max_nb_trade_uses = -1;
+int hf_xp = -1;
+int hf_special_price = -1;
+int hf_price_multiplier = -1;
+int hf_demand = -1;
+int hf_experience_uint = -1;
+int hf_is_regular_villager = -1;
+int hf_can_restock = -1;
+int hf_dx = -1;
+int hf_dy = -1;
+int hf_dz = -1;
+int hf_on_ground = -1;
+int hf_hand = -1;
+int hf_is_front_text = -1;
+int hf_recipe = -1;
+int hf_flying_speed = -1;
+int hf_walking_speed = -1;
+int hf_index_uint = -1;
+int hf_plain_message = -1;
+int hf_timestamp = -1;
+int hf_salt = -1;
+int hf_unsigned_chat_content = -1;
+int hf_filter_type = -1;
+int hf_network_name = -1;
+int hf_network_target_name = -1;
+int hf_duration = -1;
+int hf_player_id = -1;
+int hf_action_i8 = -1;
+int hf_listed = -1;
+int hf_latency = -1;
+int hf_flags_i8 = -1;
+int hf_teleport_id = -1;
+int hf_crafting_book_open = -1;
+int hf_filtering_craftable = -1;
+int hf_smelting_book_open = -1;
+int hf_filtering_smeltable = -1;
+int hf_blast_furnace_open = -1;
+int hf_filtering_blast_furnace = -1;
+int hf_smoker_book_open = -1;
+int hf_filtering_smoker = -1;
+int hf_effect_id = -1;
+int hf_url = -1;
+int hf_hash = -1;
+int hf_forced = -1;
+int hf_prompt_message = -1;
+int hf_copy_metadata = -1;
+int hf_head_yaw = -1;
+int hf_camera_id = -1;
+int hf_chunk_x_uint = -1;
+int hf_chunk_z_uint = -1;
+int hf_position_i8 = -1;
+int hf_vehicle_id = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -491,7 +552,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_particles, "Particles", "mcje.particles", INT32, DEC)
             DEFINE_HF(hf_is_hardcore, "Is Hardcore", "mcje.is_hardcore", BOOLEAN, NONE)
             DEFINE_HF(hf_gamemode, "Game Mode", "mcje.gamemode", UINT8, DEC)
-            DEFINE_HF(hf_previous_gamemode, "Previous Game Mode", "mcje.previous_gamemode", UINT8, DEC)
+            DEFINE_HF(hf_previous_gamemode, "Previous Game Mode", "mcje.previous_gamemode", INT8, DEC)
             DEFINE_HF(hf_world_names, "World Names", "mcje.world_names", STRING, NONE)
             DEFINE_HF(hf_dimension_codec, "Dimension Codec", "mcje.dimension_codec", BYTES, NONE)
             DEFINE_HF(hf_world_type, "World Type", "mcje.world_type", STRING, NONE)
@@ -505,7 +566,69 @@ void proto_register_mcje() {
             DEFINE_HF(hf_is_debug, "Is Debug", "mcje.is_debug", BOOLEAN, NONE)
             DEFINE_HF(hf_is_flat, "Is Flat", "mcje.is_flat", BOOLEAN, NONE)
             DEFINE_HF(hf_dimension_name, "Dimension Name", "mcje.dimension_name", STRING, NONE)
-            DEFINE_HF(hf_portal_cooldown, "Portal Cooldown", "mcje.portal_cooldown", INT32, DEC)
+            DEFINE_HF(hf_portal_cooldown, "Portal Cooldown", "mcje.portal_cooldown", UINT32, DEC)
+            DEFINE_HF(hf_map_id, "Map ID", "mcje.map_id", UINT32, DEC)
+            DEFINE_HF(hf_scale_i8, "Scale", "mcje.scale_i8", INT8, DEC)
+            DEFINE_HF(hf_locked, "Locked", "mcje.locked", BOOLEAN, NONE)
+            DEFINE_HF(hf_columns, "Columns", "mcje.columns", UINT8, DEC)
+            DEFINE_HF(hf_rows, "Rows", "mcje.rows", UINT8, DEC)
+            DEFINE_HF(hf_u8_x, "X", "mcje.x_u8", UINT8, DEC)
+            DEFINE_HF(hf_u8_y, "Y", "mcje.y_u8", UINT8, DEC)
+            DEFINE_HF(hf_trade_disabled, "Trade Disabled", "mcje.trade_disabled", BOOLEAN, NONE)
+            DEFINE_HF(hf_nb_trade_uses, "Trade Uses", "mcje.nb_trade_uses", INT32, DEC)
+            DEFINE_HF(hf_max_nb_trade_uses, "Max Trade Uses", "mcje.max_nb_trade_uses", INT32, DEC)
+            DEFINE_HF(hf_xp, "XP", "mcje.xp", INT32, DEC)
+            DEFINE_HF(hf_special_price, "Special Price", "mcje.special_price", INT32, DEC)
+            DEFINE_HF(hf_price_multiplier, "Price Multiplier", "mcje.price_multiplier", FLOAT, DEC)
+            DEFINE_HF(hf_demand, "Demand", "mcje.demand", INT32, DEC)
+            DEFINE_HF(hf_experience_uint, "Experience", "mcje.experience_uint", UINT32, DEC)
+            DEFINE_HF(hf_is_regular_villager, "Is Regular Villager", "mcje.is_regular_villager", BOOLEAN, NONE)
+            DEFINE_HF(hf_can_restock, "Can Restock", "mcje.can_restock", BOOLEAN, NONE)
+            DEFINE_HF(hf_dx, "Delta X", "mcje.dx", INT16, DEC)
+            DEFINE_HF(hf_dy, "Delta Y", "mcje.dy", INT16, DEC)
+            DEFINE_HF(hf_dz, "Delta Z", "mcje.dz", INT16, DEC)
+            DEFINE_HF(hf_on_ground, "On Ground", "mcje.on_ground", BOOLEAN, NONE)
+            DEFINE_HF(hf_hand, "Hand", "mcje.hand", UINT32, DEC)
+            DEFINE_HF(hf_is_front_text, "Is Front Text", "mcje.is_front_text", BOOLEAN, NONE)
+            DEFINE_HF(hf_recipe, "Recipe", "mcje.recipe", STRING, NONE)
+            DEFINE_HF(hf_flying_speed, "Flying Speed", "mcje.flying_speed", FLOAT, DEC)
+            DEFINE_HF(hf_walking_speed, "Walking Speed", "mcje.walking_speed", FLOAT, DEC)
+            DEFINE_HF(hf_index_uint, "Index", "mcje.index_uint", UINT32, DEC)
+            DEFINE_HF(hf_plain_message, "Plain Message", "mcje.plain_message", STRING, NONE)
+            DEFINE_HF(hf_timestamp, "Timestamp", "mcje.timestamp", INT64, DEC)
+            DEFINE_HF(hf_salt, "Salt", "mcje.salt", INT64, DEC)
+            DEFINE_HF(hf_unsigned_chat_content, "Unsigned Chat Content", "mcje.unsigned_chat_content", STRING, NONE)
+            DEFINE_HF(hf_filter_type, "Filter Type", "mcje.filter_type", UINT32, DEC)
+            DEFINE_HF(hf_network_name, "Network Name", "mcje.network_name", STRING, NONE)
+            DEFINE_HF(hf_network_target_name, "Network Target Name", "mcje.network_target_name", STRING, NONE)
+            DEFINE_HF(hf_duration, "Duration", "mcje.duration", UINT32, DEC)
+            DEFINE_HF(hf_player_id, "Player ID", "mcje.player_id", UINT32, DEC)
+            DEFINE_HF(hf_action_i8, "Action", "mcje.action_i8", INT8, DEC)
+            DEFINE_HF(hf_listed, "Listed", "mcje.listed", BOOLEAN, NONE)
+            DEFINE_HF(hf_latency, "Latency", "mcje.latency", UINT32, DEC)
+            DEFINE_HF(hf_flags_i8, "Flags", "mcje.flags_i8", INT8, DEC)
+            DEFINE_HF(hf_teleport_id, "Teleport ID", "mcje.teleport_id", UINT32, DEC)
+            DEFINE_HF(hf_crafting_book_open, "Crafting Book Open", "mcje.crafting_book_open", BOOLEAN, NONE)
+            DEFINE_HF(hf_filtering_craftable, "Filtering Craftable", "mcje.filtering_craftable", BOOLEAN, NONE)
+            DEFINE_HF(hf_smelting_book_open, "Smelting Book Open", "mcje.smelting_book_open", BOOLEAN, NONE)
+            DEFINE_HF(hf_filtering_smeltable, "Filtering Smeltable", "mcje.filtering_smeltable", BOOLEAN, NONE)
+            DEFINE_HF(hf_blast_furnace_open, "Blasting Furnace Open", "mcje.blasting_furnace_open", BOOLEAN, NONE)
+            DEFINE_HF(hf_filtering_blast_furnace, "Filtering Blast Furnace", "mcje.filtering_blast_furnace", BOOLEAN,
+                      NONE)
+            DEFINE_HF(hf_smoker_book_open, "Smoker Book Open", "mcje.smoker_book_open", BOOLEAN, NONE)
+            DEFINE_HF(hf_filtering_smoker, "Filtering Smoker", "mcje.filtering_smoker", BOOLEAN, NONE)
+            DEFINE_HF(hf_effect_id, "Effect ID", "mcje.effect_id", UINT32, DEC)
+            DEFINE_HF(hf_url, "URL", "mcje.url", STRING, NONE)
+            DEFINE_HF(hf_hash, "Hash", "mcje.hash", STRING, NONE)
+            DEFINE_HF(hf_forced, "Forced", "mcje.forced", BOOLEAN, NONE)
+            DEFINE_HF(hf_prompt_message, "Prompt Message", "mcje.prompt_message", STRING, NONE)
+            DEFINE_HF(hf_copy_metadata, "Copy Metadata", "mcje.copy_metadata", BOOLEAN, NONE)
+            DEFINE_HF(hf_head_yaw, "Head Yaw", "mcje.head_yaw", INT8, DEC)
+            DEFINE_HF(hf_camera_id, "Camera ID", "mcje.camera_id", UINT32, DEC)
+            DEFINE_HF(hf_chunk_x_uint, "Chunk X", "mcje.chunk_x_uint", UINT32, DEC)
+            DEFINE_HF(hf_chunk_z_uint, "Chunk Z", "mcje.chunk_z_uint", UINT32, DEC)
+            DEFINE_HF(hf_position_i8, "Position", "mcje.position_i8", INT8, DEC)
+            DEFINE_HF(hf_vehicle_id, "Vehicle ID", "mcje.vehicle_id", INT32, DEC)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -832,6 +955,128 @@ void proto_register_mcje() {
     ADD_HF("login/isFlat", hf_is_flat);
     ADD_HF("login/dimensionName", hf_dimension_name);
     ADD_HF("login/portalCooldown", hf_portal_cooldown);
+    ADD_HF("map/itemDamage", hf_map_id);
+    ADD_HF("map/scale", hf_scale_i8);
+    ADD_HF("map/locked", hf_locked);
+    ADD_HF("map/icons/type", hf_type);
+    ADD_HF("map/icons/x", hf_i8_x);
+    ADD_HF("map/icons/z", hf_i8_z);
+    ADD_HF("map/icons/direction", hf_direction);
+    ADD_HF("map/icons/displayName", hf_name);
+    ADD_HF("map/columns", hf_columns);
+    ADD_HF("map/rows", hf_rows);
+    ADD_HF("map/x", hf_u8_x);
+    ADD_HF("map/y", hf_u8_y);
+    ADD_HF("map/data", hf_data);
+    ADD_HF("trade_list/windowId", hf_window_id);
+    ADD_HF("trade_list/trades/tradeDisabled", hf_trade_disabled);
+    ADD_HF("trade_list/trades/nbTradeUses", hf_nb_trade_uses);
+    ADD_HF("trade_list/trades/maximumNbTradeUses", hf_max_nb_trade_uses);
+    ADD_HF("trade_list/trades/xp", hf_xp);
+    ADD_HF("trade_list/trades/specialPrice", hf_special_price);
+    ADD_HF("trade_list/trades/priceMultiplier", hf_price_multiplier);
+    ADD_HF("trade_list/trades/demand", hf_demand);
+    ADD_HF("trade_list/villagerLevel", hf_level);
+    ADD_HF("trade_list/experience", hf_experience_uint);
+    ADD_HF("trade_list/isRegularVillager", hf_is_regular_villager);
+    ADD_HF("trade_list/canRestock", hf_can_restock);
+    ADD_HF("rel_entity_move/entityId", hf_entity_id);
+    ADD_HF("rel_entity_move/dX", hf_dx);
+    ADD_HF("rel_entity_move/dY", hf_dy);
+    ADD_HF("rel_entity_move/dZ", hf_dz);
+    ADD_HF("rel_entity_move/onGround", hf_on_ground);
+    ADD_HF("entity_move_look/entityId", hf_entity_id);
+    ADD_HF("entity_move_look/dX", hf_dx);
+    ADD_HF("entity_move_look/dY", hf_dy);
+    ADD_HF("entity_move_look/dZ", hf_dz);
+    ADD_HF("entity_move_look/yaw", hf_yaw_i8);
+    ADD_HF("entity_move_look/pitch", hf_pitch_i8);
+    ADD_HF("entity_move_look/onGround", hf_on_ground);
+    ADD_HF("entity_look/entityId", hf_entity_id);
+    ADD_HF("entity_look/yaw", hf_yaw_i8);
+    ADD_HF("entity_look/pitch", hf_pitch_i8);
+    ADD_HF("entity_look/onGround", hf_on_ground);
+    ADD_HF("vehicle_move/x", hf_f64_x);
+    ADD_HF("vehicle_move/y", hf_f64_y);
+    ADD_HF("vehicle_move/z", hf_f64_z);
+    ADD_HF("vehicle_move/yaw", hf_yaw_float);
+    ADD_HF("vehicle_move/pitch", hf_pitch_float);
+    ADD_HF("open_book/hand", hf_hand);
+    ADD_HF("open_sign_entity/isFrontText", hf_is_front_text);
+    ADD_HF("craft_recipe_response/windowId", hf_window_id);
+    ADD_HF("craft_recipe_response/recipe", hf_recipe);
+    ADD_HF("abilities/flags", hf_flags);
+    ADD_HF("abilities/flyingSpeed", hf_flying_speed);
+    ADD_HF("abilities/walkingSpeed", hf_walking_speed);
+    ADD_HF("player_chat/senderUuid", hf_uuid);
+    ADD_HF("player_chat/index", hf_index_uint);
+    ADD_HF("player_chat/signature", hf_signature);
+    ADD_HF("player_chat/plainMessage", hf_plain_message);
+    ADD_HF("player_chat/timestamp", hf_timestamp);
+    ADD_HF("player_chat/salt", hf_salt);
+    ADD_HF("player_chat/unsignedChatContent", hf_unsigned_chat_content);
+    ADD_HF("player_chat/filterType", hf_filter_type);
+    ADD_HF("player_chat/type", hf_varint_type);
+    ADD_HF("player_chat/networkName", hf_network_name);
+    ADD_HF("player_chat/networkTargetName", hf_network_target_name);
+    ADD_HF("end_combat_event/duration", hf_duration);
+    ADD_HF("death_combat_event/playerId", hf_player_id);
+    ADD_HF("death_combat_event/message", hf_message);
+    ADD_HF("player_info/action", hf_action_i8);
+    ADD_HF("player_info/data/uuid", hf_uuid);
+    ADD_HF("player_info/data/gamemode", hf_gamemode);
+    ADD_HF("player_info/data/listed", hf_listed);
+    ADD_HF("player_info/data/latency", hf_latency);
+    ADD_HF("player_info/data/displayName", hf_name);
+    ADD_HF("position/x", hf_f64_x);
+    ADD_HF("position/y", hf_f64_y);
+    ADD_HF("position/z", hf_f64_z);
+    ADD_HF("position/yaw", hf_yaw_float);
+    ADD_HF("position/pitch", hf_pitch_float);
+    ADD_HF("position/flags", hf_flags_i8);
+    ADD_HF("position/teleportId", hf_teleport_id);
+    ADD_HF("unlock_recipes/action", hf_action);
+    ADD_HF("unlock_recipes/craftingBookOpen", hf_crafting_book_open);
+    ADD_HF("unlock_recipes/filteringCraftable", hf_filtering_craftable);
+    ADD_HF("unlock_recipes/smeltingBookOpen", hf_smelting_book_open);
+    ADD_HF("unlock_recipes/filteringSmeltable", hf_filtering_smeltable);
+    ADD_HF("unlock_recipes/blastFurnaceOpen", hf_blast_furnace_open);
+    ADD_HF("unlock_recipes/filteringBlastFurnace", hf_filtering_blast_furnace);
+    ADD_HF("unlock_recipes/smokerBookOpen", hf_smoker_book_open);
+    ADD_HF("unlock_recipes/filteringSmoker", hf_filtering_smoker);
+    ADD_HF("remove_entity_effect/entityId", hf_entity_id);
+    ADD_HF("remove_entity_effect/effectId", hf_effect_id);
+    ADD_HF("resource_pack_send/url", hf_url);
+    ADD_HF("resource_pack_send/hash", hf_hash);
+    ADD_HF("resource_pack_send/forced", hf_forced);
+    ADD_HF("resource_pack_send/promptMessage", hf_prompt_message);
+    ADD_HF("respawn/dimension", hf_dimension_name);
+    ADD_HF("respawn/worldName", hf_world_name);
+    ADD_HF("respawn/hashedSeed", hf_hashed_seed);
+    ADD_HF("respawn/gamemode", hf_gamemode);
+    ADD_HF("respawn/previousGamemode", hf_previous_gamemode);
+    ADD_HF("respawn/isDebug", hf_is_debug);
+    ADD_HF("respawn/isFlat", hf_is_flat);
+    ADD_HF("respawn/copyMetadata", hf_copy_metadata);
+    ADD_HF("respawn/death/dimensionName", hf_dimension_name);
+    ADD_HF("respawn/portalCooldown", hf_portal_cooldown);
+    ADD_HF("entity_head_rotation/entityId", hf_entity_id);
+    ADD_HF("entity_head_rotation/headYaw", hf_head_yaw);
+    ADD_HF("camera/cameraId", hf_camera_id);
+    ADD_HF("update_view_position/chunkX", hf_chunk_x_uint);
+    ADD_HF("update_view_position/chunkZ", hf_chunk_z_uint);
+    ADD_HF("update_view_distance/viewDistance", hf_view_distance);
+    ADD_HF("scoreboard_display_objective/position", hf_position_i8);
+    ADD_HF("scoreboard_display_objective/name", hf_name);
+    ADD_HF("entity_metadata/entityId", hf_entity_id);
+    ADD_HF("attach_entity/entityId", hf_entity_id_i32);
+    ADD_HF("attach_entity/vehicleId", hf_vehicle_id);
+    ADD_HF("entity_velocity/entityId", hf_entity_id);
+    ADD_HF("entity_velocity/velocityX", hf_vx_i16);
+    ADD_HF("entity_velocity/velocityY", hf_vy_i16);
+    ADD_HF("entity_velocity/velocityZ", hf_vz_i16);
+    ADD_HF("entity_equipment/entityId", hf_entity_id);
+    ADD_HF("entity_equipment/equipments/slot", hf_slot);
 
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
