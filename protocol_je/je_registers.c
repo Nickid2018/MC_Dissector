@@ -344,6 +344,7 @@ int hf_speed = -1;
 int hf_portal_teleport_boundary = -1;
 int hf_warning_blocks = -1;
 int hf_warning_time = -1;
+int hf_id_i32 = -1;
 int hf_text = -1;
 int hf_diameter = -1;
 int hf_fade_in = -1;
@@ -392,6 +393,29 @@ int hf_levels = -1;
 int hf_keep_jigsaws = -1;
 int hf_left_paddle = -1;
 int hf_right_paddle = -1;
+int hf_make_all = -1;
+int hf_status = -1;
+int hf_face = -1;
+int hf_jump_boost = -1;
+int hf_sideways = -1;
+int hf_forward = -1;
+int hf_jump = -1;
+int hf_book_id = -1;
+int hf_book_open = -1;
+int hf_filter_active = -1;
+int hf_result = -1;
+int hf_pool = -1;
+int hf_final_state = -1;
+int hf_joint_type = -1;
+int hf_text_1 = -1;
+int hf_text_2 = -1;
+int hf_text_3 = -1;
+int hf_text_4 = -1;
+int hf_cursor_x = -1;
+int hf_cursor_y = -1;
+int hf_cursor_z = -1;
+int hf_inside_block = -1;
+int hf_tab_id = -1;
 // --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
@@ -789,6 +813,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_portal_teleport_boundary, "Portal Teleport Boundary", "mcje.portal_teleport_boundary", UINT32, DEC)
             DEFINE_HF(hf_warning_blocks, "Warning Blocks", "mcje.warning_blocks", UINT32, DEC)
             DEFINE_HF(hf_warning_time, "Warning Time", "mcje.warning_time", UINT32, DEC)
+            DEFINE_HF(hf_id_i32, "ID", "mcje.id_i32", INT32, DEC)
             DEFINE_HF(hf_text, "Text", "mcje.text", STRING, NONE)
             DEFINE_HF(hf_diameter, "Diameter", "mcje.diameter", DOUBLE, DEC)
             DEFINE_HF(hf_fade_in, "Fade In", "mcje.fade_in", INT32, DEC)
@@ -836,6 +861,29 @@ void proto_register_mcje() {
             DEFINE_HF(hf_keep_jigsaws, "Keep Jigsaws", "mcje.keep_jigsaws", BOOLEAN, NONE)
             DEFINE_HF(hf_left_paddle, "Left Paddle", "mcje.left_paddle", BOOLEAN, NONE)
             DEFINE_HF(hf_right_paddle, "Right Paddle", "mcje.right_paddle", BOOLEAN, NONE)
+            DEFINE_HF(hf_make_all, "Make All", "mcje.make_all", BOOLEAN, NONE)
+            DEFINE_HF(hf_status, "Status", "mcje.status", UINT32, DEC)
+            DEFINE_HF(hf_face, "Face", "mcje.face", INT8, DEC)
+            DEFINE_HF(hf_jump_boost, "Jump Boost", "mcje.jump_boost", UINT8, DEC)
+            DEFINE_HF(hf_sideways, "Sideways", "mcje.sideways", FLOAT, DEC)
+            DEFINE_HF(hf_forward, "Forward", "mcje.forward", FLOAT, DEC)
+            DEFINE_HF(hf_jump, "Jump", "mcje.jump", UINT8, DEC)
+            DEFINE_HF(hf_book_id, "Book ID", "mcje.book_id", UINT32, DEC)
+            DEFINE_HF(hf_book_open, "Book Open", "mcje.book_open", BOOLEAN, NONE)
+            DEFINE_HF(hf_filter_active, "Filter Active", "mcje.filter_active", BOOLEAN, NONE)
+            DEFINE_HF(hf_result, "Result", "mcje.result", UINT32, DEC)
+            DEFINE_HF(hf_pool, "Pool", "mcje.pool", STRING, NONE)
+            DEFINE_HF(hf_final_state, "Final State", "mcje.final_state", STRING, NONE)
+            DEFINE_HF(hf_joint_type, "Joint Type", "mcje.joint_type", STRING, NONE)
+            DEFINE_HF(hf_text_1, "Text 1", "mcje.text_1", STRING, NONE)
+            DEFINE_HF(hf_text_2, "Text 2", "mcje.text_2", STRING, NONE)
+            DEFINE_HF(hf_text_3, "Text 3", "mcje.text_3", STRING, NONE)
+            DEFINE_HF(hf_text_4, "Text 4", "mcje.text_4", STRING, NONE)
+            DEFINE_HF(hf_cursor_x, "Cursor X", "mcje.cursor_x", FLOAT, DEC)
+            DEFINE_HF(hf_cursor_y, "Cursor Y", "mcje.cursor_y", FLOAT, DEC)
+            DEFINE_HF(hf_cursor_z, "Cursor Z", "mcje.cursor_z", FLOAT, DEC)
+            DEFINE_HF(hf_inside_block, "Inside Block", "mcje.inside_block", BOOLEAN, NONE)
+            DEFINE_HF(hf_tab_id, "Tab ID", "mcje.tab_id", STRING, NONE)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -1389,7 +1437,7 @@ void proto_register_mcje() {
     ADD_HF("world_border_size/diameter", hf_diameter);
     ADD_HF("world_border_warning_delay/warningTime", hf_warning_time);
     ADD_HF("world_border_warning_reach/warningBlocks", hf_warning_blocks);
-    ADD_HF("ping/id", hf_id);
+    ADD_HF("ping/id", hf_id_i32);
     ADD_HF("set_title_subtitle/text", hf_text);
     ADD_HF("set_title_text/text", hf_text);
     ADD_HF("set_title_time/fadeIn", hf_fade_in);
@@ -1493,6 +1541,53 @@ void proto_register_mcje() {
     ADD_HF("flying/onGround", hf_on_ground);
     ADD_HF("steer_boat/leftPaddle", hf_left_paddle);
     ADD_HF("steer_boat/rightPaddle", hf_right_paddle);
+    ADD_HF("craft_recipe_request/windowId", hf_window_id_i8);
+    ADD_HF("craft_recipe_request/recipe", hf_recipe);
+    ADD_HF("craft_recipe_request/makeAll", hf_make_all);
+    ADD_HF("block_dig/status", hf_status);
+    ADD_HF("block_dig/face", hf_face);
+    ADD_HF("block_dig/sequence", hf_sequence_id);
+    ADD_HF("entity_action/entityId", hf_entity_id);
+    ADD_HF("entity_action/actionId", hf_action_id);
+    ADD_HF("entity_action/jumpBoost", hf_jump_boost);
+    ADD_HF("steer_vehicle/sideways", hf_sideways);
+    ADD_HF("steer_vehicle/forward", hf_forward);
+    ADD_HF("steer_vehicle/jump", hf_jump);
+    ADD_HF("displayed_recipe/recipeId", hf_recipe_id);
+    ADD_HF("recipe_book/bookId", hf_book_id);
+    ADD_HF("recipe_book/bookOpen", hf_book_open);
+    ADD_HF("recipe_book/filterActive", hf_filter_active);
+    ADD_HF("resource_pack_receive/result", hf_result);
+    ADD_HF("held_item_slot/slotId", hf_slot);
+    ADD_HF("set_creative_slot/slot", hf_slot);
+    ADD_HF("update_jigsaw_block/name", hf_name);
+    ADD_HF("update_jigsaw_block/target", hf_target);
+    ADD_HF("update_jigsaw_block/pool", hf_pool);
+    ADD_HF("update_jigsaw_block/finalState", hf_final_state);
+    ADD_HF("update_jigsaw_block/jointType", hf_joint_type);
+    ADD_HF("update_sign/isFrontText", hf_is_front_text);
+    ADD_HF("update_sign/text1", hf_text_1);
+    ADD_HF("update_sign/text2", hf_text_2);
+    ADD_HF("update_sign/text3", hf_text_3);
+    ADD_HF("update_sign/text4", hf_text_4);
+    ADD_HF("arm_animation/hand", hf_hand);
+    ADD_HF("spectate/target", hf_uuid);
+    ADD_HF("block_place/hand", hf_hand);
+    ADD_HF("block_place/direction", hf_direction);
+    ADD_HF("block_place/cursorX", hf_cursor_x);
+    ADD_HF("block_place/cursorY", hf_cursor_y);
+    ADD_HF("block_place/cursorZ", hf_cursor_z);
+    ADD_HF("block_place/insideBlock", hf_inside_block);
+    ADD_HF("block_place/sequence", hf_sequence_id);
+    ADD_HF("use_item/hand", hf_hand);
+    ADD_HF("use_item/sequence", hf_sequence_id);
+    ADD_HF("advancement_tab/action", hf_action);
+    ADD_HF("advancement_tab/tabId", hf_tab_id);
+    ADD_HF("pong/id", hf_id_i32);
+    ADD_HF("chat_session_update/sessionUUID", hf_uuid);
+    ADD_HF("chat_session_update/expireTime", hf_expire_time);
+    ADD_HF("chat_session_update/publicKey", hf_public_key);
+    ADD_HF("chat_session_update/signature", hf_signature);
 
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
