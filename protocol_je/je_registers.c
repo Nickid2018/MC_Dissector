@@ -60,6 +60,7 @@ int hf_entity_eye_height = -1;
 int hf_destination = -1;
 int hf_ticks = -1;
 int hf_delay_in_ticks_before_shown = -1;
+int hf_rotation_f32 = -1;
 int hf_id = -1;
 int hf_signature = -1;
 int hf_id_u8 = -1;
@@ -530,6 +531,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_ticks, "Ticks", "mcje.ticks", UINT32, DEC)
             DEFINE_HF(hf_delay_in_ticks_before_shown, "Delay in Ticks before Shown", "mcje.delay_in_ticks_before_shown",
                       UINT32, DEC)
+            DEFINE_HF(hf_rotation_f32, "Rotation", "mcje.rotation", FLOAT, DEC)
             DEFINE_HF(hf_id, "ID", "mcje.id", UINT32, DEC)
             DEFINE_HF(hf_signature, "Signature", "mcje.signature", BYTES, NONE)
             DEFINE_HF(hf_id_u8, "ID", "mcje.id", UINT8, DEC)
@@ -812,7 +814,8 @@ void proto_register_mcje() {
             DEFINE_HF(hf_old_diameter, "Old Diameter", "mcje.old_diameter", DOUBLE, DEC)
             DEFINE_HF(hf_new_diameter, "New Diameter", "mcje.new_diameter", DOUBLE, DEC)
             DEFINE_HF(hf_speed, "Speed", "mcje.speed", UINT32, DEC)
-            DEFINE_HF(hf_portal_teleport_boundary, "Portal Teleport Boundary", "mcje.portal_teleport_boundary", UINT32, DEC)
+            DEFINE_HF(hf_portal_teleport_boundary, "Portal Teleport Boundary", "mcje.portal_teleport_boundary", UINT32,
+                      DEC)
             DEFINE_HF(hf_warning_blocks, "Warning Blocks", "mcje.warning_blocks", UINT32, DEC)
             DEFINE_HF(hf_warning_time, "Warning Time", "mcje.warning_time", UINT32, DEC)
             DEFINE_HF(hf_id_i32, "ID", "mcje.id_i32", INT32, DEC)
@@ -965,6 +968,7 @@ void proto_register_mcje() {
     ADD_HF("particleData/destination", hf_destination);
     ADD_HF("particleData/ticks", hf_ticks);
     ADD_HF("particleData/delayInTicksBeforeShown", hf_delay_in_ticks_before_shown);
+    ADD_HF("particleData/rotation", hf_rotation_f32);
     ADD_HF("previousMessages/id", hf_id);
     ADD_HF("previousMessages/signature", hf_signature);
     ADD_HF("entityMetadataItem[byte]", hf_byte);
