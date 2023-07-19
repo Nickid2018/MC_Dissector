@@ -417,6 +417,8 @@ int hf_cursor_z = -1;
 int hf_inside_block = -1;
 int hf_tab_id = -1;
 // --------------------
+int hf_killer_id = -1;
+// --------------------
 int hf_x_26 = -1;
 int hf_z_26 = -1;
 int hf_y_12 = -1;
@@ -884,6 +886,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_cursor_z, "Cursor Z", "mcje.cursor_z", FLOAT, DEC)
             DEFINE_HF(hf_inside_block, "Inside Block", "mcje.inside_block", BOOLEAN, NONE)
             DEFINE_HF(hf_tab_id, "Tab ID", "mcje.tab_id", STRING, NONE)
+            DEFINE_HF(hf_killer_id, "Killer ID", "mcje.killer_id", INT32, DEC)
 
             // BITMASKS ------------------------------------------------------------------------------------------------
             DEFINE_HF_BITMASK(hf_x_26, "X", "mcje.x26", INT64, DEC, 0xFFFFFFC000000000)
@@ -1588,6 +1591,8 @@ void proto_register_mcje() {
     ADD_HF("chat_session_update/expireTime", hf_expire_time);
     ADD_HF("chat_session_update/publicKey", hf_public_key);
     ADD_HF("chat_session_update/signature", hf_signature);
+    ADD_HF("end_combat_event/entityId", hf_killer_id);
+    ADD_HF("death_combat_event/entityId", hf_killer_id);
 
     // BITMASKS --------------------------------------------------------------------------------------------------------
     bitmask_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
