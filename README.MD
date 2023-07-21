@@ -4,7 +4,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Nickid2018/MC_Dissector)
 
 ### 使用方法
-构建的文件可以在 Action 里面找到，目前项目仍在开发中所以没有 Release。
+构建的文件可以在 Action 里面找到，稳定版可以在 Release 里面找到。
 
 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
 
@@ -29,7 +29,8 @@
 如果出现了解析错误，可能是因为还没有做好这部分的适配或相应的处理，可以在 Issues 里面提出来。协议整体由`minecraft-data`内的协议描述文件动态构建，如果你确信是因为协议描述出现问题而导致错误，可以在`minecraft-data`仓库里面提出 Issue。
 
 ### 当前计划
-- [ ] 还没写完呢！
+- [x] 写的差不多了！
+- [ ] 版本兼容性。
 - [ ] 支持基岩版。
 - [ ] 支持加密。
 - [ ] linux 支持？
