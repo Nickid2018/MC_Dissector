@@ -34,11 +34,13 @@ extern int hf_unknown_bytes_je;
 extern int hf_unknown_string_je;
 extern int hf_unknown_boolean_je;
 extern int hf_unknown_uuid_je;
+extern int hf_array_length_je;
 
 extern int ett_mcje, ett_je_proto, ett_sub_je;
 extern wmem_map_t *name_hf_map_je;
 extern wmem_map_t *unknown_hf_map_je;
 extern wmem_map_t *bitmask_hf_map_je;
+extern wmem_map_t *component_map_je;
 
 void proto_register_mcje();
 

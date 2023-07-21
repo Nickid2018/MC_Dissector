@@ -29,6 +29,7 @@ int hf_unknown_bytes_je = -1;
 int hf_unknown_string_je = -1;
 int hf_unknown_boolean_je = -1;
 int hf_unknown_uuid_je = -1;
+int hf_array_length_je = -1;
 // --------------------
 #define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_je, g_strdup(name), GINT_TO_POINTER(hf_index))
 int hf_f32_x = -1;
@@ -148,6 +149,7 @@ int hf_send_telemetry_data = -1;
 int hf_id_string = -1;
 int hf_criterion_id = -1;
 int hf_criterion_progress = -1;
+int hf_requirement = -1;
 int hf_destroy_stage = -1;
 int hf_action = -1;
 int hf_byte1 = -1;
@@ -168,6 +170,7 @@ int hf_root_index = -1;
 int hf_feet_eyes = -1;
 int hf_is_entity = -1;
 int hf_entity_feet_eyes = -1;
+int hf_record = -1;
 int hf_window_id = -1;
 int hf_inventory_type = -1;
 int hf_state_id = -1;
@@ -175,6 +178,7 @@ int hf_property_i16 = -1;
 int hf_value_i16 = -1;
 int hf_slot = -1;
 int hf_cooldown_ticks = -1;
+int hf_entry = -1;
 int hf_message = -1;
 int hf_type = -1;
 int hf_target = -1;
@@ -214,7 +218,6 @@ int hf_particles = -1;
 int hf_is_hardcore = -1;
 int hf_gamemode = -1;
 int hf_previous_gamemode = -1;
-int hf_world_names = -1;
 int hf_dimension_codec = -1;
 int hf_world_type = -1;
 int hf_world_name = -1;
@@ -260,6 +263,7 @@ int hf_timestamp = -1;
 int hf_salt = -1;
 int hf_unsigned_chat_content = -1;
 int hf_filter_type = -1;
+int hf_filter_mask = -1;
 int hf_network_name = -1;
 int hf_network_target_name = -1;
 int hf_duration = -1;
@@ -277,6 +281,8 @@ int hf_blast_furnace_open = -1;
 int hf_filtering_blast_furnace = -1;
 int hf_smoker_book_open = -1;
 int hf_filtering_smoker = -1;
+int hf_recipe_1 = -1;
+int hf_recipe_2 = -1;
 int hf_effect_id = -1;
 int hf_url = -1;
 int hf_hash = -1;
@@ -302,6 +308,7 @@ int hf_collision_rule = -1;
 int hf_formatting = -1;
 int hf_prefix = -1;
 int hf_suffix = -1;
+int hf_player = -1;
 int hf_item_name = -1;
 int hf_score_name = -1;
 int hf_angle = -1;
@@ -327,6 +334,7 @@ int hf_pickup_item_count = -1;
 int hf_value_f64 = -1;
 int hf_amount = -1;
 int hf_operation = -1;
+int hf_feature = -1;
 int hf_amplifier = -1;
 int hf_hide_particles = -1;
 int hf_factor_codec = -1;
@@ -467,6 +475,8 @@ int ett_sub_je = -1;
 wmem_map_t *name_hf_map_je = NULL;
 wmem_map_t *unknown_hf_map_je = NULL;
 wmem_map_t *bitmask_hf_map_je = NULL;
+#define ADD_CP(name, display_name) wmem_map_insert(component_map_je, name, display_name)
+wmem_map_t *component_map_je = NULL;
 
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
@@ -487,6 +497,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_next_state_je, "Next State", "mcje.next_state", STRING, NONE)
             DEFINE_HF(hf_ping_time_je, "Ping Time", "mcje.ping_time", UINT64, DEC)
             DEFINE_HF(hf_server_status_je, "Server Status", "mcje.server_status", STRING, NONE)
+            DEFINE_HF(hf_array_length_je, "Array Length", "mcje.array_length", UINT32, DEC)
 
             // Unknowns ------------------------------------------------------------------------------------------------
             DEFINE_HF(hf_unknown_int_je, "Unresolved Integer", "mcje.unknown_int", INT32, DEC)
@@ -572,7 +583,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_key_string, "Key", "mcje.key_string", STRING, NONE)
             DEFINE_HF(hf_value_string, "Value", "mcje.value_string", STRING, NONE)
             DEFINE_HF(hf_signature_string, "Signature", "mcje.signature_string", STRING, NONE)
-            DEFINE_HF(hf_children_int, "Children", "mcje.children_int", UINT32, DEC)
+            DEFINE_HF(hf_children_int, "Child", "mcje.children_int", UINT32, DEC)
             DEFINE_HF(hf_redirect_node, "Redirect Node", "mcje.redirect_node", UINT32, DEC)
             DEFINE_HF(hf_parser, "Parser", "mcje.parser", STRING, NONE)
             DEFINE_HF(hf_properties, "Properties", "mcje.properties", STRING, NONE)
@@ -618,6 +629,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_id_string, "ID", "mcje.id_string", STRING, NONE)
             DEFINE_HF(hf_criterion_id, "Criterion ID", "mcje.criterion_id", STRING, NONE)
             DEFINE_HF(hf_criterion_progress, "Criterion Progress", "mcje.criterion_progress", INT64, DEC)
+            DEFINE_HF(hf_requirement, "Requirement", "mcje.requirement", STRING, NONE)
             DEFINE_HF(hf_destroy_stage, "Destroy Stage", "mcje.destroy_stage", INT8, DEC)
             DEFINE_HF(hf_action, "Action", "mcje.action", UINT32, DEC)
             DEFINE_HF(hf_byte1, "Byte 1", "mcje.byte1", UINT8, DEC)
@@ -638,6 +650,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_feet_eyes, "Feet Eyes", "mcje.feet_eyes", UINT32, DEC)
             DEFINE_HF(hf_is_entity, "Is Entity", "mcje.is_entity", BOOLEAN, DEC)
             DEFINE_HF(hf_entity_feet_eyes, "Entity Feet Eyes", "mcje.entity_feet_eyes", STRING, NONE)
+            DEFINE_HF(hf_record, "Record", "mcje.record", UINT32, DEC)
             DEFINE_HF(hf_window_id, "Window ID", "mcje.window_id", UINT32, DEC)
             DEFINE_HF(hf_inventory_type, "Inventory Type", "mcje.inventory_type", UINT32, DEC)
             DEFINE_HF(hf_state_id, "State ID", "mcje.state_id", UINT32, DEC)
@@ -645,6 +658,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_value_i16, "Value", "mcje.value_i16", INT16, DEC)
             DEFINE_HF(hf_slot, "Slot", "mcje.slot", INT16, DEC)
             DEFINE_HF(hf_cooldown_ticks, "Cooldown Ticks", "mcje.cooldown_ticks", UINT32, DEC)
+            DEFINE_HF(hf_entry, "Entry", "mcje.entry", STRING, NONE)
             DEFINE_HF(hf_message, "Message", "mcje.message", STRING, NONE)
             DEFINE_HF(hf_type, "Type", "mcje.type", UINT32, DEC)
             DEFINE_HF(hf_target, "Target", "mcje.target", STRING, NONE)
@@ -685,7 +699,6 @@ void proto_register_mcje() {
             DEFINE_HF(hf_is_hardcore, "Is Hardcore", "mcje.is_hardcore", BOOLEAN, NONE)
             DEFINE_HF(hf_gamemode, "Game Mode", "mcje.gamemode", UINT8, DEC)
             DEFINE_HF(hf_previous_gamemode, "Previous Game Mode", "mcje.previous_gamemode", INT8, DEC)
-            DEFINE_HF(hf_world_names, "World Names", "mcje.world_names", STRING, NONE)
             DEFINE_HF(hf_dimension_codec, "Dimension Codec", "mcje.dimension_codec", BYTES, NONE)
             DEFINE_HF(hf_world_type, "World Type", "mcje.world_type", STRING, NONE)
             DEFINE_HF(hf_world_name, "World Name", "mcje.world_name", STRING, NONE)
@@ -731,6 +744,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_salt, "Salt", "mcje.salt", INT64, DEC)
             DEFINE_HF(hf_unsigned_chat_content, "Unsigned Chat Content", "mcje.unsigned_chat_content", STRING, NONE)
             DEFINE_HF(hf_filter_type, "Filter Type", "mcje.filter_type", UINT32, DEC)
+            DEFINE_HF(hf_filter_mask, "Filter Mask", "mcje.filter_mask", INT64, DEC)
             DEFINE_HF(hf_network_name, "Network Name", "mcje.network_name", STRING, NONE)
             DEFINE_HF(hf_network_target_name, "Network Target Name", "mcje.network_target_name", STRING, NONE)
             DEFINE_HF(hf_duration, "Duration", "mcje.duration", UINT32, DEC)
@@ -749,6 +763,8 @@ void proto_register_mcje() {
                       NONE)
             DEFINE_HF(hf_smoker_book_open, "Smoker Book Open", "mcje.smoker_book_open", BOOLEAN, NONE)
             DEFINE_HF(hf_filtering_smoker, "Filtering Smoker", "mcje.filtering_smoker", BOOLEAN, NONE)
+            DEFINE_HF(hf_recipe_1, "Recipe 1", "mcje.recipe_1", STRING, NONE)
+            DEFINE_HF(hf_recipe_2, "Recipe 2", "mcje.recipe_2", STRING, NONE)
             DEFINE_HF(hf_effect_id, "Effect ID", "mcje.effect_id", UINT32, DEC)
             DEFINE_HF(hf_url, "URL", "mcje.url", STRING, NONE)
             DEFINE_HF(hf_hash, "Hash", "mcje.hash", STRING, NONE)
@@ -774,6 +790,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_formatting, "Formatting", "mcje.formatting", UINT32, DEC)
             DEFINE_HF(hf_prefix, "Prefix", "mcje.prefix", STRING, NONE)
             DEFINE_HF(hf_suffix, "Suffix", "mcje.suffix", STRING, NONE)
+            DEFINE_HF(hf_player, "Player", "mcje.player", STRING, NONE)
             DEFINE_HF(hf_item_name, "Item Name", "mcje.item_name", STRING, NONE)
             DEFINE_HF(hf_score_name, "Score Name", "mcje.score_name", STRING, NONE)
             DEFINE_HF(hf_angle, "Angle", "mcje.angle", FLOAT, DEC)
@@ -799,6 +816,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_value_f64, "Value", "mcje.value_f64", DOUBLE, DEC)
             DEFINE_HF(hf_amount, "Amount", "mcje.amount", DOUBLE, DEC)
             DEFINE_HF(hf_operation, "Operation", "mcje.operation", INT8, DEC)
+            DEFINE_HF(hf_feature, "Feature", "mcje.feature", STRING, NONE)
             DEFINE_HF(hf_amplifier, "Amplifier", "mcje.amplifier", INT8, DEC)
             DEFINE_HF(hf_hide_particles, "Hide Particles", "mcje.hide_particles", INT8, DEC)
             DEFINE_HF(hf_factor_codec, "Factor Codec", "mcje.factor_codec", BYTES, NONE)
@@ -1087,6 +1105,7 @@ void proto_register_mcje() {
     ADD_HF("advancements/advancementMapping/value/displayData/yCord", hf_f32_y);
     ADD_HF("advancements/advancementMapping/value/criteria/key", hf_key_string);
     ADD_HF("advancements/advancementMapping/value/criteria/value", hf_value_string);
+    ADD_HF("advancements/advancementMapping/value/requirements", hf_requirement);
     ADD_HF("advancements/advancementMapping/value/sendsTelemtryData", hf_send_telemetry_data);
     ADD_HF("advancements/identifiers", hf_id_string);
     ADD_HF("advancements/progressMapping/key", hf_key_string);
@@ -1124,6 +1143,7 @@ void proto_register_mcje() {
     ADD_HF("face_player/entity_feet_eyes", hf_entity_feet_eyes);
     ADD_HF("nbt_query_response/transactionId", hf_transaction_id);
     ADD_HF("nbt_query_response/nbt", hf_nbt_data);
+    ADD_HF("multi_block_change/records", hf_record);
     ADD_HF("close_window/windowId", hf_window_id);
     ADD_HF("open_window/windowId", hf_window_id);
     ADD_HF("open_window/inventoryType", hf_inventory_type);
@@ -1139,6 +1159,7 @@ void proto_register_mcje() {
     ADD_HF("set_cooldown/itemID", hf_item_id);
     ADD_HF("set_cooldown/cooldownTicks", hf_cooldown_ticks);
     ADD_HF("chat_suggestions/action", hf_action);
+    ADD_HF("chat_suggestions/entries", hf_entry);
     ADD_HF("custom_payload/channel", hf_channel_str);
     ADD_HF("custom_payload/data", hf_data);
     ADD_HF("hide_message/id", hf_id);
@@ -1203,7 +1224,7 @@ void proto_register_mcje() {
     ADD_HF("login/isHardcore", hf_is_hardcore);
     ADD_HF("login/gameMode", hf_gamemode);
     ADD_HF("login/previousGameMode", hf_previous_gamemode);
-    ADD_HF("login/worldNames", hf_world_names);
+    ADD_HF("login/worldNames", hf_world_name);
     ADD_HF("login/dimensionCodec", hf_dimension_codec);
     ADD_HF("login/worldType", hf_world_type);
     ADD_HF("login/worldName", hf_world_name);
@@ -1284,6 +1305,7 @@ void proto_register_mcje() {
     ADD_HF("end_combat_event/duration", hf_duration);
     ADD_HF("death_combat_event/playerId", hf_player_id);
     ADD_HF("death_combat_event/message", hf_message);
+    ADD_HF("player_remove/players", hf_uuid);
     ADD_HF("player_info/action", hf_action_i8);
     ADD_HF("player_info/data/uuid", hf_uuid);
     ADD_HF("player_info/data/gamemode", hf_gamemode);
@@ -1306,6 +1328,9 @@ void proto_register_mcje() {
     ADD_HF("unlock_recipes/filteringBlastFurnace", hf_filtering_blast_furnace);
     ADD_HF("unlock_recipes/smokerBookOpen", hf_smoker_book_open);
     ADD_HF("unlock_recipes/filteringSmoker", hf_filtering_smoker);
+    ADD_HF("unlock_recipes/recipes1", hf_recipe_1);
+    ADD_HF("unlock_recipes/recipes2", hf_recipe_2);
+    ADD_HF("entity_destroy/entityIds", hf_entity_id);
     ADD_HF("remove_entity_effect/entityId", hf_entity_id);
     ADD_HF("remove_entity_effect/effectId", hf_effect_id);
     ADD_HF("resource_pack_send/url", hf_url);
@@ -1350,6 +1375,7 @@ void proto_register_mcje() {
     ADD_HF("scoreboard_objective/displayText", hf_display_text);
     ADD_HF("scoreboard_objective/type", hf_type);
     ADD_HF("set_passengers/entityId", hf_entity_id);
+    ADD_HF("set_passengers/passengers", hf_entity_id);
     ADD_HF("teams/team", hf_team);
     ADD_HF("teams/mode", hf_mode);
     ADD_HF("teams/name", hf_name);
@@ -1359,6 +1385,7 @@ void proto_register_mcje() {
     ADD_HF("teams/formatting", hf_formatting);
     ADD_HF("teams/prefix", hf_prefix);
     ADD_HF("teams/suffix", hf_suffix);
+    ADD_HF("teams/players", hf_player);
     ADD_HF("scoreboard_score/itemName", hf_item_name);
     ADD_HF("scoreboard_score/action", hf_action);
     ADD_HF("scoreboard_score/scoreName", hf_score_name);
@@ -1407,6 +1434,7 @@ void proto_register_mcje() {
     ADD_HF("entity_update_attributes/properties/modifiers/uuid", hf_uuid);
     ADD_HF("entity_update_attributes/properties/modifiers/amount", hf_amount);
     ADD_HF("entity_update_attributes/properties/modifiers/operation", hf_operation);
+    ADD_HF("feature_flags/features", hf_feature);
     ADD_HF("entity_effect/entityId", hf_entity_id);
     ADD_HF("entity_effect/effectId", hf_effect_id);
     ADD_HF("entity_effect/amplifier", hf_amplifier);
@@ -1419,11 +1447,11 @@ void proto_register_mcje() {
     ADD_HF("server_data/enforcesSecureChat", hf_enforces_secure_chat);
     ADD_HF("type", hf_type_string);
     ADD_HF("recipeId", hf_recipe_id);
-    ADD_HF("declare_recipes/data/group", hf_group);
-    ADD_HF("declare_recipes/data/category", hf_category);
-    ADD_HF("declare_recipes/data/width", hf_width);
-    ADD_HF("declare_recipes/data/height", hf_height);
-    ADD_HF("declare_recipes/data/showNotification", hf_show_notification);
+    ADD_HF("declare_recipes/recipes/data/group", hf_group);
+    ADD_HF("declare_recipes/recipes/data/category", hf_category);
+    ADD_HF("declare_recipes/recipes/data/width", hf_width);
+    ADD_HF("declare_recipes/recipes/data/height", hf_height);
+    ADD_HF("declare_recipes/recipes/data/showNotification", hf_show_notification);
     ADD_HF("tags/tags/tagType", hf_tag_type);
     ADD_HF("acknowledge_player_digging/sequenceId", hf_sequence_id);
     ADD_HF("clear_titles/reset", hf_reset);
@@ -1565,7 +1593,7 @@ void proto_register_mcje() {
     ADD_HF("recipe_book/bookOpen", hf_book_open);
     ADD_HF("recipe_book/filterActive", hf_filter_active);
     ADD_HF("resource_pack_receive/result", hf_result);
-    ADD_HF("held_item_slot/slotId", hf_slot);
+    ADD_HF("held_item_slot/slot", hf_slot);
     ADD_HF("set_creative_slot/slot", hf_slot);
     ADD_HF("update_jigsaw_block/name", hf_name);
     ADD_HF("update_jigsaw_block/target", hf_target);
@@ -1611,6 +1639,104 @@ void proto_register_mcje() {
     wmem_map_insert(bitmask_hf_map_je, "[29]_unused[1]hidden[1]show_toast[1]has_background_texture",
                     advancement_display);
     wmem_map_insert(bitmask_hf_map_je, "[22]x[22]z[20]y", chunk_coordinates);
+
+    // Component -------------------------------------------------------------------------------------------------------
+    component_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    ADD_CP("vec3f", "Vector (3 floats)");
+    ADD_CP("vec4f", "Vector (4 floats)");
+    ADD_CP("vec3f64", "Vector (3 doubles)");
+    ADD_CP("slot", "Slot Data");
+    ADD_CP("particle", "Particle");
+    ADD_CP("slot/[unnamed]", "Item Stack");
+    ADD_CP("particle/data", "Particle Display Data");
+    ADD_CP("particleData", "Particle Display Data");
+    ADD_CP("particleData/item", "Item");
+    ADD_CP("particleData/destination", "Destination");
+    ADD_CP("ingredient", "Ingredient");
+    ADD_CP("position", "Block Position");
+    ADD_CP("previousMessages", "Previous Messages");
+    ADD_CP("entityMetadataItem", "Entity Metadata Item");
+    ADD_CP("entityMetadata", "Entity Metadata");
+    ADD_CP("minecraft_simple_recipe_format", "Simple Recipe Format");
+    ADD_CP("minecraft_smelting_format", "Smelting Recipe Format");
+    ADD_CP("minecraft_smelting_format/result/slot", "Result");
+    ADD_CP("tags", "Tags");
+    ADD_CP("tags/entries", "Tag Entries");
+    ADD_CP("chunkBlockEntity", "Chunk Block Entity");
+    ADD_CP("chat_session", "Chat Session");
+    ADD_CP("game_profile", "Game Profile");
+    ADD_CP("game_profile/properties", "Game Profile Properties");
+    ADD_CP("command_node", "Command Node");
+    ADD_CP("command_node/children", "Command Node Children");
+    ADD_CP("command_node/extraNodeData", "Extra Node Data");
+    ADD_CP("command_node/extraNodeData/properties", "Extra Node Data Properties");
+    ADD_CP("success/properties", "Properties");
+    ADD_CP("statistics/entries", "Statistics Entries");
+    ADD_CP("advancements/advancementMapping", "Advancement Mapping");
+    ADD_CP("advancements/advancementMapping/value", "Value");
+    ADD_CP("advancements/advancementMapping/value/displayData", "Display Data");
+    ADD_CP("advancements/advancementMapping/criteria", "Criteria");
+    ADD_CP("advancements/advancementMapping/requirements", "Requirements");
+    ADD_CP("advancements/identifiers", "Identifiers");
+    ADD_CP("advancements/progressMapping", "Progress Mapping");
+    ADD_CP("advancements/progressMapping/value", "Value");
+    ADD_CP("tab_complete/matches", "Matches");
+    ADD_CP("declare_commands/nodes", "Command Nodes");
+    ADD_CP("multi_block_change/records", "Records");
+    ADD_CP("window_items/items", "Items");
+    ADD_CP("window_items/carriedItem/slot", "Carried Item");
+    ADD_CP("set_slot/item/slot", "Item");
+    ADD_CP("chat_suggestions/entries", "Suggestion Entries");
+    ADD_CP("explosion/affectedBlockOffsets", "Affected Block Offsets");
+    ADD_CP("map_chunk/blockEntities", "Block Entities");
+    ADD_CP("map_chunk/skyLightMask", "Sky Light Mask");
+    ADD_CP("map_chunk/blockLightMask", "Block Light Mask");
+    ADD_CP("map_chunk/emptySkyLightMask", "Empty Sky Light Mask");
+    ADD_CP("map_chunk/emptyBlockLightMask", "Empty Block Light Mask");
+    ADD_CP("map_chunk/skyLight", "Sky Light");
+    ADD_CP("map_chunk/blockLight", "Block Light");
+    ADD_CP("update_light/skyLightMask", "Sky Light Mask");
+    ADD_CP("update_light/blockLightMask", "Block Light Mask");
+    ADD_CP("update_light/emptySkyLightMask", "Empty Sky Light Mask");
+    ADD_CP("update_light/emptyBlockLightMask", "Empty Block Light Mask");
+    ADD_CP("update_light/skyLight", "Sky Light");
+    ADD_CP("update_light/blockLight", "Block Light");
+    ADD_CP("login/worldNames", "World Names");
+    ADD_CP("login/death", "Death Data");
+    ADD_CP("map/icons", "Map Icons");
+    ADD_CP("trade_list/trades", "Trades");
+    ADD_CP("trade_list/trades/inputItem1/slot", "Input Item 1");
+    ADD_CP("trade_list/trades/inputItem2/slot", "Input Item 2");
+    ADD_CP("trade_list/trades/outputItem/slot", "Output Item");
+    ADD_CP("player_chat/filterTypeMask", "Filter Type Mask");
+    ADD_CP("player_remove/players", "Players");
+    ADD_CP("player_info/data", "Player Data");
+    ADD_CP("entity_destroy/entityIds", "Destroy Entities");
+    ADD_CP("respawn/death", "Death Data");
+    ADD_CP("entity_equipment/equipments", "Equipments");
+    ADD_CP("entity_equipment/equipments/item/slot", "Item");
+    ADD_CP("set_passengers/passengers", "Passengers");
+    ADD_CP("teams/players", "Players");
+    ADD_CP("entity_sound_effect/soundEvent", "Sound Event");
+    ADD_CP("sound_effect/soundEvent", "Sound Event");
+    ADD_CP("entity_update_attributes/properties", "Properties");
+    ADD_CP("entity_update_attributes/properties/modifiers", "Modifiers");
+    ADD_CP("feature_flags/features", "Features");
+    ADD_CP("declare_recipes/recipes", "Recipes");
+    ADD_CP("declare_recipes/recipes/data", "Recipe Format");
+    ADD_CP("declare_recipes/recipes/data/ingredients", "Ingredients");
+    ADD_CP("declare_recipes/recipes/data/result/slot", "Result");
+    ADD_CP("declare_recipes/recipes/data/template/ingredient", "Template");
+    ADD_CP("declare_recipes/recipes/data/base/ingredient", "Base");
+    ADD_CP("declare_recipes/recipes/data/addition/ingredient", "Addition");
+    ADD_CP("chunk_biomes/biomes", "Biomes");
+    ADD_CP("damage_event/sourcePosition/vec3f64", "Source Position");
+    ADD_CP("chat_command/argumentSignatures", "Argument Signatures");
+    ADD_CP("edit_book/pages", "Pages");
+    ADD_CP("window_click/changedSlots", "Changed Slots");
+    ADD_CP("window_click/changedSlots/item/slot", "Item");
+    ADD_CP("window_click/cursorItem/slot", "Cursor Item");
+    ADD_CP("set_creative_slot/item/slot", "Item");
 
     // Preference ------------------------------------------------------------------------------------------------------
     pref_mcje = prefs_register_protocol(proto_mcje, NULL);

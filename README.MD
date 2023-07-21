@@ -6,11 +6,11 @@
 ### 使用方法
 构建的文件可以在 Action 里面找到，目前项目仍在开发中所以没有 Release。
 
-下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/epan`）并启动 Wireshark 即可。
+下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
 
 ### 可调选项
 可以在 Wireshark 的`首选项/Protocols`里面找到`MCJE`，在这里可以调整一些选项。
-* Ignore Packets：阻止解析一些包，用于过滤不需要的信息。默认为`c:map_chunk`，即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
+* Ignore Packets：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`代表发向服务端的包，`c`代表发向客户端的包。默认为`c:map_chunk`，即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
 * TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
 
 ### 构建项目

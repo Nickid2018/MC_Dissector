@@ -13,6 +13,7 @@ extern int ett_sub_be;
 extern wmem_map_t *name_hf_map_be;
 extern wmem_map_t *unknown_hf_map_be;
 extern wmem_map_t *bitmask_hf_map_be;
+extern wmem_map_t *component_map_be;
 
 extern int hf_unknown_int_be;
 extern int hf_unknown_uint_be;
@@ -24,6 +25,7 @@ extern int hf_unknown_bytes_be;
 extern int hf_unknown_string_be;
 extern int hf_unknown_boolean_be;
 extern int hf_unknown_uuid_be;
+extern int hf_array_length_be;
 
 void proto_register_mcbe();
 
