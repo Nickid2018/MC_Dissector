@@ -47,11 +47,11 @@ jobs:
       - run: cmake --build . --config RelWithDebInfo --target epan
         working-directory: wireshark/build
       - name: Configure dissector (Debug)
-        if: "!startsWith(github.ref, 'refs/tags/')"
+        if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -G Ninja -B build
         working-directory: dissector
       - name: Configure dissector (Release)
-        if: "startsWith(github.ref, 'refs/tags/')"
+        if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
         run: cmake -DCMAKE_BUILD_TYPE=Release -S . -G Ninja -B build
         working-directory: dissector
       - name: Build dissector
@@ -81,7 +81,7 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'beta') }}
       - name: Upload mcdissector.dll
         uses: actions/upload-release-asset@v1
         env:

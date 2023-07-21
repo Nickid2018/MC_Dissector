@@ -31,7 +31,7 @@ int hf_unknown_boolean_je = -1;
 int hf_unknown_uuid_je = -1;
 int hf_array_length_je = -1;
 // --------------------
-#define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_je, g_strdup(name), GINT_TO_POINTER(hf_index))
+#define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_je, name, GINT_TO_POINTER(hf_index))
 int hf_f32_x = -1;
 int hf_f32_y = -1;
 int hf_f32_z = -1;
@@ -941,16 +941,16 @@ void proto_register_mcje() {
 
     // Unknown fields --------------------------------------------------------------------------------------------------
     unknown_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    wmem_map_insert(unknown_hf_map_je, g_strdup("int"), GINT_TO_POINTER(hf_unknown_int_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("uint"), GINT_TO_POINTER(hf_unknown_uint_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("int64"), GINT_TO_POINTER(hf_unknown_int64_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("uint64"), GINT_TO_POINTER(hf_unknown_uint64_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("float"), GINT_TO_POINTER(hf_unknown_float_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("double"), GINT_TO_POINTER(hf_unknown_double_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("bytes"), GINT_TO_POINTER(hf_unknown_bytes_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("string"), GINT_TO_POINTER(hf_unknown_string_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("boolean"), GINT_TO_POINTER(hf_unknown_boolean_je));
-    wmem_map_insert(unknown_hf_map_je, g_strdup("uuid"), GINT_TO_POINTER(hf_unknown_uuid_je));
+    wmem_map_insert(unknown_hf_map_je, "int", GINT_TO_POINTER(hf_unknown_int_je));
+    wmem_map_insert(unknown_hf_map_je, "uint", GINT_TO_POINTER(hf_unknown_uint_je));
+    wmem_map_insert(unknown_hf_map_je, "int64", GINT_TO_POINTER(hf_unknown_int64_je));
+    wmem_map_insert(unknown_hf_map_je, "uint64", GINT_TO_POINTER(hf_unknown_uint64_je));
+    wmem_map_insert(unknown_hf_map_je, "float", GINT_TO_POINTER(hf_unknown_float_je));
+    wmem_map_insert(unknown_hf_map_je, "double", GINT_TO_POINTER(hf_unknown_double_je));
+    wmem_map_insert(unknown_hf_map_je, "bytes", GINT_TO_POINTER(hf_unknown_bytes_je));
+    wmem_map_insert(unknown_hf_map_je, "string", GINT_TO_POINTER(hf_unknown_string_je));
+    wmem_map_insert(unknown_hf_map_je, "boolean", GINT_TO_POINTER(hf_unknown_boolean_je));
+    wmem_map_insert(unknown_hf_map_je, "uuid", GINT_TO_POINTER(hf_unknown_uuid_je));
 
     // Field Names -----------------------------------------------------------------------------------------------------
     name_hf_map_je = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
