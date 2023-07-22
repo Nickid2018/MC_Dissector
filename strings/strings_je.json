@@ -1,0 +1,2414 @@
+{
+  "hf_defines": {
+    "x": {
+      "name": "X",
+      "type": [
+        "f32",
+        "f64",
+        "i8",
+        "i32",
+        "u8"
+      ]
+    },
+    "y": {
+      "name": "Y",
+      "type": [
+        "f32",
+        "f64",
+        "i16",
+        "i8",
+        "u8",
+        "i32"
+      ]
+    },
+    "z": {
+      "name": "Z",
+      "type": [
+        "f32",
+        "f64",
+        "i8",
+        "i32"
+      ]
+    },
+    "w": {
+      "name": "w",
+      "type": "f32"
+    },
+    "slot_present": {
+      "name": "Slot Present",
+      "type": "bool"
+    },
+    "item_id": {
+      "name": "Item ID",
+      "type": "u32"
+    },
+    "item_count": {
+      "name": "Item Count",
+      "type": "i8"
+    },
+    "nbt_data": {
+      "name": "NBT Data",
+      "type": "bytes"
+    },
+    "particle_id": {
+      "name": "Particle ID",
+      "type": "u32"
+    },
+    "blockstate": {
+      "name": "Block State",
+      "type": "u32"
+    },
+    "red_factor": {
+      "name": "Red Factor",
+      "type": "f32"
+    },
+    "green_factor": {
+      "name": "Green Factor",
+      "type": "f32"
+    },
+    "blue_factor": {
+      "name": "Blue Factor",
+      "type": "f32"
+    },
+    "scale": {
+      "name": "Scale",
+      "type": [
+        "f32",
+        "i8"
+      ]
+    },
+    "from_red_factor": {
+      "name": "From Red Factor",
+      "type": "f32"
+    },
+    "from_green_factor": {
+      "name": "From Green Factor",
+      "type": "f32"
+    },
+    "from_blue_factor": {
+      "name": "From Blue Factor",
+      "type": "f32"
+    },
+    "to_red_factor": {
+      "name": "To Red Factor",
+      "type": "f32"
+    },
+    "to_green_factor": {
+      "name": "To Green Factor",
+      "type": "f32"
+    },
+    "to_blue_factor": {
+      "name": "To Blue Factor",
+      "type": "f32"
+    },
+    "position_type": {
+      "name": "Position Type",
+      "type": "string"
+    },
+    "entity_eye_height": {
+      "name": "Entity Eye Height",
+      "type": "u32"
+    },
+    "destination": {
+      "name": "Destination",
+      "type": "u32"
+    },
+    "ticks": {
+      "name": "Ticks",
+      "type": "u32"
+    },
+    "delay_in_ticks_before_shown": {
+      "name": "Delay in Ticks Before Shown",
+      "type": "u32"
+    },
+    "rotation": {
+      "name": "Rotation",
+      "type": [
+        "f32"
+      ]
+    },
+    "id": {
+      "name": "ID",
+      "type": [
+        "u32",
+        "u8",
+        "string",
+        "i32"
+      ]
+    },
+    "type": {
+      "name": "Type",
+      "type": [
+        "string",
+        "u32",
+        "i32"
+      ]
+    },
+    "byte": {
+      "name": "Byte",
+      "type": [
+        "u8",
+        "i8"
+      ]
+    },
+    "int": {
+      "name": "Integer",
+      "type": [
+        "u32",
+        "i32"
+      ]
+    },
+    "long": {
+      "name": "Long Integer",
+      "type": "i64"
+    },
+    "float": {
+      "name": "Float",
+      "type": "f32"
+    },
+    "string": {
+      "name": "String",
+      "type": "string"
+    },
+    "component": {
+      "name": "Component",
+      "type": "string"
+    },
+    "boolean": {
+      "name": "Boolean",
+      "type": "bool"
+    },
+    "pitch": {
+      "name": "Pitch",
+      "type": [
+        "f32",
+        "i8"
+      ]
+    },
+    "yaw": {
+      "name": "Yaw",
+      "type": [
+        "f32",
+        "i8"
+      ]
+    },
+    "roll": {
+      "name": "Roll",
+      "type": "f32"
+    },
+    "direction": {
+      "name": "Direction",
+      "type": "u32"
+    },
+    "villager_type": {
+      "name": "Villager Type",
+      "type": "u32"
+    },
+    "villager_profession": {
+      "name": "Villager Profession",
+      "type": "u32"
+    },
+    "level": {
+      "name": "Level",
+      "type": "u32"
+    },
+    "uint": {
+      "name": "Unsigned Integer",
+      "type": "u32"
+    },
+    "pose": {
+      "name": "Pose",
+      "type": "u32"
+    },
+    "cat_variant": {
+      "name": "Cat Variant",
+      "type": "u32"
+    },
+    "frog_variant": {
+      "name": "Frog Variant",
+      "type": "u32"
+    },
+    "global_pos": {
+      "name": "Global Position",
+      "type": "string"
+    },
+    "painting_variant": {
+      "name": "Painting Variant",
+      "type": "u32"
+    },
+    "sniffer_state": {
+      "name": "Sniffer State",
+      "type": "u32"
+    },
+    "category": {
+      "name": "Category",
+      "type": "u32"
+    },
+    "group": {
+      "name": "Group",
+      "type": "string"
+    },
+    "experience": {
+      "name": "Experience",
+      "type": [
+        "f32",
+        "u32"
+      ]
+    },
+    "cook_time": {
+      "name": "Cook Time",
+      "type": "u32"
+    },
+    "tag_name": {
+      "name": "Tag Name",
+      "type": "string"
+    },
+    "tag_entry": {
+      "name": "Tag Entry",
+      "type": "u32"
+    },
+    "uuid": {
+      "name": "UUID",
+      "type": "uuid"
+    },
+    "expire_time": {
+      "name": "Expire Time",
+      "type": "i64"
+    },
+    "key_bytes": {
+      "name": "Key Bytes",
+      "type": "bytes"
+    },
+    "name": {
+      "name": "Name",
+      "type": "string"
+    },
+    "key": {
+      "name": "Key",
+      "type": "string"
+    },
+    "value": {
+      "name": "Value",
+      "type": [
+        "string",
+        "u32",
+        "i16",
+        "f64"
+      ]
+    },
+    "signature": {
+      "name": "Signature",
+      "type": [
+        "bytes",
+        "string"
+      ]
+    },
+    "children": {
+      "name": "children",
+      "type": "u32"
+    },
+    "redirect_node": {
+      "name": "Redirect Node",
+      "type": "u32"
+    },
+    "parser": {
+      "name": "Parser",
+      "type": "string"
+    },
+    "properties": {
+      "name": "Properties",
+      "type": "string"
+    },
+    "registry": {
+      "name": "Registry",
+      "type": "string"
+    },
+    "min": {
+      "name": "Min",
+      "type": [
+        "i32",
+        "i64",
+        "f32",
+        "f64"
+      ]
+    },
+    "max": {
+      "name": "Max",
+      "type": [
+        "i32",
+        "i64",
+        "f32",
+        "f64"
+      ]
+    },
+    "suggestion_type": {
+      "name": "Suggestion Type",
+      "type": "string"
+    },
+    "reason": {
+      "name": "Reason",
+      "type": "string"
+    },
+    "server_id": {
+      "name": "Server ID",
+      "type": "string"
+    },
+    "public_key": {
+      "name": "Public Key",
+      "type": "bytes"
+    },
+    "verify_token": {
+      "name": "Verify Token",
+      "type": "bytes"
+    },
+    "user_name": {
+      "name": "User Name",
+      "type": "string"
+    },
+    "threshold": {
+      "name": "Threshold",
+      "type": "u32"
+    },
+    "message_id": {
+      "name": "Message ID",
+      "type": "u32"
+    },
+    "channel": {
+      "name": "Channel",
+      "type": "string"
+    },
+    "data": {
+      "name": "Data",
+      "type": [
+        "bytes",
+        "i32"
+      ]
+    },
+    "shared_secret": {
+      "name": "Shared Secret",
+      "type": "bytes"
+    },
+    "head_pitch": {
+      "name": "Head Pitch",
+      "type": "i8"
+    },
+    "chunk_data": {
+      "name": "Chunk Data",
+      "type": "bytes"
+    },
+    "object_data": {
+      "name": "Object Data",
+      "type": "u32"
+    },
+    "vx": {
+      "name": "Velocity X",
+      "type": "i16"
+    },
+    "vy": {
+      "name": "Velocity Y",
+      "type": "i16"
+    },
+    "vz": {
+      "name": "Velocity Z",
+      "type": "i16"
+    },
+    "count": {
+      "name": "Count",
+      "type": "i16"
+    },
+    "animation": {
+      "name": "Animation",
+      "type": "u8"
+    },
+    "category_id": {
+      "name": "Category ID",
+      "type": "u32"
+    },
+    "stat_id": {
+      "name": "Statistic ID",
+      "type": "u32"
+    },
+    "reset": {
+      "name": "Reset",
+      "type": "bool"
+    },
+    "parent_id": {
+      "name": "Parent ID",
+      "type": "string"
+    },
+    "title": {
+      "name": "Title",
+      "type": "string"
+    },
+    "desc": {
+      "name": "Description",
+      "type": "string"
+    },
+    "frame_type": {
+      "name": "Frame Type",
+      "type": "u32"
+    },
+    "background_texture": {
+      "name": "Background Texture",
+      "type": "string"
+    },
+    "send_telemetry_data": {
+      "name": "Send Telemetry Data",
+      "type": "bool"
+    },
+    "criterion_id": {
+      "name": "Criterion ID",
+      "type": "string"
+    },
+    "criterion_progress": {
+      "name": "Criterion Progress",
+      "type": "i64"
+    },
+    "requirement": {
+      "name": "Requirement",
+      "type": "string"
+    },
+    "destroy_stage": {
+      "name": "Destory Stage",
+      "type": "i8"
+    },
+    "action": {
+      "name": "Action",
+      "type": [
+        "u32",
+        "i8"
+      ]
+    },
+    "byte1": {
+      "name": "Byte 1",
+      "type": "u8"
+    },
+    "byte2": {
+      "name": "Byte 2",
+      "type": "u8"
+    },
+    "block_id": {
+      "name": "Block ID",
+      "type": "u32"
+    },
+    "health": {
+      "name": "Health",
+      "type": "f32"
+    },
+    "color": {
+      "name": "Color",
+      "type": "u32"
+    },
+    "dividers": {
+      "name": "Dividers",
+      "type": "u32"
+    },
+    "flags": {
+      "name": "Flags",
+      "type": [
+        "u8",
+        "i8"
+      ]
+    },
+    "difficulty": {
+      "name": "Difficulty",
+      "type": "u8"
+    },
+    "difficulty_locked": {
+      "name": "Difficulty Locked",
+      "type": "bool"
+    },
+    "transaction_id": {
+      "name": "Transaction ID",
+      "type": "u32"
+    },
+    "completion_start": {
+      "name": "Completion Start",
+      "type": "u32"
+    },
+    "length": {
+      "name": "Length",
+      "type": "u32"
+    },
+    "match": {
+      "name": "Match",
+      "type": "string"
+    },
+    "tooltip": {
+      "name": "Tooltip",
+      "type": "string"
+    },
+    "root_index": {
+      "name": "Root Index",
+      "type": "u32"
+    },
+    "feet_eyes": {
+      "name": "Feet Eyes",
+      "type": "u32"
+    },
+    "is_entity": {
+      "name": "Is Entity",
+      "type": "bool"
+    },
+    "entity_feet_eyes": {
+      "name": "Entity Feet Eyes",
+      "type": "u32"
+    },
+    "record": {
+      "name": "Record",
+      "type": "u32"
+    },
+    "window_id": {
+      "name": "Window ID",
+      "type": [
+        "u32",
+        "i8"
+      ]
+    },
+    "inventory_type": {
+      "name": "Inventory Type",
+      "type": "u32"
+    },
+    "state_id": {
+      "name": "State ID",
+      "type": "u32"
+    },
+    "property": {
+      "name": "Property",
+      "type": "i16"
+    },
+    "slot": {
+      "name": "Slot",
+      "type": "i16"
+    },
+    "cooldown_ticks": {
+      "name": "Cooldown Ticks",
+      "type": "u32"
+    },
+    "entry": {
+      "name": "Entry",
+      "type": "string"
+    },
+    "message": {
+      "name": "Message",
+      "type": "string"
+    },
+    "target": {
+      "name": "Target",
+      "type": [
+        "string",
+        "u32"
+      ]
+    },
+    "entity_id": {
+      "name": "Entity ID",
+      "type": [
+        "u32",
+        "i32"
+      ]
+    },
+    "entity_status": {
+      "name": "Entity Status",
+      "type": "i8"
+    },
+    "radius": {
+      "name": "Radius",
+      "type": "f32"
+    },
+    "player_motion_x": {
+      "name": "Player Motion X",
+      "type": "f32"
+    },
+    "player_motion_y": {
+      "name": "Player Motion Y",
+      "type": "f32"
+    },
+    "player_motion_z": {
+      "name": "Player Motion Z",
+      "type": "f32"
+    },
+    "chunk_x": {
+      "name": "Chunk X",
+      "type": [
+        "i32",
+        "u32"
+      ]
+    },
+    "chunk_z": {
+      "name": "Chunk Z",
+      "type": [
+        "i32",
+        "u32"
+      ]
+    },
+    "event": {
+      "name": "Event",
+      "type": "u8"
+    },
+    "event_param": {
+      "name": "Event Parameter",
+      "type": "f32"
+    },
+    "nb_slots": {
+      "name": "Slot Count",
+      "type": "u32"
+    },
+    "keep_alive_id": {
+      "name": "Keep Alive ID",
+      "type": "i64"
+    },
+    "heightmaps": {
+      "name": "Heightmaps",
+      "type": "bytes"
+    },
+    "sky_light_mask": {
+      "name": "Sky Light Mask",
+      "type": "i64"
+    },
+    "block_light_mask": {
+      "name": "Block Light Mask",
+      "type": "i64"
+    },
+    "empty_sky_light_mask": {
+      "name": "Empty Sky Light Mask",
+      "type": "i64"
+    },
+    "empty_block_light_mask": {
+      "name": "Empty Block Light Mask",
+      "type": "i64"
+    },
+    "skylight": {
+      "name": "Sky Light",
+      "type": "u8"
+    },
+    "blocklight": {
+      "name": "Block Light",
+      "type": "u8"
+    },
+    "global": {
+      "name": "Global",
+      "type": "bool"
+    },
+    "long_distance": {
+      "name": "Long Distance",
+      "type": "bool"
+    },
+    "offset_x": {
+      "name": "Offset X",
+      "type": [
+        "f32",
+        "i32"
+      ]
+    },
+    "offset_y": {
+      "name": "Offset Y",
+      "type": [
+        "f32",
+        "i32"
+      ]
+    },
+    "offset_z": {
+      "name": "Offset Z",
+      "type": [
+        "f32",
+        "i32"
+      ]
+    },
+    "particle_data": {
+      "name": "Particle Data",
+      "type": "f32"
+    },
+    "particles": {
+      "name": "Particles",
+      "type": "i32"
+    },
+    "is_hardcore": {
+      "name": "Is Hardcore",
+      "type": "bool"
+    },
+    "gamemode": {
+      "name": "Game Mode",
+      "type": "u8"
+    },
+    "previous_gamemode": {
+      "name": "Previous Game Mode",
+      "type": "i8"
+    },
+    "dimension_codec": {
+      "name": "Dimension Codec",
+      "type": "bytes"
+    },
+    "world_type": {
+      "name": "World Type",
+      "type": "string"
+    },
+    "world_name": {
+      "name": "World Name",
+      "type": "string"
+    },
+    "hashed_seed": {
+      "name": "Hashed Seed",
+      "type": "i64"
+    },
+    "max_players": {
+      "name": "Max Players",
+      "type": "u32"
+    },
+    "view_distance": {
+      "name": "View Distance",
+      "type": [
+        "u32",
+        "i32"
+      ]
+    },
+    "simulation_distance": {
+      "name": "Simulation Distance",
+      "type": [
+        "u32",
+        "i32"
+      ]
+    },
+    "reduced_debug_info": {
+      "name": "Reduced Debug Info",
+      "type": "bool"
+    },
+    "enable_respawn_screen": {
+      "name": "Enable Respawn Screen",
+      "type": "bool"
+    },
+    "is_debug": {
+      "name": "Is Debug",
+      "type": "bool"
+    },
+    "is_flat": {
+      "name": "Is Flat",
+      "type": "bool"
+    },
+    "dimension_name": {
+      "name": "Dimension Name",
+      "type": "string"
+    },
+    "portal_cooldown": {
+      "name": "Portal Cooldown",
+      "type": "u32"
+    },
+    "map_id": {
+      "name": "Map ID",
+      "type": "u32"
+    },
+    "locked": {
+      "name": "Locked",
+      "type": "bool"
+    },
+    "columns": {
+      "name": "Columns",
+      "type": "u8"
+    },
+    "rows": {
+      "name": "Rows",
+      "type": "u8"
+    },
+    "trade_disabled": {
+      "name": "Trade Disabled",
+      "type": "bool"
+    },
+    "nb_trade_uses": {
+      "name": "Trade Uses",
+      "type": "i32"
+    },
+    "max_nb_trade_uses": {
+      "name": "Max Trade Uses",
+      "type": "i32"
+    },
+    "xp": {
+      "name": "XP",
+      "type": "i32"
+    },
+    "special_price": {
+      "name": "Special Price",
+      "type": "i32"
+    },
+    "price_multiplier": {
+      "name": "Price Multiplier",
+      "type": "f32"
+    },
+    "demand": {
+      "name": "Demand",
+      "type": "i32"
+    },
+    "is_regular_villager": {
+      "name": "Is Regular Villager",
+      "type": "bool"
+    },
+    "can_restock": {
+      "name": "Can Restock",
+      "type": "vool"
+    },
+    "dx": {
+      "name": "Delta X",
+      "type": "i16"
+    },
+    "dy": {
+      "name": "Delta Y",
+      "type": "i16"
+    },
+    "dz": {
+      "name": "Delta Z",
+      "type": "i16"
+    },
+    "on_ground": {
+      "name": "On Ground",
+      "type": "bool"
+    },
+    "hand": {
+      "name": "Hand",
+      "type": "u32"
+    },
+    "is_front_text": {
+      "name": "Is Front Text",
+      "type": "bool"
+    },
+    "recipe": {
+      "name": "Recipe",
+      "type": "string"
+    },
+    "flying_speed": {
+      "name": "Flying Speed",
+      "type": "f32"
+    },
+    "walking_speed": {
+      "name": "Walking Speed",
+      "type": "f32"
+    },
+    "index": {
+      "name": "Index",
+      "type": "u32"
+    },
+    "plain_message": {
+      "name": "Plain Message",
+      "type": "string"
+    },
+    "timestamp": {
+      "name": "Timestamp",
+      "type": "i64"
+    },
+    "salt": {
+      "name": "Salt",
+      "type": "i64"
+    },
+    "unsigned_chat_content": {
+      "name": "Unsigned Chat Content",
+      "type": "string"
+    },
+    "filter_type": {
+      "name": "Filter Type",
+      "type": "u32"
+    },
+    "filter_mask": {
+      "name": "Filter Mask",
+      "type": "i64"
+    },
+    "network_name": {
+      "name": "Network Name",
+      "type": "string"
+    },
+    "network_target_name": {
+      "name": "Network Target Name",
+      "type": "string"
+    },
+    "duration": {
+      "name": "Duration",
+      "type": "u32"
+    },
+    "player_id": {
+      "name": "Player ID",
+      "type": "u32"
+    },
+    "listed": {
+      "name": "Listed",
+      "type": "bool"
+    },
+    "latency": {
+      "name": "Latency",
+      "type": "u32"
+    },
+    "teleport_id": {
+      "name": "Teleport ID",
+      "type": "u32"
+    },
+    "crafting_book_open": {
+      "name": "Crafting Book Open",
+      "type": "bool"
+    },
+    "filtering_craftable": {
+      "name": "Filtering Craftable",
+      "type": "bool"
+    },
+    "smelting_book_open": {
+      "name": "Smelting Book Open",
+      "type": "bool"
+    },
+    "filtering_smeltable": {
+      "name": "Filtering Smeltable",
+      "type": "bool"
+    },
+    "blast_furnace_open": {
+      "name": "Blast Furnace Open",
+      "type": "bool"
+    },
+    "filtering_blast_furnace": {
+      "name": "Filtering Blast Furnace",
+      "type": "bool"
+    },
+    "smoker_book_open": {
+      "name": "Smoker Book Open",
+      "type": "bool"
+    },
+    "filtering_smoker": {
+      "name": "Filtering Smoker",
+      "type": "bool"
+    },
+    "recipe_1": {
+      "name": "Recipe 1",
+      "type": "string"
+    },
+    "recipe_2": {
+      "name": "Recipe 2",
+      "type": "string"
+    },
+    "effect_id": {
+      "name": "Effect ID",
+      "type": "u32"
+    },
+    "url": {
+      "name": "URL",
+      "type": "string"
+    },
+    "hash": {
+      "name": "Hash",
+      "type": "string"
+    },
+    "forced": {
+      "name": "Forced",
+      "type": "bool"
+    },
+    "prompt_message": {
+      "name": "Prompt Message",
+      "type": "string"
+    },
+    "copy_metadata": {
+      "name": "Copy Metadata",
+      "type": "bool"
+    },
+    "head_yaw": {
+      "name": "Head Yaw",
+      "type": "i8"
+    },
+    "camera_id": {
+      "name": "Camera ID",
+      "type": "u32"
+    },
+    "position": {
+      "name": "Position",
+      "type": "i8"
+    },
+    "vehicle_id": {
+      "name": "Vechicle ID",
+      "type": "i32"
+    },
+    "experience_bar": {
+      "name": "Experience Bar",
+      "type": "f32"
+    },
+    "total_experience": {
+      "name": "Total Experience",
+      "type": "u32"
+    },
+    "food": {
+      "name": "Food",
+      "type": "u32"
+    },
+    "food_saturation": {
+      "name": "Food Saturation",
+      "type": "f32"
+    },
+    "display_text": {
+      "name": "Display Text",
+      "type": "string"
+    },
+    "team": {
+      "name": "Team",
+      "type": "string"
+    },
+    "mode": {
+      "name": "Mode",
+      "type": "u32"
+    },
+    "friendly_fire": {
+      "name": "Friendly Fire",
+      "type": "u8"
+    },
+    "name_tag_visibility": {
+      "name": "Name Tag Visibility",
+      "type": "string"
+    },
+    "collision_rule": {
+      "name": "Collision Rule",
+      "type": "string"
+    },
+    "formatting": {
+      "name": "Formatting",
+      "type": "u32"
+    },
+    "prefix": {
+      "name": "Prefix",
+      "type": "string"
+    },
+    "suffix": {
+      "name": "Suffix",
+      "type": "string"
+    },
+    "player": {
+      "name": "Player",
+      "type": "string"
+    },
+    "item_name": {
+      "name": "Item Name",
+      "type": "string"
+    },
+    "score_name": {
+      "name": "Score Name",
+      "type": "string"
+    },
+    "angle": {
+      "name": "Angle",
+      "type": "f32"
+    },
+    "age": {
+      "name": "Age",
+      "type": "i64"
+    },
+    "time": {
+      "name": "Time",
+      "type": "i64"
+    },
+    "sound_id": {
+      "name": "Sound ID",
+      "type": "u32"
+    },
+    "resource": {
+      "name": "Resource",
+      "type": "string"
+    },
+    "range": {
+      "name": "Range",
+      "type": "f32"
+    },
+    "sound_category": {
+      "name": "Sound Category",
+      "type": "u32"
+    },
+    "volume": {
+      "name": "Volume",
+      "type": "f32"
+    },
+    "pitch_sound": {
+      "name": "Pitch",
+      "type": "f32"
+    },
+    "seed": {
+      "name": "Seed",
+      "type": [
+        "i64",
+        "u32"
+      ]
+    },
+    "source": {
+      "name": "Source",
+      "type": "u32"
+    },
+    "sound": {
+      "name": "Sound",
+      "type": "string"
+    },
+    "content": {
+      "name": "Content",
+      "type": "string"
+    },
+    "is_action_bar": {
+      "name": "Is Action Bar",
+      "type": "bool"
+    },
+    "header": {
+      "name": "Header",
+      "type": "bool"
+    },
+    "footer": {
+      "name": "Footer",
+      "type": "bool"
+    },
+    "collected_entity_id": {
+      "name": "Collected Entity ID",
+      "type": "u32"
+    },
+    "collector_entity_id": {
+      "name": "Collector Entity ID",
+      "type": "u32"
+    },
+    "pickup_item_count": {
+      "name": "Pickup Item Count",
+      "type": "u32"
+    },
+    "amount": {
+      "name": "Amount",
+      "type": "f64"
+    },
+    "operation": {
+      "name": "Operation",
+      "type": "i8"
+    },
+    "feature": {
+      "name": "Feature",
+      "type": "string"
+    },
+    "amplifier": {
+      "name": "Amplifier",
+      "type": "i8"
+    },
+    "hide_particles": {
+      "name": "Hide Particles",
+      "type": "i8"
+    },
+    "factor_codec": {
+      "name": "Factor Codec",
+      "type": "bytes"
+    },
+    "motd": {
+      "name": "MOTD",
+      "type": "string"
+    },
+    "icon_bytes": {
+      "name": "Icon",
+      "type": "bytes"
+    },
+    "enforces_secure_chat": {
+      "name": "Enforces Secure Chat",
+      "type": "bool"
+    },
+    "recipe_id": {
+      "name": "Recipe ID",
+      "type": "string"
+    },
+    "width": {
+      "name": "Width",
+      "type": "u32"
+    },
+    "height": {
+      "name": "Height",
+      "type": "u32"
+    },
+    "show_notification": {
+      "name": "Show Notification",
+      "type": "bool"
+    },
+    "tag_type": {
+      "name": "Tag Type",
+      "type": "string"
+    },
+    "sequence_id": {
+      "name": "Sequence ID",
+      "type": "u32"
+    },
+    "old_diameter": {
+      "name": "Old Diameter",
+      "type": "f64"
+    },
+    "new_diameter": {
+      "name": "New Diameter",
+      "type": "f64"
+    },
+    "speed": {
+      "name": "Speed",
+      "type": "u32"
+    },
+    "portal_teleport_boundary": {
+      "name": "Portal Teleport Boundary",
+      "type": "u32"
+    },
+    "warning_blocks": {
+      "name": "Warning Blocks",
+      "type": "u32"
+    },
+    "warning_time": {
+      "name": "Warning Time",
+      "type": "u32"
+    },
+    "text": {
+      "name": "Text",
+      "type": "string"
+    },
+    "diameter": {
+      "name": "Diameter",
+      "type": "f64"
+    },
+    "fade_in": {
+      "name": "Fade In",
+      "type": "i32"
+    },
+    "stay": {
+      "name": "Stay",
+      "type": "i32"
+    },
+    "fade_out": {
+      "name": "Fade Out",
+      "type": "i32"
+    },
+    "source_type_id": {
+      "name": "Source Type ID",
+      "type": "u32"
+    },
+    "source_cause_id": {
+      "name": "Source Cause ID",
+      "type": "u32"
+    },
+    "source_direct_id": {
+      "name": "Source Direct ID",
+      "type": "u32"
+    },
+    "command": {
+      "name": "Command",
+      "type": "string"
+    },
+    "argument_name": {
+      "name": "Argument Name",
+      "type": "string"
+    },
+    "message_count": {
+      "name": "Message Count",
+      "type": "u32"
+    },
+    "acknowledged": {
+      "name": "Acknowledged",
+      "type": "bytes"
+    },
+    "offset": {
+      "name": "Offset",
+      "type": "u32"
+    },
+    "primary_effect": {
+      "name": "Primary Effect",
+      "type": "u32"
+    },
+    "secondary_effect": {
+      "name": "Secondary Effect",
+      "type": "u32"
+    },
+    "track_output": {
+      "name": "Track Output",
+      "type": "bool"
+    },
+    "size_x": {
+      "name": "Size X",
+      "type": "i32"
+    },
+    "size_y": {
+      "name": "Size Y",
+      "type": "i32"
+    },
+    "size_z": {
+      "name": "Size Z",
+      "type": "i32"
+    },
+    "mirror": {
+      "name": "Mirror",
+      "type": "u32"
+    },
+    "metadata": {
+      "name": "Metadata",
+      "type": "string"
+    },
+    "integrity": {
+      "name": "Integrity",
+      "type": "f32"
+    },
+    "action_id": {
+      "name": "Action ID",
+      "type": "u32"
+    },
+    "locale": {
+      "name": "Locale",
+      "type": "string"
+    },
+    "chat_flags": {
+      "name": "Chat Flags",
+      "type": "u32"
+    },
+    "chat_color": {
+      "name": "Chat Color",
+      "type": "bool"
+    },
+    "skin_parts": {
+      "name": "Skin Parts",
+      "type": "u8"
+    },
+    "main_hand": {
+      "name": "Main Hand",
+      "type": "u32"
+    },
+    "enable_text_filtering": {
+      "name": "Enable Text Filtering",
+      "type": "bool"
+    },
+    "enable_server_listing": {
+      "name": "Enable Server Listing",
+      "type": "bool"
+    },
+    "enchantment": {
+      "name": "Enchantment",
+      "type": "i8"
+    },
+    "mouse_button": {
+      "name": "Mouse Button",
+      "type": "i8"
+    },
+    "location": {
+      "name": "Location",
+      "type": "i16"
+    },
+    "mouse": {
+      "name": "Mouse",
+      "type": "u32"
+    },
+    "sneaking": {
+      "name": "Sneaking",
+      "type": "bool"
+    },
+    "levels": {
+      "name": "Levels",
+      "type": "u32"
+    },
+    "keep_jigsaws": {
+      "name": "Keep Jigsaws",
+      "type": "bool"
+    },
+    "left_paddle": {
+      "name": "Left Paddle",
+      "type": "bool"
+    },
+    "right_paddle": {
+      "name": "Right Paddle",
+      "type": "bool"
+    },
+    "make_all": {
+      "name": "Make All",
+      "type": "bool"
+    },
+    "status": {
+      "name": "Status",
+      "type": "u32"
+    },
+    "face": {
+      "name": "Face",
+      "type": "i8"
+    },
+    "jump_boost": {
+      "name": "Jump Boost",
+      "type": "u8"
+    },
+    "sideways": {
+      "name": "Sideways",
+      "type": "f32"
+    },
+    "forward": {
+      "name": "Forward",
+      "type": "f32"
+    },
+    "jump": {
+      "name": "Jump",
+      "type": "u8"
+    },
+    "book_id": {
+      "name": "Book ID",
+      "type": "u32"
+    },
+    "book_open": {
+      "name": "Book Open",
+      "type": "bool"
+    },
+    "filter_active": {
+      "name": "Filter Active",
+      "type": "bool"
+    },
+    "result": {
+      "name": "Result",
+      "type": "u32"
+    },
+    "pool": {
+      "name": "Pool",
+      "type": "string"
+    },
+    "final_state": {
+      "name": "Final State",
+      "type": "string"
+    },
+    "joint_type": {
+      "name": "Joint Type",
+      "type": "string"
+    },
+    "text_1": {
+      "name": "Text 1",
+      "type": "string"
+    },
+    "text_2": {
+      "name": "Text 2",
+      "type": "string"
+    },
+    "text_3": {
+      "name": "Text 3",
+      "type": "string"
+    },
+    "text_4": {
+      "name": "Text 4",
+      "type": "string"
+    },
+    "cursor_x": {
+      "name": "Cursor X",
+      "type": "f32"
+    },
+    "cursor_y": {
+      "name": "Cursor Y",
+      "type": "f32"
+    },
+    "cursor_z": {
+      "name": "Cursor Z",
+      "type": "f32"
+    },
+    "inside_block": {
+      "name": "Inside Block",
+      "type": "bool"
+    },
+    "tab_id": {
+      "name": "Tab ID",
+      "type": "string"
+    },
+    "killer_id": {
+      "name": "Killer ID",
+      "type": "i32"
+    }
+  },
+  "mappings": {
+    "ver3f/x": "x",
+    "ver3f/y": "y",
+    "ver3f/z": "z",
+    "vec4f/x": "x",
+    "vec4f/y": "y",
+    "vec4f/z": "z",
+    "vec4f/w": "w",
+    "vec3f64/x": "x",
+    "vec3f64/y": "y",
+    "vec3f64/z": "z",
+    "slot/present": "slot_present",
+    "slot/[unnamed]/itemId": "item_id",
+    "slot/[unnamed]/itemCount": "item_count",
+    "nbtData": "nbt_data",
+    "particleData/particleId": "particle_id",
+    "particleData/blockState": "blockstate",
+    "particleData/red": "red_factor",
+    "particleData/green": "green_factor",
+    "particleData/blue": "blue_factor",
+    "particleData/scale": "scale",
+    "particleData/fromRed": "from_red_factor",
+    "particleData/fromGreen": "from_green_factor",
+    "particleData/fromBlue": "from_blue_factor",
+    "particleData/toRed": "to_red_factor",
+    "particleData/toGreen": "to_green_factor",
+    "particleData/toBlue": "to_blue_factor",
+    "particleData/positionType": "position_type",
+    "particleData/entityId": "entity_id",
+    "particleData/entityEyeHeight": "entity_eye_height",
+    "particleData/destination": "destination",
+    "particleData/ticks": "ticks",
+    "particleData/delayInTicksBeforeShown": "delay_in_ticks_before_shown",
+    "particleData/rotation": "rotation",
+    "previousMessages/id": "id",
+    "previousMessages/signature": "signature",
+    "entityMetadataItem[byte]": "byte",
+    "entityMetadataItem[int]": "int",
+    "entityMetadataItem[long]": "long",
+    "entityMetadataItem[float]": "float",
+    "entityMetadataItem[string]": "string",
+    "entityMetadataItem[component]": "component",
+    "entityMetadataItem[optional_component]": "component",
+    "entityMetadataItem[boolean]": "boolean",
+    "entityMetadataItem/pitch": "pitch",
+    "entityMetadataItem/yaw": "yaw",
+    "entityMetadataItem/roll": "roll",
+    "entityMetadataItem[direction]": "direction",
+    "entityMetadataItem[optional_uuid]": "uuid",
+    "entityMetadataItem[block_state]": "blockstate",
+    "entityMetadataItem[optional_block_state]": "blockstate",
+    "entityMetadataItem[compound_tag]": "nbt_data",
+    "entityMetadataItem/villagerType": "villager_type",
+    "entityMetadataItem/villagerProfession": "villager_profession",
+    "entityMetadataItem/level": "level",
+    "entityMetadataItem[optional_unsigned_int]": "uint",
+    "entityMetadataItem[pose]": "pose",
+    "entityMetadataItem[cat_variant]": "cat_variant",
+    "entityMetadataItem[frog_variant]": "frog_variant",
+    "entityMetadataItem[optional_global_pos]": "global_pos",
+    "entityMetadataItem[painting_variant]": "painting_variant",
+    "entityMetadataItem[sniffer_state]": "sniffer_state",
+    "entityMetadata/key": "id",
+    "entityMetadata/type": "type_string",
+    "minecraft_simple_recipe_format/category": "category",
+    "minecraft_smelting_format/group": "group",
+    "minecraft_smelting_format/category": "category",
+    "minecraft_smelting_format/experience": "experience",
+    "minecraft_smelting_format/cookTime": "cook_time",
+    "tags/tagName": "tag_name",
+    "tags/entries": "tag_entry",
+    "chunkBlockEntity/y": "y",
+    "chunkBlockEntity/type": "type",
+    "uuid": "uuid",
+    "publicKey/expireTime": "expire_time",
+    "publicKey/keyBytes": "key_bytes",
+    "publicKey/keySignature": "signature",
+    "game_profile/name": "name",
+    "game_profile/properties/key": "key_string",
+    "game_profile/properties/value": "value_string",
+    "game_profile/properties/signature": "signature_string",
+    "command_node/children": "children_int",
+    "command_node/redirectNode": "redirect_node",
+    "command_node/extraNodeData/name": "name",
+    "command_node/extraNodeData/parser": "parser",
+    "command_node/extraNodeData/properties": "properties",
+    "command_node/extraNodeData/properties/min": "min",
+    "command_node/extraNodeData/properties/max": "max",
+    "command_node/extraNodeData/properties/registry": "registry",
+    "command_node/extraNodeData/suggestionType": "suggestion_type",
+    "serverId": "server_id",
+    "publicKey": "public_key",
+    "verifyToken": "verify_token",
+    "username": "user_name",
+    "success/properties/key": "key_string",
+    "success/properties/value": "value_string",
+    "success/properties/signature": "signature_string",
+    "compress/threshold": "threshold_int",
+    "login_plugin_request/messageId": "message_id",
+    "login_plugin_request/channel": "channel_str",
+    "login_plugin_request/data": "data",
+    "playerUUID": "uuid",
+    "sharedSecret": "shared_secret",
+    "login_plugin_response/messageId": "message_id",
+    "login_plugin_response/data": "data",
+    "spawn_entity/entityId": "entity_id",
+    "spawn_entity/objectUUID": "uuid",
+    "spawn_entity/type": "type",
+    "spawn_entity/x": "x",
+    "spawn_entity/y": "y",
+    "spawn_entity/z": "z",
+    "spawn_entity/pitch": "pitch",
+    "spawn_entity/yaw": "yaw",
+    "spawn_entity/headPitch": "head_pitch",
+    "spawn_entity/objectData": "object_data",
+    "spawn_entity/velocityX": "vx",
+    "spawn_entity/velocityY": "vy",
+    "spawn_entity/velocityZ": "vz",
+    "spawn_entity_experience_orb/entityId": "entity_id",
+    "spawn_entity_experience_orb/x": "x",
+    "spawn_entity_experience_orb/y": "y",
+    "spawn_entity_experience_orb/z": "z",
+    "spawn_entity_experience_orb/count": "count",
+    "named_entity_spawn/entityId": "entity_id",
+    "named_entity_spawn/playerUUID": "uuid",
+    "named_entity_spawn/x": "x",
+    "named_entity_spawn/y": "y",
+    "named_entity_spawn/z": "z",
+    "animation/entityId": "entity_id",
+    "animation/animation": "animation",
+    "statistics/entries/categoryId": "category_id",
+    "statistics/entries/statisticId": "stat_id",
+    "statistics/entries/value": "value",
+    "advancements/reset": "reset",
+    "advancements/advancementMapping/key": "key_string",
+    "advancements/advancementMapping/value/parentId": "parent_id_string",
+    "advancements/advancementMapping/value/displayData/title": "title",
+    "advancements/advancementMapping/value/displayData/description": "desc",
+    "advancements/advancementMapping/value/displayData/frameType": "frame_type",
+    "advancements/advancementMapping/value/displayData/backgroundTexture": "background_texture",
+    "advancements/advancementMapping/value/displayData/xCord": "x",
+    "advancements/advancementMapping/value/displayData/yCord": "y",
+    "advancements/advancementMapping/value/criteria/key": "key_string",
+    "advancements/advancementMapping/value/criteria/value": "value_string",
+    "advancements/advancementMapping/value/requirements": "requirement",
+    "advancements/advancementMapping/value/sendsTelemtryData": "send_telemetry_data",
+    "advancements/identifiers": "id_string",
+    "advancements/progressMapping/key": "key_string",
+    "advancements/progressMapping/value/criterionIdentifier": "criterion_id",
+    "advancements/progressMapping/value/criterionProgress": "criterion_progress",
+    "block_break_animation/entityId": "entity_id",
+    "block_break_animation/destroyStage": "destroy_stage",
+    "tile_entity_data/action": "action",
+    "tile_entity_data/nbtData": "nbt_data",
+    "block_action/byte1": "byte1",
+    "block_action/byte2": "byte2",
+    "block_action/blockId": "block_id",
+    "block_change/type": "blockstate",
+    "boss_bar/entityUUID": "uuid",
+    "boss_bar/action": "action",
+    "boss_bar/title": "title",
+    "boss_bar/health": "health",
+    "boss_bar/color": "color",
+    "boss_bar/dividers": "dividers",
+    "boss_bar/flags": "flags",
+    "difficulty/difficulty": "difficulty",
+    "difficulty/difficultyLocked": "difficulty_locked",
+    "tab_complete/transactionId": "transaction_id",
+    "tab_complete/start": "completion_start",
+    "tab_complete/length": "length",
+    "tab_complete/matches/match": "match",
+    "tab_complete/matches/tooltip": "tooltip",
+    "declare_commands/rootIndex": "root_index",
+    "face_player/feet_eyes": "feet_eyes",
+    "face_player/x": "x",
+    "face_player/y": "y",
+    "face_player/z": "z",
+    "face_player/isEntity": "is_entity",
+    "face_player/entityId": "entity_id",
+    "face_player/entity_feet_eyes": "entity_feet_eyes",
+    "nbt_query_response/transactionId": "transaction_id",
+    "nbt_query_response/nbt": "nbt_data",
+    "multi_block_change/records": "record",
+    "close_window/windowId": "window_id",
+    "open_window/windowId": "window_id",
+    "open_window/inventoryType": "inventory_type",
+    "open_window/windowTitle": "title",
+    "window_items/windowId": "window_id",
+    "window_items/stateId": "state_id",
+    "craft_progress_bar/windowId": "window_id",
+    "craft_progress_bar/property": "property",
+    "craft_progress_bar/value": "value",
+    "set_slot/windowId": "window_id",
+    "set_slot/stateId": "state_id",
+    "set_slot/slot": "slot",
+    "set_cooldown/itemID": "item_id",
+    "set_cooldown/cooldownTicks": "cooldown_ticks",
+    "chat_suggestions/action": "action",
+    "chat_suggestions/entries": "entry",
+    "custom_payload/channel": "channel",
+    "custom_payload/data": "data",
+    "hide_message/id": "id",
+    "hide_message/signature": "signature",
+    "kick_disconnect/reason": "reason",
+    "profileless_chat/message": "message",
+    "profileless_chat/type": "type",
+    "profileless_chat/name": "name",
+    "profileless_chat/target": "target",
+    "entity_status/entityId": "entity_id",
+    "entity_status/entityStatus": "entity_status",
+    "explosion/x": "x",
+    "explosion/y": "y",
+    "explosion/z": "z",
+    "explosion/radius": "radius",
+    "explosion/affectedBlockOffsets/x": "x",
+    "explosion/affectedBlockOffsets/y": "y",
+    "explosion/affectedBlockOffsets/z": "z",
+    "explosion/playerMotionX": "player_motion_x",
+    "explosion/playerMotionY": "player_motion_y",
+    "explosion/playerMotionZ": "player_motion_z",
+    "unload_chunk/chunkX": "chunk_x",
+    "unload_chunk/chunkZ": "chunk_z",
+    "game_state_change/reason": "event",
+    "game_state_change/gameMode": "event_param",
+    "open_horse_window/windowId": "window_id",
+    "open_horse_window/nbSlots": "nb_slots",
+    "open_horse_window/entityId": "entity_id",
+    "keep_alive/keepAliveId": "keep_alive_id",
+    "map_chunk/x": "x",
+    "map_chunk/z": "z",
+    "map_chunk/heightmaps": "heightmaps",
+    "map_chunk/chunkData": "chunk_data",
+    "map_chunk/skyLightMask": "sky_light_mask",
+    "map_chunk/blockLightMask": "block_light_mask",
+    "map_chunk/emptySkyLightMask": "empty_sky_light_mask",
+    "map_chunk/emptyBlockLightMask": "empty_block_light_mask",
+    "map_chunk/skyLight": "skylight",
+    "map_chunk/blockLight": "blocklight",
+    "world_event/effectId": "type",
+    "world_event/data": "data",
+    "world_event/global": "global",
+    "world_particles/particleId": "particle_id",
+    "world_particles/longDistance": "long_distance",
+    "world_particles/x": "x",
+    "world_particles/y": "y",
+    "world_particles/z": "z",
+    "world_particles/offsetX": "offset_x",
+    "world_particles/offsetY": "offset_y",
+    "world_particles/offsetZ": "offset_z",
+    "world_particles/particleData": "particle_data",
+    "world_particles/particles": "particles",
+    "update_light/chunkX": "chunk_x",
+    "update_light/chunkZ": "chunk_z",
+    "update_light/skyLightMask": "sky_light_mask",
+    "update_light/blockLightMask": "block_light_mask",
+    "update_light/emptySkyLightMask": "empty_sky_light_mask",
+    "update_light/emptyBlockLightMask": "empty_block_light_mask",
+    "update_light/skyLight": "skylight",
+    "update_light/blockLight": "blocklight",
+    "login/entityId": "entity_id",
+    "login/isHardcore": "is_hardcore",
+    "login/gameMode": "gamemode",
+    "login/previousGameMode": "previous_gamemode",
+    "login/worldNames": "world_name",
+    "login/dimensionCodec": "dimension_codec",
+    "login/worldType": "world_type",
+    "login/worldName": "world_name",
+    "login/hashedSeed": "hashed_seed",
+    "login/maxPlayers": "max_players",
+    "login/viewDistance": "view_distance",
+    "login/simulationDistance": "simulation_distance",
+    "login/reducedDebugInfo": "reduced_debug_info",
+    "login/enableRespawnScreen": "enable_respawn_screen",
+    "login/isDebug": "is_debug",
+    "login/isFlat": "is_flat",
+    "login/dimensionName": "dimension_name",
+    "login/portalCooldown": "portal_cooldown",
+    "map/itemDamage": "map_id",
+    "map/scale": "scale",
+    "map/locked": "locked",
+    "map/icons/type": "type",
+    "map/icons/x": "x",
+    "map/icons/z": "z",
+    "map/icons/direction": "direction",
+    "map/icons/displayName": "name",
+    "map/columns": "columns",
+    "map/rows": "rows",
+    "map/x": "x",
+    "map/y": "y",
+    "map/data": "data",
+    "trade_list/windowId": "window_id",
+    "trade_list/trades/tradeDisabled": "trade_disabled",
+    "trade_list/trades/nbTradeUses": "nb_trade_uses",
+    "trade_list/trades/maximumNbTradeUses": "max_nb_trade_uses",
+    "trade_list/trades/xp": "xp",
+    "trade_list/trades/specialPrice": "special_price",
+    "trade_list/trades/priceMultiplier": "price_multiplier",
+    "trade_list/trades/demand": "demand",
+    "trade_list/villagerLevel": "level",
+    "trade_list/experience": "experience",
+    "trade_list/isRegularVillager": "is_regular_villager",
+    "trade_list/canRestock": "can_restock",
+    "rel_entity_move/entityId": "entity_id",
+    "rel_entity_move/dX": "dx",
+    "rel_entity_move/dY": "dy",
+    "rel_entity_move/dZ": "dz",
+    "rel_entity_move/onGround": "on_ground",
+    "entity_move_look/entityId": "entity_id",
+    "entity_move_look/dX": "dx",
+    "entity_move_look/dY": "dy",
+    "entity_move_look/dZ": "dz",
+    "entity_move_look/yaw": "yaw",
+    "entity_move_look/pitch": "pitch",
+    "entity_move_look/onGround": "on_ground",
+    "entity_look/entityId": "entity_id",
+    "entity_look/yaw": "yaw",
+    "entity_look/pitch": "pitch",
+    "entity_look/onGround": "on_ground",
+    "vehicle_move/x": "x",
+    "vehicle_move/y": "y",
+    "vehicle_move/z": "z",
+    "vehicle_move/yaw": "yaw",
+    "vehicle_move/pitch": "pitch",
+    "open_book/hand": "hand",
+    "open_sign_entity/isFrontText": "is_front_text",
+    "craft_recipe_response/windowId": "window_id",
+    "craft_recipe_response/recipe": "recipe",
+    "abilities/flags": "flags",
+    "abilities/flyingSpeed": "flying_speed",
+    "abilities/walkingSpeed": "walking_speed",
+    "player_chat/senderUuid": "uuid",
+    "player_chat/index": "index",
+    "player_chat/signature": "signature",
+    "player_chat/plainMessage": "plain_message",
+    "player_chat/timestamp": "timestamp",
+    "player_chat/salt": "salt",
+    "player_chat/unsignedChatContent": "unsigned_chat_content",
+    "player_chat/filterType": "filter_type",
+    "player_chat/type": "type",
+    "player_chat/networkName": "network_name",
+    "player_chat/networkTargetName": "network_target_name",
+    "end_combat_event/duration": "duration",
+    "death_combat_event/playerId": "player_id",
+    "death_combat_event/message": "message",
+    "player_remove/players": "uuid",
+    "player_info/action": "action",
+    "player_info/data/uuid": "uuid",
+    "player_info/data/gamemode": "gamemode",
+    "player_info/data/listed": "listed",
+    "player_info/data/latency": "latency",
+    "player_info/data/displayName": "name",
+    "position/x": "x",
+    "position/y": "y",
+    "position/z": "z",
+    "position/yaw": "yaw",
+    "position/pitch": "pitch",
+    "position/flags": "flags",
+    "position/teleportId": "teleport_id",
+    "unlock_recipes/action": "action",
+    "unlock_recipes/craftingBookOpen": "crafting_book_open",
+    "unlock_recipes/filteringCraftable": "filtering_craftable",
+    "unlock_recipes/smeltingBookOpen": "smelting_book_open",
+    "unlock_recipes/filteringSmeltable": "filtering_smeltable",
+    "unlock_recipes/blastFurnaceOpen": "blast_furnace_open",
+    "unlock_recipes/filteringBlastFurnace": "filtering_blast_furnace",
+    "unlock_recipes/smokerBookOpen": "smoker_book_open",
+    "unlock_recipes/filteringSmoker": "filtering_smoker",
+    "unlock_recipes/recipes1": "recipe_1",
+    "unlock_recipes/recipes2": "recipe_2",
+    "entity_destroy/entityIds": "entity_id",
+    "remove_entity_effect/entityId": "entity_id",
+    "remove_entity_effect/effectId": "effect_id",
+    "resource_pack_send/url": "url",
+    "resource_pack_send/hash": "hash",
+    "resource_pack_send/forced": "forced",
+    "resource_pack_send/promptMessage": "prompt_message",
+    "respawn/dimension": "dimension_name",
+    "respawn/worldName": "world_name",
+    "respawn/hashedSeed": "hashed_seed",
+    "respawn/gamemode": "gamemode",
+    "respawn/previousGamemode": "previous_gamemode",
+    "respawn/isDebug": "is_debug",
+    "respawn/isFlat": "is_flat",
+    "respawn/copyMetadata": "copy_metadata",
+    "respawn/death/dimensionName": "dimension_name",
+    "respawn/portalCooldown": "portal_cooldown",
+    "entity_head_rotation/entityId": "entity_id",
+    "entity_head_rotation/headYaw": "head_yaw",
+    "camera/cameraId": "camera_id",
+    "update_view_position/chunkX": "chunk_x",
+    "update_view_position/chunkZ": "chunk_z",
+    "update_view_distance/viewDistance": "view_distance",
+    "scoreboard_display_objective/position": "position",
+    "scoreboard_display_objective/name": "name",
+    "entity_metadata/entityId": "entity_id",
+    "attach_entity/entityId": "entity_id",
+    "attach_entity/vehicleId": "vehicle_id",
+    "entity_velocity/entityId": "entity_id",
+    "entity_velocity/velocityX": "vx",
+    "entity_velocity/velocityY": "vy",
+    "entity_velocity/velocityZ": "vz",
+    "entity_equipment/entityId": "entity_id",
+    "entity_equipment/equipments/slot": "slot",
+    "experience/experienceBar": "experience_bar",
+    "experience/totalExperience": "total_experience",
+    "experience/level": "level",
+    "update_health/health": "health",
+    "update_health/food": "food",
+    "update_health/foodSaturation": "food_saturation",
+    "scoreboard_objective/name": "name",
+    "scoreboard_objective/action": "action",
+    "scoreboard_objective/displayText": "display_text",
+    "scoreboard_objective/type": "type",
+    "set_passengers/entityId": "entity_id",
+    "set_passengers/passengers": "entity_id",
+    "teams/team": "team",
+    "teams/mode": "mode",
+    "teams/name": "name",
+    "teams/friendlyFire": "friendly_fire",
+    "teams/nameTagVisibility": "name_tag_visibility",
+    "teams/collisionRule": "collision_rule",
+    "teams/formatting": "formatting",
+    "teams/prefix": "prefix",
+    "teams/suffix": "suffix",
+    "teams/players": "player",
+    "scoreboard_score/itemName": "item_name",
+    "scoreboard_score/action": "action",
+    "scoreboard_score/scoreName": "score_name",
+    "scoreboard_score/value": "value",
+    "spawn_position/angle": "angle",
+    "update_time/age": "age",
+    "update_time/time": "time",
+    "entity_sound_effect/soundId": "sound_id",
+    "entity_sound_effect/soundEvent/resource": "resource",
+    "entity_sound_effect/soundEvent/range": "range",
+    "entity_sound_effect/soundCategory": "sound_category",
+    "entity_sound_effect/entityId": "entity_id",
+    "entity_sound_effect/volume": "volume",
+    "entity_sound_effect/pitch": "pitch_sound",
+    "entity_sound_effect/seed": "seed",
+    "stop_sound/flags": "flags",
+    "stop_sound/source": "source",
+    "stop_sound/sound": "sound",
+    "sound_effect/soundId": "sound_id",
+    "sound_effect/soundEvent/resource": "resource",
+    "sound_effect/soundEvent/range": "range",
+    "sound_effect/soundCategory": "sound_category",
+    "sound_effect/x": "x",
+    "sound_effect/y": "y",
+    "sound_effect/z": "z",
+    "sound_effect/volume": "volume",
+    "sound_effect/pitch": "pitch_sound",
+    "sound_effect/seed": "seed",
+    "system_chat/content": "content",
+    "system_chat/isActionBar": "is_action_bar",
+    "playerlist_header/header": "header",
+    "playerlist_header/footer": "footer",
+    "collect/collectedEntityId": "collected_entity_id",
+    "collect/collectorEntityId": "collector_entity_id",
+    "collect/pickupItemCount": "pickup_item_count",
+    "entity_teleport/entityId": "entity_id",
+    "entity_teleport/x": "x",
+    "entity_teleport/y": "y",
+    "entity_teleport/z": "z",
+    "entity_teleport/yaw": "yaw",
+    "entity_teleport/pitch": "pitch",
+    "entity_teleport/onGround": "on_ground",
+    "entity_update_attributes/entityId": "entity_id",
+    "entity_update_attributes/properties/key": "key",
+    "entity_update_attributes/properties/value": "value",
+    "entity_update_attributes/properties/modifiers/uuid": "uuid",
+    "entity_update_attributes/properties/modifiers/amount": "amount",
+    "entity_update_attributes/properties/modifiers/operation": "operation",
+    "feature_flags/features": "feature",
+    "entity_effect/entityId": "entity_id",
+    "entity_effect/effectId": "effect_id",
+    "entity_effect/amplifier": "amplifier",
+    "entity_effect/duration": "duration",
+    "entity_effect/hideParticles": "hide_particles",
+    "entity_effect/factorCodec": "factor_codec",
+    "select_advancement_tab/id": "id",
+    "server_data/motd": "motd",
+    "server_data/iconBytes": "icon_bytes",
+    "server_data/enforcesSecureChat": "enforces_secure_chat",
+    "type": "type",
+    "recipeId": "recipe_id",
+    "declare_recipes/recipes/data/group": "group",
+    "declare_recipes/recipes/data/category": "category",
+    "declare_recipes/recipes/data/width": "width",
+    "declare_recipes/recipes/data/height": "height",
+    "declare_recipes/recipes/data/showNotification": "show_notification",
+    "tags/tags/tagType": "tag_type",
+    "acknowledge_player_digging/sequenceId": "sequence_id",
+    "clear_titles/reset": "reset",
+    "initialize_world_border/x": "x",
+    "initialize_world_border/z": "z",
+    "initialize_world_border/oldDiameter": "old_diameter",
+    "initialize_world_border/newDiameter": "new_diameter",
+    "initialize_world_border/speed": "speed",
+    "initialize_world_border/portalTeleportBoundary": "portal_teleport_boundary",
+    "initialize_world_border/warningBlocks": "warning_blocks",
+    "initialize_world_border/warningTime": "warning_time",
+    "action_bar/text": "text",
+    "world_border_center/x": "x",
+    "world_border_center/z": "z",
+    "world_border_lerp_size/oldDiameter": "old_diameter",
+    "world_border_lerp_size/newDiameter": "new_diameter",
+    "world_border_lerp_size/speed": "speed",
+    "world_border_size/diameter": "diameter",
+    "world_border_warning_delay/warningTime": "warning_time",
+    "world_border_warning_reach/warningBlocks": "warning_blocks",
+    "ping/id": "id",
+    "set_title_subtitle/text": "text",
+    "set_title_text/text": "text",
+    "set_title_time/fadeIn": "fade_in",
+    "set_title_time/stay": "stay",
+    "set_title_time/fadeOut": "fade_out",
+    "simulation_distance/distance": "simulation_distance",
+    "chunk_biomes/biomes/data": "data",
+    "damage_event/entityId": "entity_id",
+    "damage_event/sourceTypeId": "source_type_id",
+    "damage_event/sourceCauseId": "source_cause_id",
+    "damage_event/sourceDirectId": "source_direct_id",
+    "hurt_animation/entityId": "entity_id",
+    "hurt_animation/yaw": "yaw",
+    "teleport_confirm/teleportId": "teleport_id",
+    "query_block_nbt/transactionId": "transaction_id",
+    "chat_command/command": "command",
+    "chat_command/timestamp": "timestamp",
+    "chat_command/salt": "salt",
+    "chat_command/argumentSignatures/argumentName": "argument_name",
+    "chat_command/argumentSignatures/signature": "signature",
+    "chat_command/messageCount": "message_count",
+    "chat_command/acknowledged": "acknowledged",
+    "chat_message/message": "message",
+    "chat_message/timestamp": "timestamp",
+    "chat_message/salt": "salt",
+    "chat_message/signature": "signature",
+    "chat_message/offset": "offset",
+    "chat_message/acknowledged": "acknowledged",
+    "set_difficulty/newDifficulty": "difficulty",
+    "message_acknowledgement/count": "count",
+    "edit_book/hand": "hand",
+    "edit_book/title": "title",
+    "query_entity_nbt/transactionId": "transaction_id",
+    "query_entity_nbt/entityId": "entity_id",
+    "pick_item/slot": "slot",
+    "name_item/name": "name",
+    "select_trade/slot": "slot",
+    "set_beacon_effect/primary_effect": "primary_effect",
+    "set_beacon_effect/secondary_effect": "secondary_effect",
+    "update_command_block/command": "command",
+    "update_command_block/mode": "mode",
+    "update_command_block/flags": "flags",
+    "update_command_block_minecart/entityId": "entity_id",
+    "update_command_block_minecart/command": "command",
+    "update_command_block_minecart/track_output": "track_output",
+    "update_structure_block/action": "action",
+    "update_structure_block/mode": "mode",
+    "update_structure_block/name": "name",
+    "update_structure_block/offset_x": "offset_x_int",
+    "update_structure_block/offset_y": "offset_y_int",
+    "update_structure_block/offset_z": "offset_z_int",
+    "update_structure_block/size_x": "size_x",
+    "update_structure_block/size_y": "size_y",
+    "update_structure_block/size_z": "size_z",
+    "update_structure_block/mirror": "mirror",
+    "update_structure_block/rotation": "rotation",
+    "update_structure_block/metadata": "metadata",
+    "update_structure_block/integrity": "integrity",
+    "update_structure_block/seed": "seed",
+    "update_structure_block/flags": "flags",
+    "tab_complete/text": "text",
+    "client_command/actionId": "action_id",
+    "settings/locale": "locale",
+    "settings/viewDistance": "view_distance_int",
+    "settings/chatFlags": "chat_flags",
+    "settings/chatColors": "chat_color",
+    "settings/skinParts": "skin_parts",
+    "settings/mainHand": "main_hand",
+    "settings/enableTextFiltering": "enable_text_filtering",
+    "settings/enableServerListing": "enable_server_listing",
+    "enchant_item/windowId": "window_id",
+    "enchant_item/enchantment": "enchantment",
+    "window_click/windowId": "window_id",
+    "window_click/stateId": "state_id",
+    "window_click/slot": "slot",
+    "window_click/mouseButton": "mouse_button",
+    "window_click/mode": "mode",
+    "window_click/changedSlots/location": "location",
+    "use_entity/target": "target",
+    "use_entity/mouse": "mouse",
+    "use_entity/x": "x",
+    "use_entity/y": "y",
+    "use_entity/z": "z",
+    "use_entity/hand": "hand",
+    "use_entity/sneaking": "sneaking",
+    "generate_structure/levels": "levels",
+    "generate_structure/keepJigsaws": "keep_jigsaws",
+    "lock_difficulty/locked": "locked",
+    "position/onGround": "on_ground",
+    "position_look/x": "x",
+    "position_look/y": "y",
+    "position_look/z": "z",
+    "position_look/yaw": "yaw",
+    "position_look/pitch": "pitch",
+    "position_look/onGround": "on_ground",
+    "look/yaw": "yaw",
+    "look/pitch": "pitch",
+    "look/onGround": "on_ground",
+    "flying/onGround": "on_ground",
+    "steer_boat/leftPaddle": "left_paddle",
+    "steer_boat/rightPaddle": "right_paddle",
+    "craft_recipe_request/windowId": "window_id",
+    "craft_recipe_request/recipe": "recipe",
+    "craft_recipe_request/makeAll": "make_all",
+    "block_dig/status": "status",
+    "block_dig/face": "face",
+    "block_dig/sequence": "sequence_id",
+    "entity_action/entityId": "entity_id",
+    "entity_action/actionId": "action_id",
+    "entity_action/jumpBoost": "jump_boost",
+    "steer_vehicle/sideways": "sideways",
+    "steer_vehicle/forward": "forward",
+    "steer_vehicle/jump": "jump",
+    "displayed_recipe/recipeId": "recipe_id",
+    "recipe_book/bookId": "book_id",
+    "recipe_book/bookOpen": "book_open",
+    "recipe_book/filterActive": "filter_active",
+    "resource_pack_receive/result": "result",
+    "held_item_slot/slot": "slot",
+    "set_creative_slot/slot": "slot",
+    "update_jigsaw_block/name": "name",
+    "update_jigsaw_block/target": "target",
+    "update_jigsaw_block/pool": "pool",
+    "update_jigsaw_block/finalState": "final_state",
+    "update_jigsaw_block/jointType": "joint_type",
+    "update_sign/isFrontText": "is_front_text",
+    "update_sign/text1": "text_1",
+    "update_sign/text2": "text_2",
+    "update_sign/text3": "text_3",
+    "update_sign/text4": "text_4",
+    "arm_animation/hand": "hand",
+    "spectate/target": "uuid",
+    "block_place/hand": "hand",
+    "block_place/direction": "direction",
+    "block_place/cursorX": "cursor_x",
+    "block_place/cursorY": "cursor_y",
+    "block_place/cursorZ": "cursor_z",
+    "block_place/insideBlock": "inside_block",
+    "block_place/sequence": "sequence_id",
+    "use_item/hand": "hand",
+    "use_item/sequence": "sequence_id",
+    "advancement_tab/action": "action",
+    "advancement_tab/tabId": "tab_id",
+    "pong/id": "id",
+    "chat_session_update/sessionUUID": "uuid",
+    "chat_session_update/expireTime": "expire_time",
+    "chat_session_update/publicKey": "public_key",
+    "chat_session_update/signature": "signature",
+    "end_combat_event/entityId": "killer_id",
+    "death_combat_event/entityId": "killer_id"
+  },
+  "bitmask": {
+    "hf_defines": {
+      "x_26": {
+        "name": "X",
+        "type": "i64",
+        "bitmask": "FFFFFFC000000000"
+      },
+      "z_26": {
+        "name": "Z",
+        "type": "i64",
+        "bitmask": "0000003FFFFFF000"
+      },
+      "y_12": {
+        "name": "Y",
+        "type": "i64",
+        "bitmask": "0000000000000FFF"
+      },
+      "x_4": {
+        "name": "X",
+        "type": "i8",
+        "bitmask": "F0"
+      },
+      "z_4": {
+        "name": "Z",
+        "type": "i8",
+        "bitmask": "0F"
+      },
+      "x_22": {
+        "name": "X",
+        "type": "i64",
+        "bitmask": "FFFFFC0000000000"
+      },
+      "z_22": {
+        "name": "Z",
+        "type": "i64",
+        "bitmask": "000003FFFFF00000"
+      },
+      "y_20": {
+        "name": "Y",
+        "type": "i64",
+        "bitmask": "00000000000FFFFF"
+      },
+      "has_custom_suggestions_1": {
+        "name": "Has Custom Suggestions",
+        "type": "bool",
+        "bitmask": "10"
+      },
+      "has_redirect_node_1": {
+        "name": "Has Redirect Node",
+        "type": "bool",
+        "bitmask": "08"
+      },
+      "has_command_1": {
+        "name": "Executable",
+        "type": "bool",
+        "bitmask": "04"
+      },
+      "command_node_type_2": {
+        "name": "Command Node Type",
+        "type": "u8",
+        "bitmask": "03",
+        "value_mapping": "command_node_type"
+      },
+      "max_present_1": {
+        "name": "Max Present",
+        "type": "bool",
+        "bitmask": "02"
+      },
+      "min_present_1": {
+        "name": "Min Present",
+        "type": "bool",
+        "bitmask": "01"
+      },
+      "only_allow_players_1": {
+        "name": "Only Allow Players",
+        "type": "bool",
+        "bitmask": "02"
+      },
+      "only_allow_entities_1": {
+        "name": "Only Allow Entities",
+        "type": "bool",
+        "bitmask": "01"
+      },
+      "allow_multiple_1": {
+        "name": "Allow Multiple",
+        "type": "bool",
+        "bitmask": "01"
+      },
+      "hidden_1": {
+        "name": "Hidden",
+        "type": "bool",
+        "bitmask": "04"
+      },
+      "show_toast_1": {
+        "name": "Show Toast",
+        "type": "bool",
+        "bitmask": "02"
+      },
+      "has_background_texture_1": {
+        "name": "Has Background Texture",
+        "type": "bool",
+        "bitmask": "01"
+      }
+    },
+    "bitmask_collection": {
+      "[26]x[26]z[12]y": [
+        "x_26",
+        "z_26",
+        "y_12"
+      ],
+      "[4]x[4]z": [
+        "x_4",
+        "z_4"
+      ],
+      "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type": [
+        null,
+        "has_custom_suggestions_1",
+        "has_redirect_node_1",
+        "has_command_1",
+        "command_node_type_2"
+      ],
+      "[6]unused[1]max_present[1]min_present": [
+        null,
+        "max_present_1",
+        "min_present_1"
+      ],
+      "[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities": [
+        null,
+        "only_allow_players_1",
+        "only_allow_entities_1"
+      ],
+      "[7]unused[1]allowMultiple": [
+        null,
+        "allow_multiple_1"
+      ],
+      "[29]_unused[1]hidden[1]show_toast[1]has_background_texture": [
+        null,
+        "hidden_1",
+        "show_toast_1",
+        "has_background_texture_1"
+      ],
+      "[22]x[22]z[20]y": [
+        "x_22",
+        "z_22",
+        "y_20"
+      ]
+    }
+  },
+  "value_mappings": {
+    "command_node_type": {
+      "0": "Root",
+      "1": "Literal",
+      "2": "Argument"
+    }
+  },
+  "component_names": {
+    "vec3f": "Vector (3 floats)",
+    "vec4f": "Vector (4 floats)",
+    "vec3f64": "Vector (3 doubles)",
+    "slot": "Slot Data",
+    "particle": "Particle",
+    "slot/[unnamed]": "Item Stack",
+    "particle/data": "Particle Display Data",
+    "particleData": "Particle Display Data",
+    "particleData/item": "Item",
+    "particleData/destination": "Destination",
+    "ingredient": "Ingredient",
+    "position": "Block Position",
+    "previousMessages": "Previous Messages",
+    "entityMetadataItem": "Entity Metadata Item",
+    "entityMetadata": "Entity Metadata",
+    "minecraft_simple_recipe_format": "Simple Recipe Format",
+    "minecraft_smelting_format": "Smelting Recipe Format",
+    "minecraft_smelting_format/result/slot": "Result",
+    "tags": "Tags",
+    "tags/entries": "Tag Entries",
+    "chunkBlockEntity": "Chunk Block Entity",
+    "chat_session": "Chat Session",
+    "game_profile": "Game Profile",
+    "game_profile/properties": "Game Profile Properties",
+    "command_node": "Command Node",
+    "command_node/children": "Command Node Children",
+    "command_node/extraNodeData": "Extra Node Data",
+    "command_node/extraNodeData/properties": "Extra Node Data Properties",
+    "success/properties": "Properties",
+    "statistics/entries": "Statistics Entries",
+    "advancements/advancementMapping": "Advancement Mapping",
+    "advancements/advancementMapping/value": "Value",
+    "advancements/advancementMapping/value/displayData": "Display Data",
+    "advancements/advancementMapping/criteria": "Criteria",
+    "advancements/advancementMapping/requirements": "Requirements",
+    "advancements/identifiers": "Identifiers",
+    "advancements/progressMapping": "Progress Mapping",
+    "advancements/progressMapping/value": "Value",
+    "tab_complete/matches": "Matches",
+    "declare_commands/nodes": "Command Nodes",
+    "multi_block_change/records": "Records",
+    "window_items/items": "Items",
+    "window_items/carriedItem/slot": "Carried Item",
+    "set_slot/item/slot": "Item",
+    "chat_suggestions/entries": "Suggestion Entries",
+    "explosion/affectedBlockOffsets": "Affected Block Offsets",
+    "map_chunk/blockEntities": "Block Entities",
+    "map_chunk/skyLightMask": "Sky Light Mask",
+    "map_chunk/blockLightMask": "Block Light Mask",
+    "map_chunk/emptySkyLightMask": "Empty Sky Light Mask",
+    "map_chunk/emptyBlockLightMask": "Empty Block Light Mask",
+    "map_chunk/skyLight": "Sky Light",
+    "map_chunk/blockLight": "Block Light",
+    "update_light/skyLightMask": "Sky Light Mask",
+    "update_light/blockLightMask": "Block Light Mask",
+    "update_light/emptySkyLightMask": "Empty Sky Light Mask",
+    "update_light/emptyBlockLightMask": "Empty Block Light Mask",
+    "update_light/skyLight": "Sky Light",
+    "update_light/blockLight": "Block Light",
+    "login/worldNames": "World Names",
+    "login/death": "Death Data",
+    "map/icons": "Map Icons",
+    "trade_list/trades": "Trades",
+    "trade_list/trades/inputItem1/slot": "Input Item 1",
+    "trade_list/trades/inputItem2/slot": "Input Item 2",
+    "trade_list/trades/outputItem/slot": "Output Item",
+    "player_chat/filterTypeMask": "Filter Type Mask",
+    "player_remove/players": "Players",
+    "player_info/data": "Player Data",
+    "entity_destroy/entityIds": "Destroy Entities",
+    "respawn/death": "Death Data",
+    "entity_equipment/equipments": "Equipments",
+    "entity_equipment/equipments/item/slot": "Item",
+    "set_passengers/passengers": "Passengers",
+    "teams/players": "Players",
+    "entity_sound_effect/soundEvent": "Sound Event",
+    "sound_effect/soundEvent": "Sound Event",
+    "entity_update_attributes/properties": "Properties",
+    "entity_update_attributes/properties/modifiers": "Modifiers",
+    "feature_flags/features": "Features",
+    "declare_recipes/recipes": "Recipes",
+    "declare_recipes/recipes/data": "Recipe Format",
+    "declare_recipes/recipes/data/ingredients": "Ingredients",
+    "declare_recipes/recipes/data/result/slot": "Result",
+    "declare_recipes/recipes/data/template/ingredient": "Template",
+    "declare_recipes/recipes/data/base/ingredient": "Base",
+    "declare_recipes/recipes/data/addition/ingredient": "Addition",
+    "chunk_biomes/biomes": "Biomes",
+    "damage_event/sourcePosition/vec3f64": "Source Position",
+    "chat_command/argumentSignatures": "Argument Signatures",
+    "edit_book/pages": "Pages",
+    "window_click/changedSlots": "Changed Slots",
+    "window_click/changedSlots/item/slot": "Item",
+    "window_click/cursorItem/slot": "Cursor Item",
+    "set_creative_slot/item/slot": "Item"
+  }
+}
