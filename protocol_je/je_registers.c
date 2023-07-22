@@ -18,6 +18,7 @@ int hf_server_address_je = -1;
 int hf_next_state_je = -1;
 int hf_ping_time_je = -1;
 int hf_server_status_je = -1;
+int hf_legacy_slp_payload = -1;
 
 int hf_unknown_int_je = -1;
 int hf_unknown_uint_je = -1;
@@ -498,6 +499,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_ping_time_je, "Ping Time", "mcje.ping_time", UINT64, DEC)
             DEFINE_HF(hf_server_status_je, "Server Status", "mcje.server_status", STRING, NONE)
             DEFINE_HF(hf_array_length_je, "Array Length", "mcje.array_length", UINT32, DEC)
+            DEFINE_HF(hf_legacy_slp_payload, "Legacy SLP Payload", "mcje.legacy_slp_payload", UINT8, DEC)
 
             // Unknowns ------------------------------------------------------------------------------------------------
             DEFINE_HF(hf_unknown_int_je, "Unresolved Integer", "mcje.unknown_int", INT32, DEC)

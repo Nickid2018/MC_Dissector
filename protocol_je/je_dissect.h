@@ -23,6 +23,7 @@ extern int hf_server_address_je;
 extern int hf_next_state_je;
 extern int hf_ping_time_je;
 extern int hf_server_status_je;
+extern int hf_legacy_slp_payload;
 
 extern int hf_unknown_int_je;
 extern int hf_unknown_uint_je;

@@ -13,34 +13,36 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protoc
     guint p = read_var_int(data, length, &packet_id);
     if (is_invalid(p))
         return INVALID_DATA;
-    if (packet_id != PACKET_ID_HANDSHAKE)
-        return INVALID_DATA;
-    guint protocol_version;
-    read = read_var_int(data + p, length - p, &protocol_version);
-    if (is_invalid(read))
-        return INVALID_DATA;
-    p += read;
-    guint str_len;
-    read = read_var_int(data + p, length - p, &str_len);
-    if (is_invalid(read))
-        return INVALID_DATA;
-    p += read + str_len + 2;
-    guint next_state;
-    read = read_var_int(data + p, length - p, &next_state);
-    if (is_invalid(read))
-        return INVALID_DATA;
-    if (next_state != 1 && next_state != 2)
-        return INVALID_DATA;
-    gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
-    gint data_version = get_java_data_version(unchecked_java_version);
-    if (data_version == -1)
-        return INVALID_DATA;
-    guint nearest_data_version = find_nearest_java_protocol(data_version);
-    gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
-    ctx->state = next_state + 1;
-    ctx->protocol_set = get_protocol_je_set(nearest_java_version);
-    ctx->protocol_version = protocol_version;
-    return 0;
+    if (packet_id == PACKET_ID_HANDSHAKE) {
+        guint protocol_version;
+        read = read_var_int(data + p, length - p, &protocol_version);
+        if (is_invalid(read))
+            return INVALID_DATA;
+        p += read;
+        guint str_len;
+        read = read_var_int(data + p, length - p, &str_len);
+        if (is_invalid(read))
+            return INVALID_DATA;
+        p += read + str_len + 2;
+        guint next_state;
+        read = read_var_int(data + p, length - p, &next_state);
+        if (is_invalid(read))
+            return INVALID_DATA;
+        if (next_state != 1 && next_state != 2)
+            return INVALID_DATA;
+        gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
+        gint data_version = get_java_data_version(unchecked_java_version);
+        if (data_version == -1)
+            return INVALID_DATA;
+        guint nearest_data_version = find_nearest_java_protocol(data_version);
+        gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
+        ctx->state = next_state + 1;
+        ctx->protocol_set = get_protocol_je_set(nearest_java_version);
+        ctx->protocol_version = protocol_version;
+        return 0;
+    } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING)
+        return 0;
+    return INVALID_DATA;
 }
 
 void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
@@ -53,47 +55,46 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
         return;
     }
     proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
-    if (packet_id != 0x00) {
+    if (packet_id == PACKET_ID_HANDSHAKE) {
+        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read,
+                                           "set_protocol", "Server Handshake");
+
+        guint protocol_version;
+        read = read_var_int(data + p, length - p, &protocol_version);
+        if (is_invalid(read)) {
+            proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
+            return;
+        }
+        proto_tree_add_string_format_value(packet_tree, hf_protocol_version_je, tvb, p, read, "",
+                                           "%d (%s)", protocol_version, get_java_version_name(protocol_version));
+        p += read;
+
+        guint8 *server_address;
+        read = read_buffer(data + p, &server_address);
+        if (is_invalid(read)) {
+            proto_tree_add_string(packet_tree, hf_server_address_je, tvb, p, -1, "Invalid Server Address");
+            return;
+        }
+        guint16 server_port;
+        read += read_ushort(data + p + read, &server_port);
+        proto_tree_add_string_format_value(packet_tree, hf_server_address_je, tvb, p, read, "",
+                                           "%s:%d", server_address, server_port);
+        p += read;
+
+        guint next_state;
+        read = read_var_int(data + p, length - p, &next_state);
+        if (is_invalid(read)) {
+            proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, -1, "Invalid Next State");
+            return;
+        }
+        proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, read, STATE_NAME[next_state + 1]);
+    } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING) {
+        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read,
+                                           "legacy_server_list_ping", "Legacy Server List Ping");
+        guint8 payload = data[p];
+        proto_tree_add_uint(packet_tree, hf_legacy_slp_payload, tvb, p, 1, payload);
+    } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
-        return;
-    }
-    proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Handshake");
-
-    guint protocol_version;
-    read = read_var_int(data + p, length - p, &protocol_version);
-    if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
-        return;
-    }
-    proto_tree_add_string_format_value(packet_tree, hf_protocol_version_je, tvb, p, read, "",
-                                       "%d (%s)", protocol_version, get_java_version_name(protocol_version));
-    p += read;
-
-    guint8 *server_address;
-    read = read_buffer(data + p, &server_address);
-    if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_server_address_je, tvb, p, -1, "Invalid Server Address");
-        return;
-    }
-    guint16 server_port;
-    read += read_ushort(data + p + read, &server_port);
-    proto_tree_add_string_format_value(packet_tree, hf_server_address_je, tvb, p, read, "",
-                                       "%s:%d", server_address, server_port);
-    p += read;
-
-    guint next_state;
-    read = read_var_int(data + p, length - p, &next_state);
-    if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, -1, "Invalid Next State");
-        return;
-    }
-    proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, read, STATE_NAME[next_state + 1]);
-
-    gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
-    gint data_version = get_java_data_version(unchecked_java_version);
-    guint nearest_data_version = find_nearest_java_protocol(data_version);
-    gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
-    get_protocol_je_set(nearest_java_version);
 }
 
 void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
