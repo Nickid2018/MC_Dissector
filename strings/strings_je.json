@@ -18,7 +18,8 @@
     },
     "packet_id_je": {
       "name": "Packet ID",
-      "type": "u8"
+      "type": "u8",
+      "display": "HEX"
     },
     "packet_name_je": {
       "name": "Packet Name",
