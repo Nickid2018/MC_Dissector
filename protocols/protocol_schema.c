@@ -184,6 +184,7 @@ FIELD_MAKE_TREE(optional_nbt) {
 
 DELEGATE_FIELD_MAKE_HEADER(container) {
     bool not_top = wmem_map_lookup(field->additional_info, GINT_TO_POINTER(-1)) == NULL;
+    gchar *now_record = record_get_recording(recorder);
     if (not_top)
         record_push(recorder);
     if (tree && not_top)
@@ -193,8 +194,18 @@ DELEGATE_FIELD_MAKE_HEADER(container) {
     guint total_length = 0;
     for (guint i = 1; i <= length; i++) {
         protocol_field sub_field = wmem_map_lookup(field->additional_info, GUINT_TO_POINTER(i));
-        record_start(recorder, sub_field->name);
+        gchar *field_name = sub_field->name;
+        bool is_anon = strcmp(field_name, "[unnamed]") == 0;
+        if (is_anon && not_top) {
+            record_pop(recorder);
+            record_start(recorder, now_record);
+        } else
+            record_start(recorder, sub_field->name);
         guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
+        if (is_anon && not_top) {
+            record_start(recorder, now_record);
+            record_push(recorder);
+        }
         offset += sub_length;
         total_length += sub_length;
         remaining -= sub_length;
