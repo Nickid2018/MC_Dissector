@@ -684,10 +684,10 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         if (sub_field == NULL)
             return NULL;
         field->make_tree = make_tree_mapper;
-        if (sub_field->hf_resolved) {
-            field->hf_index = sub_field->hf_index;
+        field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags, "string");
+        if (field->hf_index != -1)
             field->hf_resolved = true;
-        } else
+        else
             field->hf_index = GPOINTER_TO_INT(wmem_map_lookup(
                     is_je ? unknown_hf_map_je : unknown_hf_map_be, "string"));
         wmem_map_insert(field->additional_info, "__subfield", sub_field);
