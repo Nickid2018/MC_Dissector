@@ -195,7 +195,7 @@ DELEGATE_FIELD_MAKE_HEADER(container) {
     for (guint i = 1; i <= length; i++) {
         protocol_field sub_field = wmem_map_lookup(field->additional_info, GUINT_TO_POINTER(i));
         gchar *field_name = sub_field->name;
-        bool is_anon = strcmp(field_name, "[unnamed]") == 0;
+        bool is_anon = field_name != NULL && strcmp(field_name, "[unnamed]") == 0;
         if (is_anon && not_top) {
             record_pop(recorder);
             record_start(recorder, now_record);

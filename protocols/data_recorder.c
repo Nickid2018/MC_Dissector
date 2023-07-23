@@ -127,7 +127,7 @@ void *record_query(data_recorder recorder, gchar **path) {
     }
     void *data = wmem_map_lookup(recorder->store_map, recording_path);
     g_free(recording_path);
-    return data;
+    return data == NULL ? data : "";
 }
 
 gchar *record_get_recording(data_recorder recorder) {
