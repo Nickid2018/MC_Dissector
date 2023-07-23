@@ -1,5 +1,53 @@
 {
   "hf_defines": {
+    "invalid_data_je": {
+      "name": "Invalid Data",
+      "type": "string"
+    },
+    "ignored_packet_je": {
+      "name": "Ignored Packet",
+      "type": "string"
+    },
+    "packet_length_je": {
+      "name": "Packet Length",
+      "type": "u32"
+    },
+    "packet_data_length_je": {
+      "name": "Packet Data Length",
+      "type": "u32"
+    },
+    "packet_id_je": {
+      "name": "Packet ID",
+      "type": "u8"
+    },
+    "packet_name_je": {
+      "name": "Packet Name",
+      "type": "string"
+    },
+    "protocol_version_je": {
+      "name": "Protocol Version",
+      "type": "string"
+    },
+    "server_address_je": {
+      "name": "Server Address",
+      "type": "string"
+    },
+    "next_state_je": {
+      "name": "Next State",
+      "type": "string"
+    },
+    "ping_time_je": {
+      "name": "Ping Time",
+      "type": "u64"
+    },
+    "server_status_je": {
+      "name": "Server Status",
+      "type": "string"
+    },
+    "legacy_slp_payload": {
+      "name": "Legacy SLP Payload",
+      "type": "u8"
+    },
     "x": {
       "name": "X",
       "type": [
@@ -562,7 +610,8 @@
       "name": "Window ID",
       "type": [
         "u32",
-        "i8"
+        "i8",
+        "u8"
       ]
     },
     "inventory_type": {
@@ -757,6 +806,7 @@
     "view_distance": {
       "name": "View Distance",
       "type": [
+        "i8",
         "u32",
         "i32"
       ]
@@ -842,7 +892,7 @@
     },
     "can_restock": {
       "name": "Can Restock",
-      "type": "vool"
+      "type": "bool"
     },
     "dx": {
       "name": "Delta X",
@@ -880,7 +930,7 @@
       "name": "Walking Speed",
       "type": "f32"
     },
-    "index": {
+    "_index": {
       "name": "Index",
       "type": "u32"
     },
@@ -1494,6 +1544,107 @@
     "killer_id": {
       "name": "Killer ID",
       "type": "i32"
+    },
+    "x_26": {
+      "name": "X",
+      "type": "i64",
+      "bitmask": "FFFFFFC000000000"
+    },
+    "z_26": {
+      "name": "Z",
+      "type": "i64",
+      "bitmask": "0000003FFFFFF000"
+    },
+    "y_12": {
+      "name": "Y",
+      "type": "i64",
+      "bitmask": "0000000000000FFF"
+    },
+    "x_4": {
+      "name": "X",
+      "type": "i8",
+      "bitmask": "F0"
+    },
+    "z_4": {
+      "name": "Z",
+      "type": "i8",
+      "bitmask": "0F"
+    },
+    "x_22": {
+      "name": "X",
+      "type": "i64",
+      "bitmask": "FFFFFC0000000000"
+    },
+    "z_22": {
+      "name": "Z",
+      "type": "i64",
+      "bitmask": "000003FFFFF00000"
+    },
+    "y_20": {
+      "name": "Y",
+      "type": "i64",
+      "bitmask": "00000000000FFFFF"
+    },
+    "has_custom_suggestions_1": {
+      "name": "Has Custom Suggestions",
+      "type": "bool",
+      "bitmask": "10"
+    },
+    "has_redirect_node_1": {
+      "name": "Has Redirect Node",
+      "type": "bool",
+      "bitmask": "08"
+    },
+    "has_command_1": {
+      "name": "Executable",
+      "type": "bool",
+      "bitmask": "04"
+    },
+    "command_node_type_2": {
+      "name": "Command Node Type",
+      "type": "u8",
+      "bitmask": "03",
+      "value_mapping": "command_node_type"
+    },
+    "max_present_1": {
+      "name": "Max Present",
+      "type": "bool",
+      "bitmask": "02"
+    },
+    "min_present_1": {
+      "name": "Min Present",
+      "type": "bool",
+      "bitmask": "01"
+    },
+    "only_allow_players_1": {
+      "name": "Only Allow Players",
+      "type": "bool",
+      "bitmask": "02"
+    },
+    "only_allow_entities_1": {
+      "name": "Only Allow Entities",
+      "type": "bool",
+      "bitmask": "01"
+    },
+    "allow_multiple_1": {
+      "name": "Allow Multiple",
+      "type": "bool",
+      "bitmask": "01"
+    },
+    "hidden_1": {
+      "name": "Hidden",
+      "type": "bool",
+      "bitmask": "04"
+    },
+    "show_toast_1": {
+      "name": "Show Toast",
+      "type": "bool",
+      "bitmask": "02"
+    },
+    "has_background_texture_1": {
+      "name": "Has Background Texture",
+      "type": "bool",
+      "bitmask": "01"
     }
   },
   "mappings": {
@@ -1559,7 +1710,7 @@
     "entityMetadataItem[painting_variant]": "painting_variant",
     "entityMetadataItem[sniffer_state]": "sniffer_state",
     "entityMetadata/key": "id",
-    "entityMetadata/type": "type_string",
+    "entityMetadata/type": "type",
     "minecraft_simple_recipe_format/category": "category",
     "minecraft_smelting_format/group": "group",
     "minecraft_smelting_format/category": "category",
@@ -1574,10 +1725,10 @@
     "publicKey/keyBytes": "key_bytes",
     "publicKey/keySignature": "signature",
     "game_profile/name": "name",
-    "game_profile/properties/key": "key_string",
-    "game_profile/properties/value": "value_string",
-    "game_profile/properties/signature": "signature_string",
-    "command_node/children": "children_int",
+    "game_profile/properties/key": "key",
+    "game_profile/properties/value": "value",
+    "game_profile/properties/signature": "signature",
+    "command_node/children": "children",
     "command_node/redirectNode": "redirect_node",
     "command_node/extraNodeData/name": "name",
     "command_node/extraNodeData/parser": "parser",
@@ -1590,12 +1741,12 @@
     "publicKey": "public_key",
     "verifyToken": "verify_token",
     "username": "user_name",
-    "success/properties/key": "key_string",
-    "success/properties/value": "value_string",
-    "success/properties/signature": "signature_string",
-    "compress/threshold": "threshold_int",
+    "success/properties/key": "key",
+    "success/properties/value": "value",
+    "success/properties/signature": "signature",
+    "compress/threshold": "threshold",
     "login_plugin_request/messageId": "message_id",
-    "login_plugin_request/channel": "channel_str",
+    "login_plugin_request/channel": "channel",
     "login_plugin_request/data": "data",
     "playerUUID": "uuid",
     "sharedSecret": "shared_secret",
@@ -1630,20 +1781,20 @@
     "statistics/entries/statisticId": "stat_id",
     "statistics/entries/value": "value",
     "advancements/reset": "reset",
-    "advancements/advancementMapping/key": "key_string",
-    "advancements/advancementMapping/value/parentId": "parent_id_string",
+    "advancements/advancementMapping/key": "key",
+    "advancements/advancementMapping/value/parentId": "parent_id",
     "advancements/advancementMapping/value/displayData/title": "title",
     "advancements/advancementMapping/value/displayData/description": "desc",
     "advancements/advancementMapping/value/displayData/frameType": "frame_type",
     "advancements/advancementMapping/value/displayData/backgroundTexture": "background_texture",
     "advancements/advancementMapping/value/displayData/xCord": "x",
     "advancements/advancementMapping/value/displayData/yCord": "y",
-    "advancements/advancementMapping/value/criteria/key": "key_string",
-    "advancements/advancementMapping/value/criteria/value": "value_string",
+    "advancements/advancementMapping/value/criteria/key": "key",
+    "advancements/advancementMapping/value/criteria/value": "value",
     "advancements/advancementMapping/value/requirements": "requirement",
     "advancements/advancementMapping/value/sendsTelemtryData": "send_telemetry_data",
-    "advancements/identifiers": "id_string",
-    "advancements/progressMapping/key": "key_string",
+    "advancements/identifiers": "id",
+    "advancements/progressMapping/key": "key",
     "advancements/progressMapping/value/criterionIdentifier": "criterion_id",
     "advancements/progressMapping/value/criterionProgress": "criterion_progress",
     "block_break_animation/entityId": "entity_id",
@@ -1827,7 +1978,7 @@
     "abilities/flyingSpeed": "flying_speed",
     "abilities/walkingSpeed": "walking_speed",
     "player_chat/senderUuid": "uuid",
-    "player_chat/index": "index",
+    "player_chat/index": "_index",
     "player_chat/signature": "signature",
     "player_chat/plainMessage": "plain_message",
     "player_chat/timestamp": "timestamp",
@@ -2056,9 +2207,9 @@
     "update_structure_block/action": "action",
     "update_structure_block/mode": "mode",
     "update_structure_block/name": "name",
-    "update_structure_block/offset_x": "offset_x_int",
-    "update_structure_block/offset_y": "offset_y_int",
-    "update_structure_block/offset_z": "offset_z_int",
+    "update_structure_block/offset_x": "offset_x",
+    "update_structure_block/offset_y": "offset_y",
+    "update_structure_block/offset_z": "offset_z",
     "update_structure_block/size_x": "size_x",
     "update_structure_block/size_y": "size_y",
     "update_structure_block/size_z": "size_z",
@@ -2071,7 +2222,7 @@
     "tab_complete/text": "text",
     "client_command/actionId": "action_id",
     "settings/locale": "locale",
-    "settings/viewDistance": "view_distance_int",
+    "settings/viewDistance": "view_distance",
     "settings/chatFlags": "chat_flags",
     "settings/chatColors": "chat_color",
     "settings/skinParts": "skin_parts",
@@ -2126,7 +2277,7 @@
     "recipe_book/bookOpen": "book_open",
     "recipe_book/filterActive": "filter_active",
     "resource_pack_receive/result": "result",
-    "held_item_slot/slot": "slot",
+    "held_item_slot/slotId": "slot",
     "set_creative_slot/slot": "slot",
     "update_jigsaw_block/name": "name",
     "update_jigsaw_block/target": "target",
@@ -2159,153 +2310,48 @@
     "end_combat_event/entityId": "killer_id",
     "death_combat_event/entityId": "killer_id"
   },
-  "bitmask": {
-    "hf_defines": {
-      "x_26": {
-        "name": "X",
-        "type": "i64",
-        "bitmask": "FFFFFFC000000000"
-      },
-      "z_26": {
-        "name": "Z",
-        "type": "i64",
-        "bitmask": "0000003FFFFFF000"
-      },
-      "y_12": {
-        "name": "Y",
-        "type": "i64",
-        "bitmask": "0000000000000FFF"
-      },
-      "x_4": {
-        "name": "X",
-        "type": "i8",
-        "bitmask": "F0"
-      },
-      "z_4": {
-        "name": "Z",
-        "type": "i8",
-        "bitmask": "0F"
-      },
-      "x_22": {
-        "name": "X",
-        "type": "i64",
-        "bitmask": "FFFFFC0000000000"
-      },
-      "z_22": {
-        "name": "Z",
-        "type": "i64",
-        "bitmask": "000003FFFFF00000"
-      },
-      "y_20": {
-        "name": "Y",
-        "type": "i64",
-        "bitmask": "00000000000FFFFF"
-      },
-      "has_custom_suggestions_1": {
-        "name": "Has Custom Suggestions",
-        "type": "bool",
-        "bitmask": "10"
-      },
-      "has_redirect_node_1": {
-        "name": "Has Redirect Node",
-        "type": "bool",
-        "bitmask": "08"
-      },
-      "has_command_1": {
-        "name": "Executable",
-        "type": "bool",
-        "bitmask": "04"
-      },
-      "command_node_type_2": {
-        "name": "Command Node Type",
-        "type": "u8",
-        "bitmask": "03",
-        "value_mapping": "command_node_type"
-      },
-      "max_present_1": {
-        "name": "Max Present",
-        "type": "bool",
-        "bitmask": "02"
-      },
-      "min_present_1": {
-        "name": "Min Present",
-        "type": "bool",
-        "bitmask": "01"
-      },
-      "only_allow_players_1": {
-        "name": "Only Allow Players",
-        "type": "bool",
-        "bitmask": "02"
-      },
-      "only_allow_entities_1": {
-        "name": "Only Allow Entities",
-        "type": "bool",
-        "bitmask": "01"
-      },
-      "allow_multiple_1": {
-        "name": "Allow Multiple",
-        "type": "bool",
-        "bitmask": "01"
-      },
-      "hidden_1": {
-        "name": "Hidden",
-        "type": "bool",
-        "bitmask": "04"
-      },
-      "show_toast_1": {
-        "name": "Show Toast",
-        "type": "bool",
-        "bitmask": "02"
-      },
-      "has_background_texture_1": {
-        "name": "Has Background Texture",
-        "type": "bool",
-        "bitmask": "01"
-      }
-    },
-    "bitmask_collection": {
-      "[26]x[26]z[12]y": [
-        "x_26",
-        "z_26",
-        "y_12"
-      ],
-      "[4]x[4]z": [
-        "x_4",
-        "z_4"
-      ],
-      "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type": [
-        null,
-        "has_custom_suggestions_1",
-        "has_redirect_node_1",
-        "has_command_1",
-        "command_node_type_2"
-      ],
-      "[6]unused[1]max_present[1]min_present": [
-        null,
-        "max_present_1",
-        "min_present_1"
-      ],
-      "[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities": [
-        null,
-        "only_allow_players_1",
-        "only_allow_entities_1"
-      ],
-      "[7]unused[1]allowMultiple": [
-        null,
-        "allow_multiple_1"
-      ],
-      "[29]_unused[1]hidden[1]show_toast[1]has_background_texture": [
-        null,
-        "hidden_1",
-        "show_toast_1",
-        "has_background_texture_1"
-      ],
-      "[22]x[22]z[20]y": [
-        "x_22",
-        "z_22",
-        "y_20"
-      ]
-    }
+  "bitmask_collection": {
+    "[26]x[26]z[12]y": [
+      "x_26",
+      "z_26",
+      "y_12"
+    ],
+    "[4]x[4]z": [
+      "x_4",
+      "z_4"
+    ],
+    "[3]unused[1]has_custom_suggestions[1]has_redirect_node[1]has_command[2]command_node_type": [
+      null,
+      "has_custom_suggestions_1",
+      "has_redirect_node_1",
+      "has_command_1",
+      "command_node_type_2"
+    ],
+    "[6]unused[1]max_present[1]min_present": [
+      null,
+      "max_present_1",
+      "min_present_1"
+    ],
+    "[6]unused[1]onlyAllowPlayers[1]onlyAllowEntities": [
+      null,
+      "only_allow_players_1",
+      "only_allow_entities_1"
+    ],
+    "[7]unused[1]allowMultiple": [
+      null,
+      "allow_multiple_1"
+    ],
+    "[29]_unused[1]hidden[1]show_toast[1]has_background_texture": [
+      null,
+      "hidden_1",
+      "show_toast_1",
+      "has_background_texture_1"
+    ],
+    "[22]x[22]z[20]y": [
+      "x_22",
+      "z_22",
+      "y_20"
+    ]
   },
   "value_mappings": {
     "command_node_type": {

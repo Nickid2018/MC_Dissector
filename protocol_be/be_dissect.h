@@ -11,6 +11,8 @@ extern dissector_handle_t mcbe_boot_handle, mcbe_handle, ignore_be_handle;
 
 extern int ett_sub_be;
 extern wmem_map_t *name_hf_map_be;
+extern wmem_map_t *complex_name_map_be;
+extern wmem_map_t *complex_hf_map_be;
 extern wmem_map_t *unknown_hf_map_be;
 extern wmem_map_t *bitmask_hf_map_be;
 extern wmem_map_t *component_map_be;

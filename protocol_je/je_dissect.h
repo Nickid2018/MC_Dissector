@@ -6,10 +6,11 @@
 #define MC_DISSECTOR_JE_DISSECT_H
 
 #include <epan/packet.h>
-#include "../protocol_data.h"
+#include "protocol_data.h"
 
-extern dissector_handle_t mcje_boot_handle, mcje_handle, ignore_je_handle;
-
+extern dissector_handle_t mcje_boot_handle;
+extern dissector_handle_t mcje_handle;
+extern dissector_handle_t ignore_je_handle;
 extern gchar *pref_ignore_packets_je;
 
 extern int hf_invalid_data_je;
@@ -37,8 +38,12 @@ extern int hf_unknown_boolean_je;
 extern int hf_unknown_uuid_je;
 extern int hf_array_length_je;
 
-extern int ett_mcje, ett_je_proto, ett_sub_je;
+extern int ett_mcje;
+extern int ett_je_proto;
+extern int ett_sub_je;
 extern wmem_map_t *name_hf_map_je;
+extern wmem_map_t *complex_name_map_je;
+extern wmem_map_t *complex_hf_map_je;
 extern wmem_map_t *unknown_hf_map_je;
 extern wmem_map_t *bitmask_hf_map_je;
 extern wmem_map_t *component_map_je;

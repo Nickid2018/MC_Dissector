@@ -4,9 +4,9 @@
 
 #include <stdlib.h>
 #include "protocol_schema.h"
-#include "../protocol_data.h"
-#include "../protocol_je/je_dissect.h"
-#include "../protocol_be/be_dissect.h"
+#include "protocol_data.h"
+#include "protocol_je/je_dissect.h"
+#include "protocol_be/be_dissect.h"
 
 #define BYTES_MAX_LENGTH 200
 
@@ -457,45 +457,59 @@ FIELD_MAKE_TREE(basic_type) {
 
 wmem_map_t *native_make_tree_map = NULL;
 wmem_map_t *native_unknown_fallback_map = NULL;
+wmem_map_t *native_types = NULL;
 
-#define ADD_NATIVE(json_name, make_name, unknown_flag) \
+#define ADD_NATIVE(json_name, make_name, unknown_flag, type_name) \
     wmem_map_insert(native_make_tree_map, #json_name, make_tree_##make_name); \
-    wmem_map_insert(native_unknown_fallback_map, #json_name, #unknown_flag);
+    wmem_map_insert(native_unknown_fallback_map, #json_name, #unknown_flag); \
+    wmem_map_insert(native_types, #json_name, #type_name);
 
 void init_schema_data() {
     native_make_tree_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     native_unknown_fallback_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    native_types = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
 
-    ADD_NATIVE(varint, var_int, uint)
-    ADD_NATIVE(optvarint, var_int, uint)
-    ADD_NATIVE(varlong, var_long, uint64)
-    ADD_NATIVE(string, string, string)
-    ADD_NATIVE(u8, u8, uint)
-    ADD_NATIVE(u16, u16, uint)
-    ADD_NATIVE(u32, u32, uint)
-    ADD_NATIVE(u64, u64, uint64)
-    ADD_NATIVE(i8, i8, int)
-    ADD_NATIVE(i16, i16, int)
-    ADD_NATIVE(i32, i32, int)
-    ADD_NATIVE(i64, i64, int64)
-    ADD_NATIVE(bool, boolean, boolean)
-    ADD_NATIVE(f32, f32, float)
-    ADD_NATIVE(f64, f64, double)
-    ADD_NATIVE(UUID, uuid, uuid)
-    ADD_NATIVE(restBuffer, rest_buffer, bytes)
-    ADD_NATIVE(void, void, uint)
-    ADD_NATIVE(nbt, nbt, bytes)
-    ADD_NATIVE(optionalNbt, optional_nbt, bytes)
+    ADD_NATIVE(varint, var_int, uint, u32)
+    ADD_NATIVE(optvarint, var_int, uint, u32)
+    ADD_NATIVE(varlong, var_long, uint64, u64)
+    ADD_NATIVE(string, string, string, string)
+    ADD_NATIVE(u8, u8, uint, u8)
+    ADD_NATIVE(u16, u16, uint, u16)
+    ADD_NATIVE(u32, u32, uint, u32)
+    ADD_NATIVE(u64, u64, uint64, u64)
+    ADD_NATIVE(i8, i8, int, i8)
+    ADD_NATIVE(i16, i16, int, i16)
+    ADD_NATIVE(i32, i32, int, i32)
+    ADD_NATIVE(i64, i64, int64, i64)
+    ADD_NATIVE(bool, boolean, boolean, bool)
+    ADD_NATIVE(f32, f32, float, f32)
+    ADD_NATIVE(f64, f64, double, f64)
+    ADD_NATIVE(UUID, uuid, uuid, uuid)
+    ADD_NATIVE(restBuffer, rest_buffer, bytes, bytes)
+    ADD_NATIVE(void, void, uint, u32)
+    ADD_NATIVE(nbt, nbt, bytes, bytes)
+    ADD_NATIVE(optionalNbt, optional_nbt, bytes, bytes)
 }
 
-int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags) {
+int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags, gchar *type) {
     wmem_map_t *search_hf_map = is_je ? name_hf_map_je : name_hf_map_be;
+    wmem_map_t *search_complex_name_map = is_je ? complex_name_map_je : complex_name_map_be;
+    wmem_map_t *search_complex_hf_map = is_je ? complex_hf_map_je : complex_hf_map_be;
+
     if (path_array == NULL) {
         int get_name = GPOINTER_TO_INT(wmem_map_lookup(search_hf_map, name));
         if (get_name != 0)
             return get_name;
+        gchar *mapped_name = wmem_map_lookup(search_complex_name_map, name);
+        if (mapped_name != NULL) {
+            get_name = GPOINTER_TO_INT(wmem_map_lookup(
+                    wmem_map_lookup(search_complex_hf_map, mapped_name), type));
+            if (get_name != 0)
+                return get_name;
+        }
         return -1;
     }
+
     wmem_list_frame_t *now;
     wmem_list_frame_t *now_flag = wmem_list_head(additional_flags);
     while (now_flag != NULL) {
@@ -507,6 +521,14 @@ int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_
                                                            GPOINTER_TO_UINT(wmem_list_frame_data(now))));
             if (get_name != 0)
                 return get_name;
+            gchar *mapped_name = wmem_map_lookup(search_complex_name_map, name_with_flag +
+                                                                          GPOINTER_TO_UINT(wmem_list_frame_data(now)));
+            if (mapped_name != NULL) {
+                get_name = GPOINTER_TO_INT(wmem_map_lookup(
+                        wmem_map_lookup(search_complex_hf_map, mapped_name), type));
+                if (get_name != 0)
+                    return get_name;
+            }
             now = wmem_list_frame_next(now);
         }
         now_flag = wmem_list_frame_next(now_flag);
@@ -518,6 +540,14 @@ int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_
                                                        name + GPOINTER_TO_UINT(wmem_list_frame_data(now))));
         if (get_name != 0)
             return get_name;
+        gchar *mapped_name = wmem_map_lookup(search_complex_name_map, name +
+                                                                      GPOINTER_TO_UINT(wmem_list_frame_data(now)));
+        if (mapped_name != NULL) {
+            get_name = GPOINTER_TO_INT(wmem_map_lookup(
+                    wmem_map_lookup(search_complex_hf_map, mapped_name), type));
+            if (get_name != 0)
+                return get_name;
+        }
         now = wmem_list_frame_next(now);
     }
     return -1;
@@ -540,6 +570,7 @@ gchar *search_name(bool is_je, wmem_list_t *path_array, gchar *name) {
         now = wmem_list_frame_next(now);
     }
 
+
     return "unnamed";
 }
 
@@ -561,7 +592,8 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         void *make_tree_func = wmem_map_lookup(native_make_tree_map, type);
         if (make_tree_func != NULL) {
             protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
-            field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags);
+            field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags,
+                                              wmem_map_lookup(native_types, type));
             if (field->hf_index != -1)
                 field->hf_resolved = true;
             else {
@@ -631,7 +663,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         wmem_map_insert(field->additional_info, 0, sub_field);
         return field;
     } else if (strcmp(type, "buffer") == 0) { // buffer
-        field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags);
+        field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags, "bytes");
         if (field->hf_index != -1)
             field->hf_resolved = true;
         else
@@ -718,7 +750,8 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         if (sub_field == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
-        field->make_tree = is_je ? make_tree_je_top_bit_set_terminated_array : make_tree_be_top_bit_set_terminated_array;
+        field->make_tree = is_je ? make_tree_je_top_bit_set_terminated_array
+                                 : make_tree_be_top_bit_set_terminated_array;
         return field;
     } else if (strcmp(type, "switch") == 0) {
         char *compare_data = cJSON_GetObjectItem(fields, "compareTo")->valuestring;

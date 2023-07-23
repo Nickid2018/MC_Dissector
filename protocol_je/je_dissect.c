@@ -5,7 +5,7 @@
 #include <epan/conversation.h>
 #include <epan/dissectors/packet-tcp.h>
 #include <epan/proto_data.h>
-#include "../mc_dissector.h"
+#include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
 #include "je_protocol_constants.h"

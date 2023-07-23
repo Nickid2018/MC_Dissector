@@ -27,6 +27,15 @@ link_directories($ENV{GLIB_DIR}/lib)
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
+# String data
+execute_process(COMMAND python "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+        "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
+        ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
+
+message(STATUS "Generate Output ${GEN_OUTPUT}")
+message(STATUS "Generate Error ${GEN_ERROR}")
+message(STATUS "Generate Result ${GEN_RESULT}")
+
 # Protocol version data
 file(GLOB PROTOCOL_VERSION_JE_DATA_FILE "minecraft-data/data/pc/common/protocolVersions.json")
 file(GLOB PROTOCOL_VERSION_BE_DATA_FILE "minecraft-data/data/bedrock/common/protocolVersions.json")
@@ -96,6 +105,7 @@ file(APPEND ${PROTOCOL_SCHEMA_FILE} "const int BE_PROTOCOL_SIZE = ${BE_PROTOCOL_
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
 include_directories(${GEN_RESOURCE_DIR})
+include_directories(".")
 
 add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${PROTOCOL_JE_SOURCES} ${PROTOCOL_JE_HEADERS}
