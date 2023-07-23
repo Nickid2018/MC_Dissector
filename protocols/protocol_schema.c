@@ -199,13 +199,12 @@ DELEGATE_FIELD_MAKE_HEADER(container) {
         if (is_anon && not_top) {
             record_pop(recorder);
             record_start(recorder, now_record);
-        } else
-            record_start(recorder, sub_field->name);
-        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
-        if (is_anon && not_top) {
+            sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
             record_start(recorder, now_record);
             record_push(recorder);
         }
+        record_start(recorder, sub_field->name);
+        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
         offset += sub_length;
         total_length += sub_length;
         remaining -= sub_length;
