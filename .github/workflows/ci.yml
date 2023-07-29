@@ -64,15 +64,6 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
-    env:
-      PLATFORM: x64
-      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.0
-      GLIB_DIR: C:/wireshark-win64-libs-4.0/vcpkg-export-20220726-1-win64ws/installed/x64-windows
-      WIRESHARK_DIR: ${{ github.workspace }}/wireshark
-      WIRESHARK_BUILD_DIR: ${{ github.workspace }}/wireshark/build
-      WIRESHARK_DIR_LIB: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo
-      WIRESHARK_LIB: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo/wireshark.lib
-      WSUTIL_LIB: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo/wsutil.lib
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -81,9 +72,6 @@ jobs:
           path: dissector
       - name: Install Wireshark Deps
         run: apt-get install cmake libglib2.0 libwireshark libwireshark-dev
-        working-directory: wireshark/build
-      - run: ninja -j8 epan
-        working-directory: wireshark/build
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -G Ninja -B build
