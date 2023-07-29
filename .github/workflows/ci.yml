@@ -71,7 +71,7 @@ jobs:
           submodules: true
           path: dissector
       - name: Install Wireshark Deps
-        run: apt-get install cmake libglib2.0 libwireshark libwireshark-dev
+        run: sudo apt-get install cmake libglib2.0 libwireshark libwireshark-dev
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -G Ninja -B build
