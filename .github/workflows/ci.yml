@@ -71,17 +71,17 @@ jobs:
           submodules: true
           path: dissector
       - name: Install Deps
-        run: sudo apt-get install cmake libglib2.0 libwireshark-dev ninja clang
+        run: sudo apt-get install cmake libglib2.0 libwireshark-dev make clang
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
-        run: cmake -S . -G Ninja -B build
+        run: cmake -S . -B build
         working-directory: dissector
       - name: Configure dissector (Release)
         if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
-        run: cmake -DCMAKE_BUILD_TYPE=Release -S . -G Ninja -B build
+        run: cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
         working-directory: dissector
       - name: Build dissector
-        run: ninja -j8
+        run: make -j8
         working-directory: dissector/build
       - name: Upload dissector
         uses: actions/upload-artifact@v2
