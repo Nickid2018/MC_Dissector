@@ -69,25 +69,22 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-          path: dissector
       - name: Install Deps
         run: sudo apt-get install cmake libglib2.0 libwireshark-dev make clang
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -B build
-        working-directory: dissector
       - name: Configure dissector (Release)
         if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
         run: cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
-        working-directory: dissector
       - name: Build dissector
         run: make -j8
-        working-directory: dissector/build
+        working-directory: build
       - name: Upload dissector
         uses: actions/upload-artifact@v2
         with:
           name: linux
-          path: dissector/build/mcdissector.so
+          path: build/mcdissector.so
 
   publish:
     needs: [ build-windows, build-linux ]
