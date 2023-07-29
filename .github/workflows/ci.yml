@@ -61,8 +61,36 @@ jobs:
           name: windows
           path: dissector/build/mcdissector.dll
 
+  build-linux:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          path: dissector
+      - name: Install Deps
+        run: sudo apt-get install cmake libglib2.0 libwireshark-dev make clang
+      - name: Configure dissector (Debug)
+        if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
+        run: cmake -S . -B build
+        working-directory: dissector
+      - name: Configure dissector (Release)
+        if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
+        run: cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
+        working-directory: dissector
+      - name: Build dissector
+        run: make -j8
+        working-directory: dissector/build
+      - name: Upload dissector
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux
+          path: dissector/build/mcdissector.so
+
   publish:
-    needs: [ build-windows ]
+    needs: [ build-windows, build-linux ]
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
     permissions: write-all
@@ -71,6 +99,10 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: windows
+      - name: Download linux artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: linux
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -89,4 +121,13 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./mcdissector.dll
           asset_name: mcdissector.dll
+          asset_content_type: application/octet-stream
+      - name: Upload mcdissector.so
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./mcdissector.so
+          asset_name: mcdissector.so
           asset_content_type: application/octet-stream

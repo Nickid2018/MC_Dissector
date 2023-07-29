@@ -14,21 +14,42 @@ file(GLOB PROTOCOL_HEADERS "./protocols/*.h")
 file(GLOB LIBRARY_CJSON_SOURCES "./cJSON/cJSON*.c")
 file(GLOB LIBRARY_CJSON_HEADERS "./cJSON/cJSON*.h")
 
-include_directories(
-        $ENV{WIRESHARK_DIR}
-        $ENV{WIRESHARK_DIR}/include
-        $ENV{WIRESHARK_BUILD_DIR}
-        $ENV{GLIB_DIR}/include/glib-2.0
-        $ENV{GLIB_DIR}/lib/glib-2.0/include
-)
-link_directories($ENV{WIRESHARK_DIR_LIB})
-link_directories($ENV{GLIB_DIR}/lib)
-
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
+set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
+set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
+if(DEFINED ENV{WIRESHARK_DIR})
+    include_directories(
+            $ENV{WIRESHARK_DIR}
+            $ENV{WIRESHARK_DIR}/include
+            $ENV{WIRESHARK_BUILD_DIR}
+    )
+    link_directories($ENV{WIRESHARK_DIR_LIB})
+    link_libraries(wireshark)
+    link_libraries(wsutil)
+else()
+    find_package(PkgConfig)
+    pkg_check_modules(wireshark REQUIRED IMPORTED_TARGET wireshark)
+    link_libraries(PkgConfig::wireshark)
+endif()
+
+set(GLIB_DIR $ENV{GLIB_DIR})
+if(DEFINED ENV{GLIB_DIR})
+    include_directories(
+            $ENV{GLIB_DIR}/include/glib-2.0
+            $ENV{GLIB_DIR}/lib/glib-2.0/include
+    )
+    link_directories($ENV{GLIB_DIR}/lib)
+    link_libraries(glib-2.0)
+else()
+    find_package(PkgConfig)
+    pkg_check_modules(glib REQUIRED IMPORTED_TARGET glib-2.0)
+    link_libraries(PkgConfig::glib)
+endif()
+
 # String data
-execute_process(COMMAND python "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
         ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
 
@@ -113,9 +134,6 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${PROTOCOL_SOURCES} ${PROTOCOL_HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
-target_link_libraries(MC_Dissector wireshark)
-target_link_libraries(MC_Dissector wsutil)
-target_link_libraries(MC_Dissector glib-2.0)
 
 install(TARGETS MC_Dissector)
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
