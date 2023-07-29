@@ -1,7 +1,7 @@
 //
 // Created by Nickid2018 on 2023/7/12.
 //
-#include <config.h>
+#include "config.h"
 
 #define WS_BUILD_DLL
 

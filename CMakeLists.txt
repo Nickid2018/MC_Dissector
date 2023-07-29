@@ -14,12 +14,35 @@ file(GLOB PROTOCOL_HEADERS "./protocols/*.h")
 file(GLOB LIBRARY_CJSON_SOURCES "./cJSON/cJSON*.c")
 file(GLOB LIBRARY_CJSON_HEADERS "./cJSON/cJSON*.h")
 
-include_directories(
-        $ENV{WIRESHARK_DIR}
-        $ENV{WIRESHARK_DIR}/include
-        $ENV{WIRESHARK_BUILD_DIR}
-)
-link_directories($ENV{WIRESHARK_DIR_LIB})
+set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
+file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
+
+set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
+set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
+if(${WIRESHARK_DIR})
+    include_directories(
+            $ENV{WIRESHARK_DIR}
+            $ENV{WIRESHARK_DIR}/include
+            $ENV{WIRESHARK_BUILD_DIR}
+    )
+    link_directories($ENV{WIRESHARK_DIR_LIB})
+    link_libraries(MC_Dissector wireshark)
+    link_libraries(MC_Dissector wsutil)
+    link_libraries(MC_Dissector glib-2.0)
+else()
+    find_package(PkgConfig)
+    pkg_check_modules(wireshark REQUIRED IMPORTED_TARGET wireshark)
+    link_libraries(PkgConfig::wireshark)
+    # Create config.h and use system wireshark version
+    set(WIRESHARK_DUMMY_CONFIG_HEADER "${GEN_RESOURCE_DIR}/config.h")
+    string(REGEX MATCH "([0-9]*)" WIRESHARK_VERSION_MAJOR ${wireshark_VERSION})
+    string(REGEX MATCH "([0-9]*)\\.([0-9]*)" WIRESHARK_VERSION_MINOR ${wireshark_VERSION})
+    string(REPLACE "${WIRESHARK_VERSION_MAJOR}." "" WIRESHARK_VERSION_MINOR ${WIRESHARK_VERSION_MINOR})
+    message(STATUS "Detected wireshark version ${WIRESHARK_VERSION_MAJOR}.${WIRESHARK_VERSION_MINOR}")
+    file(WRITE ${WIRESHARK_DUMMY_CONFIG_HEADER} "#pragma once\n")
+    file(APPEND ${WIRESHARK_DUMMY_CONFIG_HEADER} "#define VERSION_MAJOR ${WIRESHARK_VERSION_MAJOR}\n")
+    file(APPEND ${WIRESHARK_DUMMY_CONFIG_HEADER} "#define VERSION_MINOR ${WIRESHARK_VERSION_MINOR}\n")
+endif()
 
 set(GLIB_DIR $ENV{GLIB_DIR})
 if(${GLIB_DIR})
@@ -30,12 +53,9 @@ if(${GLIB_DIR})
     link_directories($ENV{GLIB_DIR}/lib)
 else()
     find_package(PkgConfig)
-    pkg_check_modules(glib IMPORTED_TARGET glib-2.0)
+    pkg_check_modules(glib REQUIRED IMPORTED_TARGET glib-2.0)
     link_libraries(PkgConfig::glib)
 endif()
-
-set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
-file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 # String data
 execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
@@ -123,9 +143,6 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${PROTOCOL_SOURCES} ${PROTOCOL_HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
-target_link_libraries(MC_Dissector wireshark)
-target_link_libraries(MC_Dissector wsutil)
-target_link_libraries(MC_Dissector glib-2.0)
 
 install(TARGETS MC_Dissector)
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
