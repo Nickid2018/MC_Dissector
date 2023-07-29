@@ -24,6 +24,10 @@ include_directories(
 link_directories($ENV{WIRESHARK_DIR_LIB})
 link_directories($ENV{GLIB_DIR}/lib)
 
+find_package(PkgConfig)
+pkg_check_modules(glib IMPORTED_TARGET glib-2.0)
+link_libraries(PkgConfig::glib)
+
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
