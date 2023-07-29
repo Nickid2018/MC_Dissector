@@ -19,7 +19,7 @@ file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
 set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
-if(${WIRESHARK_DIR})
+if(DEFINED ENV{WIRESHARK_DIR})
     include_directories(
             $ENV{WIRESHARK_DIR}
             $ENV{WIRESHARK_DIR}/include
@@ -44,7 +44,7 @@ else()
 endif()
 
 set(GLIB_DIR $ENV{GLIB_DIR})
-if(${GLIB_DIR})
+if(DEFINED ENV{GLIB_DIR})
     include_directories(
             $ENV{GLIB_DIR}/include/glib-2.0
             $ENV{GLIB_DIR}/lib/glib-2.0/include
