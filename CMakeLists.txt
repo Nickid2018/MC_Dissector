@@ -28,7 +28,7 @@ set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 # String data
-execute_process(COMMAND python "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
         ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
 
