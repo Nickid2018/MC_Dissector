@@ -132,10 +132,10 @@ protocol_je_set get_protocol_je_set(gchar *java_version) {
     protocol_set play_set = create_protocol_set(types, play, true);
     result->login = login_set;
     result->play = play_set;
-    if (config != NULL) {
-        protocol_set config_set = create_protocol_set(types, config, true);
-        result->configuration = config_set;
-    }
+//    if (config != NULL) {
+//        protocol_set config_set = create_protocol_set(types, config, true);
+//        result->configuration = config_set;
+//    }
 
     cJSON_Delete(json);
     wmem_map_insert(protocol_schema_je, java_version, result);
