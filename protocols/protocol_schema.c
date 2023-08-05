@@ -141,10 +141,10 @@ FIELD_MAKE_TREE(rest_buffer) {
 FIELD_MAKE_TREE(uuid) {
     e_guid_t *uuid = wmem_new(wmem_packet_scope(), e_guid_t);
     tvb_get_guid(tvb, offset, uuid, 0);
-    if (tree)
-        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
-    else
-        record(recorder, uuid);
+//    if (tree)
+//        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
+//    else
+//        record(recorder, uuid);
     return 16;
 }
 
