@@ -127,7 +127,7 @@ protocol_je_set get_protocol_je_set(gchar *java_version) {
     cJSON *play = cJSON_GetObjectItem(json, "play");
     cJSON *config = cJSON_GetObjectItem(json, "configuration");
 
-    protocol_je_set result = wmem_new(wmem_file_scope(), struct _protocol_je_set);
+    protocol_je_set result = wmem_new(wmem_epan_scope(), struct _protocol_je_set);
     protocol_set login_set = create_protocol_set(types, login, true);
     protocol_set play_set = create_protocol_set(types, play, true);
     result->login = login_set;

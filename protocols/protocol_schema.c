@@ -141,10 +141,10 @@ FIELD_MAKE_TREE(rest_buffer) {
 FIELD_MAKE_TREE(uuid) {
     e_guid_t *uuid = wmem_new(wmem_packet_scope(), e_guid_t);
     tvb_get_guid(tvb, offset, uuid, 0);
-//    if (tree)
-//        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
-//    else
-//        record(recorder, uuid);
+    if (tree)
+        proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
+    else
+        record(recorder, uuid);
     return 16;
 }
 
@@ -600,7 +600,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         char *type = data->valuestring;
         void *make_tree_func = wmem_map_lookup(native_make_tree_map, type);
         if (make_tree_func != NULL) {
-            protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
+            protocol_field field = wmem_new(wmem_epan_scope(), protocol_field_t);
             field->hf_index = search_hf_index(is_je, path_array, path_name, additional_flags,
                                               wmem_map_lookup(native_types, type));
             if (field->hf_index != -1)
@@ -631,8 +631,8 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     char *type = cJSON_GetArrayItem(data, 0)->valuestring;
     cJSON *fields = cJSON_GetArrayItem(data, 1);
 
-    protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
-    field->additional_info = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+    protocol_field field = wmem_new(wmem_epan_scope(), protocol_field_t);
+    field->additional_info = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
     field->make_tree = NULL;
     field->name = NULL;
     field->hf_index = -1;
@@ -686,7 +686,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
             field->make_tree = make_tree_var_buffer;
         return field;
     } else if (strcmp(type, "mapper") == 0) { // mapper
-        field->additional_info = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
                                                   type_data, types, is_je, false);
@@ -765,7 +765,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     } else if (strcmp(type, "switch") == 0) {
         char *compare_data = cJSON_GetObjectItem(fields, "compareTo")->valuestring;
         char **compare_data_split = g_strsplit(strdup(compare_data), "/", 10);
-        field->additional_info = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         wmem_map_insert(field->additional_info, strdup("__path"), compare_data_split);
         if (cJSON_HasObjectItem(fields, "default")) {
             cJSON *default_data = cJSON_GetObjectItem(fields, "default");
@@ -848,7 +848,7 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
         guint packet_id = (guint) strtol(packet_id_str + 2, &ptr, 16);
         wmem_map_insert(name_map, packet_name, GUINT_TO_POINTER(packet_id + 1));
 
-        protocol_entry entry = wmem_new(wmem_file_scope(), protocol_entry_t);
+        protocol_entry entry = wmem_new(wmem_epan_scope(), protocol_entry_t);
         entry->id = packet_id;
         entry->name = packet_name;
         wmem_map_insert(packet_map, GUINT_TO_POINTER(packet_id), entry);
@@ -857,13 +857,13 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
         cJSON *item = cJSON_GetObjectItem(data, packet_definition);
 
         if (item != NULL) {
-            wmem_list_t *path_array = wmem_list_new(wmem_file_scope());
+            wmem_list_t *path_array = wmem_list_new(wmem_epan_scope());
             wmem_list_append(path_array, 0);
-            entry->field = parse_protocol(path_array, packet_name, wmem_list_new(wmem_file_scope()),
-                                          wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal),
+            entry->field = parse_protocol(path_array, packet_name, wmem_list_new(wmem_epan_scope()),
+                                          wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal),
                                           item, types, is_je, true);
         } else {
-            protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
+            protocol_field field = wmem_new(wmem_epan_scope(), protocol_field_t);
             field->make_tree = make_tree_void;
             entry->field = field;
         }
@@ -874,11 +874,11 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
 }
 
 protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je) {
-    protocol_set set = wmem_new(wmem_file_scope(), protocol_set_t);
-    set->client_packet_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
-    set->server_packet_map = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
-    set->client_name_map = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
-    set->server_name_map = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+    protocol_set set = wmem_new(wmem_epan_scope(), protocol_set_t);
+    set->client_packet_map = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+    set->server_packet_map = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+    set->client_name_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    set->server_name_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
 
     cJSON *to_client = cJSON_GetObjectItem(cJSON_GetObjectItem(data, "toClient"), "types");
     cJSON *to_server = cJSON_GetObjectItem(cJSON_GetObjectItem(data, "toServer"), "types");

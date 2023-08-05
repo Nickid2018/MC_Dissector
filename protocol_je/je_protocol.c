@@ -194,7 +194,7 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         return;
     }
     if (protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
+        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
     protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, is_client);
@@ -228,7 +228,7 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
 void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                   guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
+        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
     handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->login, is_client);
@@ -257,7 +257,7 @@ int handle_server_play_switch(const guint8 *data, guint length, mcje_protocol_co
 void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                  guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
+        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
     handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->play, is_client);
@@ -286,7 +286,7 @@ int handle_server_configuration_switch(const guint8 *data, guint length, mcje_pr
 void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                          guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
+        proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
     handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->configuration, is_client);
