@@ -125,12 +125,19 @@ protocol_je_set get_protocol_je_set(gchar *java_version) {
     cJSON *types = cJSON_GetObjectItem(json, "types");
     cJSON *login = cJSON_GetObjectItem(json, "login");
     cJSON *play = cJSON_GetObjectItem(json, "play");
+    cJSON *config = cJSON_GetObjectItem(json, "configuration");
+
+    protocol_je_set result = wmem_new(wmem_file_scope(), struct _protocol_je_set);
     protocol_set login_set = create_protocol_set(types, login, true);
     protocol_set play_set = create_protocol_set(types, play, true);
-    cJSON_Delete(json);
-    protocol_je_set result = wmem_new(wmem_file_scope(), struct _protocol_je_set);
     result->login = login_set;
     result->play = play_set;
+    if (config != NULL) {
+        protocol_set config_set = create_protocol_set(types, config, true);
+        result->configuration = config_set;
+    }
+
+    cJSON_Delete(json);
     wmem_map_insert(protocol_schema_je, java_version, result);
     return result;
 }

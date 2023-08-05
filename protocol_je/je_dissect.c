@@ -55,12 +55,22 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     handle_server_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
             case LOGIN:
+                if (!visited && is_invalid(handle_server_login_switch(data, length, ctx)))
+                    return;
                 if (tree)
                     handle_login(tree, tvb, pinfo, data, length, ctx, false);
                 return;
             case PLAY:
+                if (!visited && is_invalid(handle_server_play_switch(data, length, ctx)))
+                    return;
                 if (tree)
                     handle_play(tree, tvb, pinfo, data, length, ctx, false);
+                return;
+            case CONFIGURATION:
+                if (!visited && is_invalid(handle_server_configuration_switch(data, length, ctx)))
+                    return;
+                if (tree)
+                    handle_configuration(tree, tvb, pinfo, data, length, ctx, false);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -79,8 +89,16 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     handle_login(tree, tvb, pinfo, data, length, ctx, true);
                 return;
             case PLAY:
+                if (!visited && is_invalid(handle_client_play_switch(data, length, ctx)))
+                    return;
                 if (tree)
                     handle_play(tree, tvb, pinfo, data, length, ctx, true);
+                return;
+            case CONFIGURATION:
+                if (!visited && is_invalid(handle_client_configuration_switch(data, length, ctx)))
+                    return;
+                if (tree)
+                    handle_configuration(tree, tvb, pinfo, data, length, ctx, true);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -143,7 +161,8 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         if (is_invalid(var_len)) {
             proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
                                   read_pointer, var_len, "Invalid Compression VarInt");
-            return 0;
+            ctx->state = INVALID;
+            return tvb_captured_length(tvb);
         }
 
         read_pointer += var_len;

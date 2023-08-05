@@ -31,10 +31,10 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protoc
         if (next_state != 1 && next_state != 2)
             return INVALID_DATA;
         gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
-        gint data_version = get_java_data_version(unchecked_java_version);
-        if (data_version == -1)
+        ctx->data_version = get_java_data_version(unchecked_java_version);
+        if (ctx->data_version == -1)
             return INVALID_DATA;
-        guint nearest_data_version = find_nearest_java_protocol(data_version);
+        guint nearest_data_version = find_nearest_java_protocol(ctx->data_version);
         gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
         ctx->state = next_state + 1;
         ctx->protocol_set = get_protocol_je_set(nearest_java_version);
@@ -163,7 +163,7 @@ int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_c
     if (is_invalid(p))
         return INVALID_DATA;
     if (packet_id == PACKET_ID_CLIENT_SUCCESS)
-        ctx->state = PLAY;
+        ctx->state = ctx->data_version >= 3567 ? CONFIGURATION : PLAY;
     if (packet_id == PACKET_ID_CLIENT_COMPRESS) {
         guint threshold;
         read = read_var_int(data + p, length - p, &threshold);
@@ -171,6 +171,16 @@ int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_c
             return INVALID_DATA;
         ctx->compression_threshold = threshold;
     }
+    return 0;
+}
+
+int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id == get_packet_id(ctx->protocol_set->login, "login_acknowledgement", false))
+        ctx->state = CONFIGURATION;
     return 0;
 }
 
@@ -202,9 +212,6 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
                                            "%s (%s)", better_name, packet_name);
 
-    if (strcmp(packet_name, "bundle_delimiter") == 0)
-        return;
-
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {
         gchar *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", packet_name);
@@ -227,6 +234,26 @@ void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_
     handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->login, is_client);
 }
 
+int handle_client_play_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id == get_packet_id(ctx->protocol_set->play, "start_configuration", true))
+        ctx->state = CONFIGURATION;
+    return 0;
+}
+
+int handle_server_play_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id == get_packet_id(ctx->protocol_set->play, "configuration_acknowledgement", false))
+        ctx->state = CONFIGURATION;
+    return 0;
+}
+
 void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                  guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
@@ -234,4 +261,33 @@ void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_,
         return;
     }
     handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->play, is_client);
+}
+
+int handle_client_configuration_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id == get_packet_id(ctx->protocol_set->configuration, "finish_configuration", true))
+        ctx->state = PLAY;
+    return 0;
+}
+
+int handle_server_configuration_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+    guint packet_id;
+    guint p = read_var_int(data, length, &packet_id);
+    if (is_invalid(p))
+        return INVALID_DATA;
+    if (packet_id == get_packet_id(ctx->protocol_set->configuration, "finish_configuration", false))
+        ctx->state = PLAY;
+    return 0;
+}
+
+void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
+                         guint length, mcje_protocol_context *ctx, bool is_client) {
+    if (ctx->protocol_set == NULL) {
+        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Can't find protocol set");
+        return;
+    }
+    handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->configuration, is_client);
 }

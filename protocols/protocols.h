@@ -25,6 +25,7 @@
 typedef struct _protocol_je_set {
     protocol_set login;
     protocol_set play;
+    protocol_set configuration;
 } *protocol_je_set;
 
 void init_je();

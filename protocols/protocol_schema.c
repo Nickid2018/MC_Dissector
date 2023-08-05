@@ -580,7 +580,6 @@ gchar *search_name(bool is_je, wmem_list_t *path_array, gchar *name) {
         now = wmem_list_frame_next(now);
     }
 
-
     return "unnamed";
 }
 
@@ -855,11 +854,19 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
         wmem_map_insert(packet_map, GUINT_TO_POINTER(packet_id), entry);
 
         gchar *packet_definition = g_strconcat("packet_", packet_name, NULL);
-        wmem_list_t *path_array = wmem_list_new(wmem_file_scope());
-        wmem_list_append(path_array, 0);
-        entry->field = parse_protocol(path_array, packet_name, wmem_list_new(wmem_file_scope()),
-                                      wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal),
-                                      cJSON_GetObjectItem(data, packet_definition), types, is_je, true);
+        cJSON *item = cJSON_GetObjectItem(data, packet_definition);
+
+        if (item != NULL) {
+            wmem_list_t *path_array = wmem_list_new(wmem_file_scope());
+            wmem_list_append(path_array, 0);
+            entry->field = parse_protocol(path_array, packet_name, wmem_list_new(wmem_file_scope()),
+                                          wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal),
+                                          item, types, is_je, true);
+        } else {
+            protocol_field field = wmem_new(wmem_file_scope(), protocol_field_t);
+            field->make_tree = make_tree_void;
+            entry->field = field;
+        }
         g_free(packet_definition);
 
         now = now->next;
@@ -890,7 +897,7 @@ gint get_packet_id_by_entry(protocol_entry entry) {
 }
 
 gint get_packet_id(protocol_set set, gchar *name, bool is_client) {
-    wmem_map_t *name_map = is_client ? set->client_packet_map : set->server_name_map;
+    wmem_map_t *name_map = is_client ? set->client_name_map : set->server_name_map;
     return GPOINTER_TO_INT(wmem_map_lookup(name_map, name)) - 1;
 }
 

@@ -13,10 +13,11 @@
 
 typedef struct {
     enum {
-        HANDSHAKE, PLAY, PING, LOGIN, INVALID
+        HANDSHAKE, PLAY, PING, LOGIN, CONFIGURATION, INVALID
     } state;
     guint32 server_port;
     guint32 protocol_version;
+    guint32 data_version;
     protocol_je_set protocol_set;
     gint32 compression_threshold;
     bool encrypted;
