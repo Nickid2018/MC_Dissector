@@ -31,7 +31,7 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
         col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Failed to parse payload length");
         conversation_t *conv = find_or_create_conversation(pinfo);
         mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-        ctx->state = INVALID;
+        ctx->client_state = INVALID;
         conversation_set_dissector(conv, ignore_je_handle);
         return 0;
     } else
@@ -40,10 +40,10 @@ guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *
 
 void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     proto_tree *tree, mcje_protocol_context *ctx,
-                    bool is_client, bool visited) {
+                    bool is_server, bool visited) {
     const guint8 *data = tvb_get_ptr(tvb, pinfo->desegment_offset, length);
-    if (is_client) {
-        switch (ctx->state) {
+    if (is_server) {
+        switch (ctx->server_state) {
             case HANDSHAKE:
                 if (!visited && is_invalid(handle_server_handshake_switch(data, length, ctx)))
                     return;
@@ -77,7 +77,7 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                 return;
         }
     } else {
-        switch (ctx->state) {
+        switch (ctx->client_state) {
             case PING:
                 if (tree)
                     handle_client_slp(tree, tvb, pinfo, data, length, ctx);
@@ -123,8 +123,8 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
     }
 
-    bool is_client = pinfo->destport == ctx->server_port;
-    if (is_client)
+    bool is_server = pinfo->destport == ctx->server_port;
+    if (is_server)
         col_set_str(pinfo->cinfo, COL_INFO, "[C => S]");
     else
         col_set_str(pinfo->cinfo, COL_INFO, "[S => C]");
@@ -142,7 +142,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         mcje_tree = proto_item_add_subtree(ti, ett_mcje);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
-        proto_item_append_text(ti, ", State: %s", STATE_NAME[ctx->state]);
+        proto_item_append_text(ti, ", Client State: %s, Server State: %s", STATE_NAME[ctx->client_state], STATE_NAME[ctx->server_state]);
     }
 
     tvbuff_t *new_tvb;
@@ -152,16 +152,16 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx, is_client, pinfo->fd->visited);
+            sub_dissect_je(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx, is_server, pinfo->fd->visited);
         } else
-            sub_dissect_je(packet_length_vari, new_tvb, pinfo, NULL, ctx, is_client, pinfo->fd->visited);
+            sub_dissect_je(packet_length_vari, new_tvb, pinfo, NULL, ctx, is_server, pinfo->fd->visited);
     } else {
         guint uncompressed_length;
         int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
         if (is_invalid(var_len)) {
             proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
                                   read_pointer, var_len, "Invalid Compression VarInt");
-            ctx->state = INVALID;
+            ctx->client_state = INVALID;
             return tvb_captured_length(tvb);
         }
 
@@ -192,10 +192,10 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_client,
+            sub_dissect_je(tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_server,
                            pinfo->fd->visited);
         } else
-            sub_dissect_je(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_client,
+            sub_dissect_je(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_server,
                            pinfo->fd->visited);
     }
 
@@ -208,7 +208,7 @@ int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     if (!ctx) {
         ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         ctx->server_port = pinfo->destport;
-        ctx->state = HANDSHAKE;
+        ctx->client_state = HANDSHAKE;
         ctx->compression_threshold = -1;
         conversation_add_proto_data(conv, proto_mcje, ctx);
         conversation_set_dissector(conv, mcje_handle);
@@ -232,7 +232,7 @@ int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, v
     if (!(ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum)))
         ctx = conversation_get_proto_data(conv, proto_mcje);
 
-    if (ctx->state == INVALID) {
+    if (ctx->client_state == INVALID) {
         col_add_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
     } else
         tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,

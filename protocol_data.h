@@ -11,10 +11,13 @@
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)
 
+typedef enum {
+    HANDSHAKE, PLAY, PING, LOGIN, CONFIGURATION, INVALID
+} je_state;
+
 typedef struct {
-    enum {
-        HANDSHAKE, PLAY, PING, LOGIN, CONFIGURATION, INVALID
-    } state;
+    je_state client_state;
+    je_state server_state;
     guint32 server_port;
     guint32 protocol_version;
     guint32 data_version;

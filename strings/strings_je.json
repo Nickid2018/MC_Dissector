@@ -1061,7 +1061,10 @@
     },
     "position": {
       "name": "Position",
-      "type": "i8"
+      "type": [
+        "i8",
+        "u32"
+      ]
     },
     "vehicle_id": {
       "name": "Vechicle ID",
@@ -1646,6 +1649,18 @@
       "name": "Has Background Texture",
       "type": "bool",
       "bitmask": "01"
+    },
+    "batch_size": {
+      "name": "Batch Size",
+      "type": "u32"
+    },
+    "desired_batch_size": {
+      "name": "Desired Batch Size",
+      "type": "f32"
+    },
+    "registry_data": {
+      "name": "Registry Data",
+      "type": "bytes"
     }
   },
   "mappings": {
@@ -2327,7 +2342,19 @@
     "chat_session_update/publicKey": "public_key",
     "chat_session_update/signature": "signature",
     "end_combat_event/entityId": "killer_id",
-    "death_combat_event/entityId": "killer_id"
+    "death_combat_event/entityId": "killer_id",
+    "common_player_spawn_info/worldType": "world_type",
+    "common_player_spawn_info/worldName": "world_name",
+    "common_player_spawn_info/hashedSeed": "hashed_seed",
+    "common_player_spawn_info/gameMode": "gamemode",
+    "common_player_spawn_info/previousGameMode": "previous_gamemode",
+    "common_player_spawn_info/isDebug": "is_debug",
+    "common_player_spawn_info/isFlat": "is_flat",
+    "common_player_spawn_info/death/dimensionName": "dimension_name",
+    "common_player_spawn_info/portalCooldown": "portal_cooldown",
+    "chunk_batch_finished/batchSize": "batch_size",
+    "chunk_batch_received/desiredBatchSize": "desired_batch_size",
+    "registry_data/registryData": "registry_data"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -2474,6 +2501,8 @@
     "window_click/changedSlots": "Changed Slots",
     "window_click/changedSlots/item/slot": "Item",
     "window_click/cursorItem/slot": "Cursor Item",
-    "set_creative_slot/item/slot": "Item"
+    "set_creative_slot/item/slot": "Item",
+    "login/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info",
+    "respawn/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info"
   }
 }

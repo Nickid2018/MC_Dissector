@@ -17,12 +17,13 @@ void init_je_constants() {
     // Login
     DEFINE_NAME_CLIENT(disconnect, Client Login Disconnect)
     DEFINE_NAME_CLIENT(encryption_begin, Client Hello)
-    DEFINE_NAME_CLIENT(success, Client Game Profile)
+    DEFINE_NAME_CLIENT(success, Client Login Success)
     DEFINE_NAME_CLIENT(compress, Client Compression)
     DEFINE_NAME_CLIENT(login_plugin_request, Client Custom Query)
     DEFINE_NAME_SERVER(login_start, Server Hello)
     DEFINE_NAME_SERVER(encryption_begin, Server Key)
     DEFINE_NAME_SERVER(login_plugin_response, Server Custom Query)
+    DEFINE_NAME_SERVER(login_acknowledgement, Server Login Success ACK)
     // Play
     DEFINE_NAME_CLIENT(bundle_delimiter, Client Bundle Delimter)
     DEFINE_NAME_CLIENT(spawn_entity, Client Add Entity)
@@ -135,6 +136,9 @@ void init_je_constants() {
     DEFINE_NAME_CLIENT(entity_effect, Client Update Mob Effect)
     DEFINE_NAME_CLIENT(declare_recipes, Client Update Recipes)
     DEFINE_NAME_CLIENT(tags, Client Update Tags)
+    DEFINE_NAME_CLIENT(chunk_batch_finished, Client Chunk Batch Finished)
+    DEFINE_NAME_CLIENT(chunk_batch_start, Client Chunk Batch Start)
+    DEFINE_NAME_CLIENT(start_configuration, Client Start Configuration)
     DEFINE_NAME_SERVER(teleport_confirm, Server Accept Teleportation)
     DEFINE_NAME_SERVER(query_block_nbt, Server Block Entity Tag Query)
     DEFINE_NAME_SERVER(set_difficulty, Server Change Difficulty)
@@ -186,4 +190,10 @@ void init_je_constants() {
     DEFINE_NAME_SERVER(spectate, Server Teleport To Entity)
     DEFINE_NAME_SERVER(block_place, Server Use Item on)
     DEFINE_NAME_SERVER(use_item, Server Use Item)
+    DEFINE_NAME_SERVER(chunk_batch_received, Server Chunk Batch Received)
+    DEFINE_NAME_SERVER(configuration_acknowledgement, Server Configuration ACK)
+    // Configuration
+    DEFINE_NAME_CLIENT(finish_configuration, Client Finish Configuration)
+    DEFINE_NAME_CLIENT(registry_data, Client Registry Data)
+    DEFINE_NAME_SERVER(finish_configuration, Server Finish Configuration)
 }
