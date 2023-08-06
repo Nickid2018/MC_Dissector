@@ -166,8 +166,8 @@ FIELD_MAKE_TREE(nbt) {
 }
 
 FIELD_MAKE_TREE(optional_nbt) {
-    guint8 present = tvb_get_guint8(tvb, offset);
-    if (present != 0) {
+    guint8 present = data[offset];
+    if (present != TAG_END) {
         guint length = count_nbt_length(data + offset);
         if (tree) {
             if (length < BYTES_MAX_LENGTH)
@@ -178,6 +178,23 @@ FIELD_MAKE_TREE(optional_nbt) {
                                      tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
         }
         return length;
+    } else
+        return 1;
+}
+
+FIELD_MAKE_TREE(nbt_any_type) {
+    guint8 present = data[offset];
+    if (present != TAG_END) {
+        guint length = count_nbt_length_with_type(data + offset + 1, present);
+        if (tree) {
+            if (length < BYTES_MAX_LENGTH)
+                proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + 1,
+                                     tvb_memdup(wmem_packet_scope(), tvb, offset, length + 1));
+            else
+                proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + 1,
+                                     tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+        }
+        return length + 1;
     } else
         return 1;
 }
@@ -592,7 +609,7 @@ gchar *search_name(bool is_je, wmem_list_t *path_array, gchar *name) {
 
 protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_list_t *additional_flags,
                               wmem_map_t *basic_types, cJSON *data, cJSON *types,
-                              bool is_je, bool on_top) {
+                              bool is_je, bool on_top, protocol_settings settings) {
     if (data == NULL)
         return NULL;
     guint path_length = strlen(path_name);
@@ -614,6 +631,10 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
             field->name = NULL;
             field->additional_info = NULL;
             field->make_tree = make_tree_func;
+
+            if (settings.nbt_any_type && strcmp(type, "nbt") == 0)
+                field->make_tree = make_tree_nbt_any_type;
+
             return field;
         }
         protocol_field field = wmem_map_lookup(basic_types, type);
@@ -622,7 +643,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         NAME_PUSH(type)
         field = parse_protocol(path_array, path_name, additional_flags, basic_types,
                                cJSON_GetObjectItem(types, data->valuestring),
-                               types, is_je, false);
+                               types, is_je, false, settings);
         NAME_POP
         return field;
     }
@@ -653,7 +674,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
                 sub_field_name = "[unnamed]";
             NAME_PUSH(sub_field_name)
             protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                      type_data, types, is_je, false);
+                                                      type_data, types, is_je, false, settings);
             NAME_POP
             if (sub_field == NULL)
                 return NULL;
@@ -666,7 +687,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     } else if (strcmp(type, "option") == 0) { // option
         field->make_tree = make_tree_option;
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                  fields, types, is_je, false);
+                                                  fields, types, is_je, false, settings);
         if (sub_field == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
@@ -689,7 +710,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                  type_data, types, is_je, false);
+                                                  type_data, types, is_je, false, settings);
         if (sub_field == NULL)
             return NULL;
         field->make_tree = make_tree_mapper;
@@ -722,7 +743,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
 
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                  type_data, types, is_je, false);
+                                                  type_data, types, is_je, false, settings);
         if (sub_field == NULL)
             return NULL;
         field->make_tree = is_je ? make_tree_je_array : make_tree_be_array;
@@ -755,7 +776,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     } else if (strcmp(type, "topBitSetTerminatedArray") == 0) {
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
                                                   cJSON_GetObjectItem(fields, "type"),
-                                                  types, is_je, false);
+                                                  types, is_je, false, settings);
         if (sub_field == NULL)
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
@@ -771,7 +792,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
             cJSON *default_data = cJSON_GetObjectItem(fields, "default");
             wmem_list_prepend(additional_flags, "default");
             protocol_field default_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                          default_data, types, is_je, false);
+                                                          default_data, types, is_je, false, settings);
             wmem_list_remove_frame(additional_flags, wmem_list_head(additional_flags));
             if (default_field == NULL)
                 return NULL;
@@ -785,7 +806,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
             char *key = now->string;
             wmem_list_prepend(additional_flags, key);
             protocol_field value = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                                  now, types, is_je, false);
+                                                  now, types, is_je, false, settings);
             wmem_list_remove_frame(additional_flags, wmem_list_head(additional_flags));
             if (value == NULL)
                 return NULL;
@@ -797,7 +818,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     } else if (strcmp(type, "entityMetadataLoop") == 0) {
         protocol_field sub_field = parse_protocol(path_array, path_name, additional_flags, basic_types,
                                                   cJSON_GetObjectItem(fields, "type"),
-                                                  types, is_je, false);
+                                                  types, is_je, false, settings);
         if (sub_field == NULL)
             return NULL;
         int end_val = cJSON_GetObjectItem(fields, "endVal")->valueint;
@@ -810,7 +831,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         if (type_data == NULL) {
             NAME_PUSH(type)
             type_data = parse_protocol(path_array, path_name, additional_flags, basic_types,
-                                       cJSON_GetObjectItem(types, type), types, is_je, false);
+                                       cJSON_GetObjectItem(types, type), types, is_je, false, settings);
             NAME_POP
         }
         if (type_data == NULL)
@@ -832,7 +853,7 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     return NULL;
 }
 
-void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wmem_map_t *name_map, bool is_je) {
+void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wmem_map_t *name_map, bool is_je, protocol_settings settings) {
     cJSON *packets = cJSON_GetObjectItem(data, "packet");
     // Path: [1].[0].type.[1].mappings
     cJSON *c1 = cJSON_GetArrayItem(packets, 1);
@@ -861,7 +882,7 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
             wmem_list_append(path_array, 0);
             entry->field = parse_protocol(path_array, packet_name, wmem_list_new(wmem_epan_scope()),
                                           wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal),
-                                          item, types, is_je, true);
+                                          item, types, is_je, true, settings);
         } else {
             protocol_field field = wmem_new(wmem_epan_scope(), protocol_field_t);
             field->make_tree = make_tree_void;
@@ -873,7 +894,7 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
     }
 }
 
-protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je) {
+protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je, protocol_settings settings) {
     protocol_set set = wmem_new(wmem_epan_scope(), protocol_set_t);
     set->client_packet_map = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
     set->server_packet_map = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
@@ -882,8 +903,8 @@ protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je) {
 
     cJSON *to_client = cJSON_GetObjectItem(cJSON_GetObjectItem(data, "toClient"), "types");
     cJSON *to_server = cJSON_GetObjectItem(cJSON_GetObjectItem(data, "toServer"), "types");
-    make_simple_protocol(to_client, types, set->client_packet_map, set->client_name_map, is_je);
-    make_simple_protocol(to_server, types, set->server_packet_map, set->server_name_map, is_je);
+    make_simple_protocol(to_client, types, set->client_packet_map, set->client_name_map, is_je, settings);
+    make_simple_protocol(to_server, types, set->server_packet_map, set->server_name_map, is_je, settings);
 
     return set;
 }

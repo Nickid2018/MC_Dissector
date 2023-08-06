@@ -19,7 +19,7 @@ file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
 set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
-if(DEFINED ENV{WIRESHARK_DIR})
+if (DEFINED ENV{WIRESHARK_DIR})
     include_directories(
             $ENV{WIRESHARK_DIR}
             $ENV{WIRESHARK_DIR}/include
@@ -28,34 +28,42 @@ if(DEFINED ENV{WIRESHARK_DIR})
     link_directories($ENV{WIRESHARK_DIR_LIB})
     link_libraries(wireshark)
     link_libraries(wsutil)
-else()
+else ()
     find_package(PkgConfig)
     pkg_check_modules(wireshark REQUIRED IMPORTED_TARGET wireshark)
     link_libraries(PkgConfig::wireshark)
-endif()
+endif ()
 
 set(GLIB_DIR $ENV{GLIB_DIR})
-if(DEFINED ENV{GLIB_DIR})
+if (DEFINED ENV{GLIB_DIR})
     include_directories(
             $ENV{GLIB_DIR}/include/glib-2.0
             $ENV{GLIB_DIR}/lib/glib-2.0/include
     )
     link_directories($ENV{GLIB_DIR}/lib)
     link_libraries(glib-2.0)
-else()
+else ()
     find_package(PkgConfig)
     pkg_check_modules(glib REQUIRED IMPORTED_TARGET glib-2.0)
     link_libraries(PkgConfig::glib)
-endif()
+endif ()
 
 # String data
 execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
         ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
 
-message(STATUS "Generate Output ${GEN_OUTPUT}")
-message(STATUS "Generate Error ${GEN_ERROR}")
-message(STATUS "Generate Result ${GEN_RESULT}")
+if (NOT GEN_RESULT EQUAL 0)
+    execute_process(COMMAND python "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+            "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
+            ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
+endif ()
+
+if (NOT GEN_RESULT EQUAL 0)
+    message(FATAL_ERROR "Failed to generate strings_je.c and strings_je.h\n${GEN_ERROR}")
+else ()
+    message(STATUS "Generate Output: ${GEN_OUTPUT}")
+endif ()
 
 # Protocol version data
 file(GLOB PROTOCOL_VERSION_JE_DATA_FILE "minecraft-data/data/pc/common/protocolVersions.json")
@@ -92,35 +100,35 @@ set(PROTOCOL_SCHEMA_FILE ${GEN_RESOURCE_DIR}/protocolSchemas.c)
 file(WRITE ${PROTOCOL_SCHEMA_FILE} "#include \"protocolSchemas.h\"\n")
 
 file(APPEND ${PROTOCOL_SCHEMA_FILE} "const char *JE_PROTOCOLS[] = {\n")
+set(JE_PROTOCOL_SIZE 0)
 foreach (INPUT_FILE ${PROTOCOL_JE_DATA_FILE})
     if (NOT EXISTS ${INPUT_FILE}/protocol.json)
         continue()
     endif ()
     file(READ ${INPUT_FILE}/protocol.json FILE_DATA HEX)
-    list(APPEND JE_PROTOCOLS ${FILE_NAME})
     string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
     get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
     file(APPEND ${PROTOCOL_SCHEMA_FILE} "    \"${FILE_NAME}\", \"${FILE_DATA}\",\n")
     message(STATUS "Found protocol data for JE${FILE_NAME}")
+    math(EXPR JE_PROTOCOL_SIZE "${JE_PROTOCOL_SIZE} + 1")
 endforeach ()
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "\n};\n")
-list(LENGTH JE_PROTOCOLS JE_PROTOCOL_SIZE)
+file(APPEND ${PROTOCOL_SCHEMA_FILE} "};\n")
 file(APPEND ${PROTOCOL_SCHEMA_FILE} "const int JE_PROTOCOL_SIZE = ${JE_PROTOCOL_SIZE};\n")
 
 file(APPEND ${PROTOCOL_SCHEMA_FILE} "const char *BE_PROTOCOLS[] = {\n")
+set(BE_PROTOCOL_SIZE 0)
 foreach (INPUT_FILE ${PROTOCOL_BE_DATA_FILE})
     if (NOT EXISTS ${INPUT_FILE}/protocol.json)
         continue()
     endif ()
     file(READ ${INPUT_FILE}/protocol.json FILE_DATA HEX)
-    list(APPEND BE_PROTOCOLS ${FILE_NAME})
     string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
     get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
     file(APPEND ${PROTOCOL_SCHEMA_FILE} "    \"${FILE_NAME}\", \"${FILE_DATA}\",\n")
     message(STATUS "Found protocol data for BE${FILE_NAME}")
+    math(EXPR BE_PROTOCOL_SIZE "${BE_PROTOCOL_SIZE} + 1")
 endforeach ()
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "\n};\n")
-list(LENGTH BE_PROTOCOLS BE_PROTOCOL_SIZE)
+file(APPEND ${PROTOCOL_SCHEMA_FILE} "};\n")
 file(APPEND ${PROTOCOL_SCHEMA_FILE} "const int BE_PROTOCOL_SIZE = ${BE_PROTOCOL_SIZE};\n")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")

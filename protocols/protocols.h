@@ -22,6 +22,8 @@
 #define TAG_INT_ARRAY  11
 #define TAG_LONG_ARRAY 12
 
+extern GArray *data_version_list_je;
+
 typedef struct _protocol_je_set {
     protocol_set login;
     protocol_set play;
@@ -41,6 +43,8 @@ gchar *get_java_version_name_by_data_version(guint data_version);
 guint find_nearest_java_protocol(guint data_version);
 
 protocol_je_set get_protocol_je_set(gchar *java_version);
+
+guint count_nbt_length_with_type(const guint8 *data, guint type);
 
 guint count_nbt_length(const guint8 *data);
 

@@ -100,18 +100,14 @@ gchar *get_java_version_name_by_data_version(guint data_version) {
 }
 
 guint find_nearest_java_protocol(guint data_version) {
-    unsigned head = 0, tail = data_version_list_je->len - 1;
-    while (head <= tail) {
-        unsigned mid = (head + tail) / 2;
-        guint mid_data = g_array_index(data_version_list_je, guint, mid);
-        if (mid_data == data_version)
-            return mid_data;
-        else if (mid_data < data_version)
-            head = mid + 1;
-        else
-            tail = mid - 1;
+    for (int cursor = 0; cursor < data_version_list_je->len; cursor++) {
+        guint data = g_array_index(data_version_list_je, guint, cursor);
+        if (data > data_version)
+            return g_array_index(data_version_list_je, guint, cursor - 1);
+        if (data == data_version)
+            return data;
     }
-    return g_array_index(data_version_list_je, guint, tail);
+    return g_array_index(data_version_list_je, guint, data_version_list_je->len - 1);
 }
 
 protocol_je_set get_protocol_je_set(gchar *java_version) {
@@ -127,15 +123,19 @@ protocol_je_set get_protocol_je_set(gchar *java_version) {
     cJSON *play = cJSON_GetObjectItem(json, "play");
     cJSON *config = cJSON_GetObjectItem(json, "configuration");
 
+    protocol_settings settings = {
+            get_java_data_version(java_version) >= 3567
+    };
+
     protocol_je_set result = wmem_new(wmem_epan_scope(), struct _protocol_je_set);
-    protocol_set login_set = create_protocol_set(types, login, true);
-    protocol_set play_set = create_protocol_set(types, play, true);
+    protocol_set login_set = create_protocol_set(types, login, true, settings);
+    protocol_set play_set = create_protocol_set(types, play, true, settings);
     result->login = login_set;
     result->play = play_set;
-//    if (config != NULL) {
-//        protocol_set config_set = create_protocol_set(types, config, true);
-//        result->configuration = config_set;
-//    }
+    if (config != NULL) {
+        protocol_set config_set = create_protocol_set(types, config, true, settings);
+        result->configuration = config_set;
+    }
 
     cJSON_Delete(json);
     wmem_map_insert(protocol_schema_je, java_version, result);

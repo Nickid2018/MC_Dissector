@@ -13,9 +13,13 @@ typedef struct _protocol_set protocol_set_t, *protocol_set;
 typedef struct _protocol_entry protocol_entry_t, *protocol_entry;
 typedef struct _protocol_field protocol_field_t, *protocol_field;
 
+typedef struct {
+    bool nbt_any_type;
+} protocol_settings;
+
 void init_schema_data();
 
-protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je);
+protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je, protocol_settings settings);
 
 gchar *get_packet_name(protocol_entry entry);
 
