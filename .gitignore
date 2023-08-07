@@ -1,3 +1,6 @@
 /.idea
+/encryption-helper/.idea
+/encryption-helper/.gradle
+/encryption-helper/build
 /cmake-*
 /build

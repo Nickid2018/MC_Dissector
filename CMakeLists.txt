@@ -48,6 +48,19 @@ else ()
     link_libraries(PkgConfig::glib)
 endif ()
 
+set(GCRYPT_DIR $ENV{GCRYPT_DIR})
+if (DEFINED ENV{GCRYPT_DIR})
+    include_directories(
+            $ENV{GCRYPT_DIR}/include
+    )
+    link_directories($ENV{GLIB_DIR}/lib)
+    link_libraries(gcrypt-20)
+else ()
+    find_package(PkgConfig)
+    pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET gcrypt)
+    link_libraries(PkgConfig::gcrypt)
+endif ()
+
 # String data
 execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"

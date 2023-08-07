@@ -2317,6 +2317,7 @@
     "recipe_book/bookOpen": "book_open",
     "recipe_book/filterActive": "filter_active",
     "resource_pack_receive/result": "result",
+    "held_item_slot/slot": "slot",
     "held_item_slot/slotId": "slot",
     "set_creative_slot/slot": "slot",
     "update_jigsaw_block/name": "name",
@@ -2482,6 +2483,8 @@
     "player_chat/filterTypeMask": "Filter Type Mask",
     "player_remove/players": "Players",
     "player_info/data": "Player Data",
+    "player_info/data/player/game_profile": "Game Profile",
+    "player_info/data/chatSession/chat_session": "Chat Session",
     "entity_destroy/entityIds": "Destroy Entities",
     "respawn/death": "Death Data",
     "entity_equipment/equipments": "Equipments",
@@ -2509,6 +2512,8 @@
     "window_click/cursorItem/slot": "Cursor Item",
     "set_creative_slot/item/slot": "Item",
     "login/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info",
-    "respawn/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info"
+    "respawn/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info",
+    "unlock_recipes/recipes1": "Recipes 1",
+    "unlock_recipes/recipes2": "Recipes 2"
   }
 }
