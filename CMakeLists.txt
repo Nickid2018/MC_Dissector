@@ -48,12 +48,12 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
             link_directories(${LIB}/installed/x64-windows/lib)
             link_libraries(glib-2.0)
         endif ()
-        if (IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GCRYPT EQUAL -1)
-            message(STATUS "Found gcrypt-20: ${LIB}")
+        if (NOT IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GCRYPT EQUAL -1)
+            message(STATUS "Found gcrypt: ${LIB}")
             include_directories(
-                    ${LIB}/include
+                    ${LIB}/installed/x64-windows/include
             )
-            link_directories(${LIB}/lib)
+            link_directories(${LIB}/installed/x64-windows/lib)
             link_libraries(gcrypt-20)
         endif ()
     endforeach ()
