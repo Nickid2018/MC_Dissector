@@ -19,44 +19,50 @@ file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
 
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
 set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
-if (DEFINED ENV{WIRESHARK_DIR})
+set(WIRESHARK_LIB_DIR $ENV{WIRESHARK_LIB_DIR})
+set(WIRESHARK_LIB_FILE_DIR $ENV{WIRESHARK_LIB_FILE_DIR})
+
+if (DEFINED ENV{WIRESHARK_LIB_DIR})
     include_directories(
-            $ENV{WIRESHARK_DIR}
-            $ENV{WIRESHARK_DIR}/include
-            $ENV{WIRESHARK_BUILD_DIR}
+            ${WIRESHARK_DIR}
+            ${WIRESHARK_DIR}/include
+            ${WIRESHARK_BUILD_DIR}
     )
-    link_directories($ENV{WIRESHARK_DIR_LIB})
+    link_directories(${WIRESHARK_LIB_FILE_DIR})
     link_libraries(wireshark)
     link_libraries(wsutil)
+    file(GLOB WIRESHARK_DOWNLOAD_LIBS "${WIRESHARK_LIB_DIR}/**")
+    foreach (LIB ${WIRESHARK_DOWNLOAD_LIBS})
+        if (NOT IS_DIRECTORY ${LIB})
+            continue()
+        endif ()
+        string(FIND ${LIB} "win64ws" IS_WIN64_WS)
+        string(FIND ${LIB} "libgcrypt" IS_LIB_GCRYPT)
+        string(FIND ${LIB} "vcpkg-export" IS_LIB_GLIB)
+        if (NOT IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GLIB EQUAL -1)
+            message(STATUS "Found glib: ${LIB}")
+            include_directories(
+                    ${LIB}/installed/x64-windows/include/glib-2.0
+                    ${LIB}/installed/x64-windows/lib/glib-2.0/include
+            )
+            link_directories(${LIB}/installed/x64-windows/lib)
+            link_libraries(glib-2.0)
+        endif ()
+        if (IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GCRYPT EQUAL -1)
+            message(STATUS "Found gcrypt-20: ${LIB}")
+            include_directories(
+                    ${LIB}/include
+            )
+            link_directories(${LIB}/lib)
+            link_libraries(gcrypt-20)
+        endif ()
+    endforeach ()
 else ()
     find_package(PkgConfig)
     pkg_check_modules(wireshark REQUIRED IMPORTED_TARGET wireshark)
     link_libraries(PkgConfig::wireshark)
-endif ()
-
-set(GLIB_DIR $ENV{GLIB_DIR})
-if (DEFINED ENV{GLIB_DIR})
-    include_directories(
-            $ENV{GLIB_DIR}/include/glib-2.0
-            $ENV{GLIB_DIR}/lib/glib-2.0/include
-    )
-    link_directories($ENV{GLIB_DIR}/lib)
-    link_libraries(glib-2.0)
-else ()
-    find_package(PkgConfig)
     pkg_check_modules(glib REQUIRED IMPORTED_TARGET glib-2.0)
     link_libraries(PkgConfig::glib)
-endif ()
-
-set(GCRYPT_DIR $ENV{GCRYPT_DIR})
-if (DEFINED ENV{GCRYPT_DIR})
-    include_directories(
-            $ENV{GCRYPT_DIR}/include
-    )
-    link_directories($ENV{GLIB_DIR}/lib)
-    link_libraries(gcrypt-20)
-else ()
-    find_package(PkgConfig)
     pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET libgcrypt)
     link_libraries(PkgConfig::gcrypt)
 endif ()
