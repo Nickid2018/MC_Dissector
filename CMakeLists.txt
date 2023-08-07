@@ -57,7 +57,7 @@ if (DEFINED ENV{GCRYPT_DIR})
     link_libraries(gcrypt-20)
 else ()
     find_package(PkgConfig)
-    pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET gcrypt20)
+    pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET libgcrypt)
     link_libraries(PkgConfig::gcrypt)
 endif ()
 
