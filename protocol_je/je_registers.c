@@ -10,6 +10,7 @@
 
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
+gchar *pref_secret_key = "";
 
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
@@ -18,6 +19,8 @@ void proto_register_mcje() {
     pref_mcje = prefs_register_protocol(proto_mcje, NULL);
     prefs_register_string_preference(pref_mcje, "ignore_packets", "Ignore Packets",
                                      "Ignore packets with the given names", (const char **) &pref_ignore_packets_je);
+    prefs_register_string_preference(pref_mcje, "secret_key", "Secret Key",
+                                     "Secret key for decryption", (const char **) &pref_secret_key);
 
     register_string_je();
     init_je();

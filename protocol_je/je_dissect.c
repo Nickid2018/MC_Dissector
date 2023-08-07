@@ -10,13 +10,12 @@
 #include "je_protocol.h"
 #include "je_protocol_constants.h"
 
-dissector_handle_t mcje_boot_handle, mcje_handle, ignore_je_handle;
+dissector_handle_t mcje_handle, ignore_je_handle;
 
 void proto_reg_handoff_mcje() {
-    mcje_boot_handle = create_dissector_handle(dissect_je_boot, proto_mcje);
     mcje_handle = create_dissector_handle(dissect_je_conv, proto_mcje);
     ignore_je_handle = create_dissector_handle(dissect_je_ignore, proto_mcje);
-    dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_boot_handle);
+    dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_handle);
 }
 
 guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
@@ -107,9 +106,23 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
     }
 }
 
-int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
+mcje_protocol_context *get_context_index(packet_info *pinfo, guint index) {
+    mcje_protocol_context *ctx;
+    if (pinfo->fd->visited) {
+        ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, index);
+    } else {
+        conversation_t *conv;
+        conv = find_or_create_conversation(pinfo);
+        ctx = conversation_get_proto_data(conv, proto_mcje);
+        mcje_protocol_context *save;
+        save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
+        *save = *ctx;
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, index, save);
+    }
+    return ctx;
+}
 
+mcje_protocol_context *get_context(packet_info *pinfo) {
     mcje_protocol_context *ctx;
     if (pinfo->fd->visited) {
         ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum);
@@ -122,6 +135,14 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         *save = *ctx;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
     }
+    pinfo->fd->subnum++;
+    return ctx;
+}
+
+int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
+
+    mcje_protocol_context *ctx = get_context(pinfo);
 
     bool is_server = pinfo->destport == ctx->server_port;
     if (is_server)
@@ -142,12 +163,13 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         mcje_tree = proto_item_add_subtree(ti, ett_mcje);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
-        proto_item_append_text(ti, ", Client State: %s, Server State: %s", STATE_NAME[ctx->client_state], STATE_NAME[ctx->server_state]);
+        proto_item_append_text(ti, ", Client State: %s, Server State: %s", STATE_NAME[ctx->client_state],
+                               STATE_NAME[ctx->server_state]);
     }
 
     tvbuff_t *new_tvb;
     if (ctx->compression_threshold < 0) {
-        new_tvb = tvb_new_subset_remaining(tvb, packet_length_length);
+        new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
         if (tree) {
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
@@ -157,7 +179,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             sub_dissect_je(packet_length_vari, new_tvb, pinfo, NULL, ctx, is_server, pinfo->fd->visited);
     } else {
         guint uncompressed_length;
-        int var_len = read_var_int(dt + packet_length_length, packet_length - read_pointer, &uncompressed_length);
+        int var_len = read_var_int(dt + read_pointer, packet_length - read_pointer, &uncompressed_length);
         if (is_invalid(var_len)) {
             proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
                                   read_pointer, var_len, "Invalid Compression VarInt");
@@ -202,7 +224,9 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     return tvb_captured_length(tvb);
 }
 
-int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
+int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
+    pinfo->fd->subnum = 0;
+
     conversation_t *conv = find_or_create_conversation(pinfo);
     mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     if (!ctx) {
@@ -210,17 +234,78 @@ int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->server_port = pinfo->destport;
         ctx->client_state = HANDSHAKE;
         ctx->compression_threshold = -1;
+        ctx->server_cipher = NULL;
+        ctx->client_cipher = NULL;
         conversation_add_proto_data(conv, proto_mcje, ctx);
-        conversation_set_dissector(conv, mcje_handle);
     }
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,
-                     get_packet_length_je, dissect_je_core, data);
-    return tvb_captured_length(tvb);
-}
 
-int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,
-                     get_packet_length_je, dissect_je_core, data);
+    guint length = tvb_captured_length_remaining(tvb, 0);
+    ctx = get_context_index(pinfo, 191981);
+    decrypt_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514);
+    if (ctx->server_cipher != NULL && ctx->client_cipher != NULL && frame_data != NULL && pinfo->fd->visited) {
+        tvb = tvb_new_child_real_data(tvb, frame_data->data, length, length);
+        add_new_data_source(pinfo, tvb, "Decrypted packet");
+    } else {
+        bool is_server = pinfo->destport == ctx->server_port;
+        if (ctx->server_cipher != NULL && is_server) {
+            guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
+            gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher, decrypted, length,
+                                                   tvb_get_ptr(tvb, 0, length), length);
+            if (err != 0) {
+                col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
+                ctx->server_state = INVALID;
+                ctx->client_state = INVALID;
+                return tvb_captured_length(tvb);
+            }
+            tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
+            add_new_data_source(pinfo, tvb, "Decrypted packet");
+            frame_data = wmem_new(wmem_file_scope(), decrypt_frame_data);
+            frame_data->data = decrypted;
+            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, frame_data);
+        }
+        if (ctx->client_cipher != NULL && !is_server) {
+            guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
+            gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher, decrypted, length,
+                                                   tvb_get_ptr(tvb, 0, length), length);
+            if (err != 0) {
+                col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
+                ctx->server_state = INVALID;
+                ctx->client_state = INVALID;
+                return tvb_captured_length(tvb);
+            }
+            tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
+            add_new_data_source(pinfo, tvb, "Decrypted packet");
+            frame_data = wmem_new(wmem_file_scope(), decrypt_frame_data);
+            frame_data->data = decrypted;
+            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, frame_data);
+        }
+    }
+
+    guint offset = 0;
+    const guint8 *dt = tvb_get_ptr(tvb, 0, tvb_reported_length_remaining(tvb, 0));
+    while (offset < tvb_reported_length(tvb)) {
+        gint available = tvb_reported_length_remaining(tvb, offset);
+
+        guint packet_len;
+        int packet_len_head = read_var_int(dt + offset, available, &packet_len);
+        if (packet_len_head <= 0) {
+            pinfo->desegment_offset = offset;
+            pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
+            return tvb_reported_length(tvb) + available;
+        }
+
+        if (packet_len + packet_len_head > available) {
+            pinfo->desegment_offset = offset;
+            pinfo->desegment_len = packet_len + packet_len_head - available;
+            return offset + packet_len_head + available;
+        }
+
+        tvbuff_t *new_tvb = tvb_new_subset_length(tvb, offset, packet_len + packet_len_head);
+        dissect_je_core(new_tvb, pinfo, tree, data);
+
+        offset += packet_len + packet_len_head;
+    }
+
     return tvb_captured_length(tvb);
 }
 
@@ -232,7 +317,8 @@ int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, v
     if (!(ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum)))
         ctx = conversation_get_proto_data(conv, proto_mcje);
 
-    if (ctx->client_state == INVALID) {
+    if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
+        col_add_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
         col_add_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
     } else
         tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,

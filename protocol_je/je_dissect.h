@@ -8,10 +8,10 @@
 #include <epan/packet.h>
 #include "protocol_data.h"
 
-extern dissector_handle_t mcje_boot_handle;
 extern dissector_handle_t mcje_handle;
 extern dissector_handle_t ignore_je_handle;
 extern gchar *pref_ignore_packets_je;
+extern gchar *pref_secret_key;
 
 extern int hf_invalid_data_je;
 extern int hf_ignored_packet_je;
@@ -59,8 +59,6 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     bool is_client, bool visited);
 
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_);
-
-int dissect_je_boot(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 

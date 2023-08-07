@@ -166,11 +166,12 @@ int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_c
     guint p = read_var_int(data, length, &packet_id);
     if (is_invalid(p))
         return INVALID_DATA;
-    if (packet_id == PACKET_ID_CLIENT_SUCCESS)
+    if (packet_id == PACKET_ID_CLIENT_SUCCESS) {
         if (ctx->data_version >= 3567)
             ctx->client_state = CONFIGURATION;
         else
             ctx->client_state = ctx->server_state = PLAY;
+    }
     if (packet_id == PACKET_ID_CLIENT_COMPRESS) {
         guint threshold;
         read = read_var_int(data + p, length - p, &threshold);
@@ -192,6 +193,24 @@ int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_c
         return INVALID_DATA;
     if (packet_id == get_packet_id(ctx->protocol_set->login, "login_acknowledgement", false))
         ctx->server_state = CONFIGURATION;
+    if (packet_id == PACKET_ID_SERVER_ENCRYPTION_BEGIN) {
+        gchar *secret_key_str = pref_secret_key;
+        if (strlen(secret_key_str) != 32) {
+            ctx->client_state = ctx->server_state = INVALID;
+            return INVALID_DATA;
+        }
+        guint8 secret_key[16];
+        for (int i = 0; i < 16; i++) {
+            gchar hex[3] = {secret_key_str[i * 2], secret_key_str[i * 2 + 1], '\0'};
+            secret_key[i] = (guint8) strtol(hex, NULL, 16);
+        }
+        gcry_cipher_open(&ctx->server_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
+        gcry_cipher_setkey(ctx->server_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_setiv(ctx->server_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_open(&ctx->client_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
+        gcry_cipher_setkey(ctx->client_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_setiv(ctx->client_cipher, secret_key, sizeof(secret_key));
+    }
     return 0;
 }
 
@@ -313,7 +332,7 @@ int handle_server_configuration_switch(const guint8 *data, guint length, mcje_pr
 }
 
 void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                         guint length, mcje_protocol_context *ctx, bool is_client) {
+                          guint length, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;

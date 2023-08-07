@@ -6,6 +6,7 @@
 #define MC_DISSECTOR_PROTOCOL_DATA_H
 
 #include <epan/proto.h>
+#include <gcrypt.h>
 #include "protocols/protocols.h"
 
 #define INVALID_DATA (-1)
@@ -23,8 +24,13 @@ typedef struct {
     guint32 data_version;
     protocol_je_set protocol_set;
     gint32 compression_threshold;
-    bool encrypted;
+    gcry_cipher_hd_t server_cipher;
+    gcry_cipher_hd_t client_cipher;
 } mcje_protocol_context;
+
+typedef struct {
+    guint8 *data;
+} decrypt_frame_data;
 
 extern char *STATE_NAME[];
 
