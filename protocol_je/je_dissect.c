@@ -124,6 +124,8 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
     mcje_protocol_context *ctx = get_context(pinfo);
+    if (ctx == NULL)
+        return;
 
     bool is_server = pinfo->destport == ctx->server_port;
     if (is_server)
