@@ -5,21 +5,19 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 public class ProgramInjector implements ClassFileTransformer {
 
-    private static ProgramInjector INSTANCE;
+    private byte[] data;
 
     public static void premain(String agentArgs, Instrumentation inst) {
         agentArgs = agentArgs.toUpperCase();
         if (agentArgs.length() != 32)
             throw new IllegalArgumentException("Secret Key String must be 32 characters long!");
-        INSTANCE = new ProgramInjector();
+        ProgramInjector instance = new ProgramInjector();
         byte[] key = new byte[16];
         for (int i = 0; i < 16; i++) {
             int high = agentArgs.charAt(i * 2);
@@ -38,16 +36,10 @@ public class ProgramInjector implements ClassFileTransformer {
                 throw new IllegalArgumentException("Secret Key String has illegal characters!");
             key[i] = (byte) ((high << 4) | low);
         }
-        INSTANCE.key = new SecretKeySpec(key, "AES");
-        inst.addTransformer(INSTANCE);
+        instance.data = key;
+        inst.addTransformer(instance);
     }
 
-    public static SecretKey getKey() {
-        System.out.println("Override Secret Key!");
-        return INSTANCE.key;
-    }
-
-    private SecretKey key;
     private boolean transformed = false;
 
     @Override
@@ -65,11 +57,27 @@ public class ProgramInjector implements ClassFileTransformer {
                     methodNode.localVariables.get(0).desc.equals("Ljavax/crypto/KeyGenerator;")) {
                 System.out.printf("Found Crypt Class, Name = %s, Method = %s%n", className, methodNode.name);
                 InsnList list = new InsnList();
-                list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "io/github/nickid2018/crypt/ProgramInjector",
-                        "getKey", "()Ljavax/crypto/SecretKey;"));
+                list.add(new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/System", "out",
+                        "Ljava/io/PrintStream;"));
+                list.add(new LdcInsnNode("Override Secret Key!"));
+                list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                        "(Ljava/lang/String;)V"));
+                list.add(new TypeInsnNode(Opcodes.NEW, "javax/crypto/spec/SecretKeySpec"));
+                list.add(new InsnNode(Opcodes.DUP));
+                list.add(new IntInsnNode(Opcodes.BIPUSH, 16));
+                list.add(new IntInsnNode(Opcodes.NEWARRAY, Opcodes.T_BYTE));
+                for (int i = 0; i < 16; i++) {
+                    list.add(new InsnNode(Opcodes.DUP));
+                    list.add(new IntInsnNode(Opcodes.BIPUSH, i));
+                    list.add(new IntInsnNode(Opcodes.BIPUSH, data[i]));
+                    list.add(new InsnNode(Opcodes.BASTORE));
+                }
+                list.add(new LdcInsnNode("AES"));
+                list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "javax/crypto/spec/SecretKeySpec", "<init>",
+                        "([BLjava/lang/String;)V"));
                 list.add(new InsnNode(Opcodes.ARETURN));
                 methodNode.maxLocals = 1;
-                methodNode.maxStack = 1;
+                methodNode.maxStack = 6;
                 methodNode.tryCatchBlocks.clear();
                 methodNode.exceptions.clear();
                 methodNode.localVariables.clear();
@@ -80,7 +88,7 @@ public class ProgramInjector implements ClassFileTransformer {
                     ClassWriter writer = new ClassWriter(0);
                     classNode.accept(writer);
                     byte[] data = writer.toByteArray();
-                    System.out.println("Class Crypt has been transformed. Key has been override with ProgramInjector.getKey() = ***!");
+                    System.out.println("Class Crypt has been transformed. Key has been override with  ***!");
                     return data;
                 } catch (Exception e) {
                     e.printStackTrace();

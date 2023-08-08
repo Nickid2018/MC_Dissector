@@ -256,7 +256,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             guint last_decrypt_available = ctx->server_last_decrypt_available;
             guint to_decrypt = length - last_decrypt_available;
             guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
-            if (ctx->server_last_decrypt != NULL)
+            if (ctx->server_last_decrypt != NULL && last_decrypt_available > 0)
                 memcpy(decrypted, ctx->server_last_decrypt, last_decrypt_available);
             if (to_decrypt > 0) {
                 gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher, decrypted + last_decrypt_available,
@@ -280,7 +280,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             guint last_decrypt_available = ctx->client_last_decrypt_available;
             guint to_decrypt = length - last_decrypt_available;
             guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
-            if (ctx->client_last_decrypt != NULL)
+            if (ctx->client_last_decrypt != NULL && last_decrypt_available > 0)
                 memcpy(decrypted, ctx->client_last_decrypt, last_decrypt_available);
             if (to_decrypt > 0) {
                 gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher, decrypted + last_decrypt_available,
