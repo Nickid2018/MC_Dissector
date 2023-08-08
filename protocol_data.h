@@ -33,10 +33,6 @@ typedef struct {
     guint8 *client_last_decrypt;
 } mcje_protocol_context;
 
-typedef struct {
-    guint8 *data;
-} decrypt_frame_data;
-
 extern char *STATE_NAME[];
 
 gint read_var_int(const guint8 *data, guint max_length, guint *result);

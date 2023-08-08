@@ -52,13 +52,11 @@ void proto_register_mcje();
 
 void proto_reg_handoff_mcje();
 
-guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_);
-
 void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     proto_tree *tree, mcje_protocol_context *ctx,
                     bool is_client, bool visited);
 
-int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_);
+void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_);
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 

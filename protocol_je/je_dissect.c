@@ -3,7 +3,7 @@
 //
 
 #include <epan/conversation.h>
-#include <epan/dissectors/packet-tcp.h>
+#include <epan/exceptions.h>
 #include <epan/proto_data.h>
 #include "mc_dissector.h"
 #include "je_dissect.h"
@@ -16,25 +16,6 @@ void proto_reg_handoff_mcje() {
     mcje_handle = create_dissector_handle(dissect_je_conv, proto_mcje);
     ignore_je_handle = create_dissector_handle(dissect_je_ignore, proto_mcje);
     dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_handle);
-}
-
-guint get_packet_length_je(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
-    guint len;
-    guint packet_length = tvb_reported_length(tvb);
-    if (packet_length == 0)
-        return 0;
-
-    const guint8 *dt = tvb_get_ptr(tvb, offset, packet_length - offset);
-    int ret = read_var_int(dt, packet_length - offset, &len);
-    if (is_invalid(ret)) {
-        col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Failed to parse payload length");
-        conversation_t *conv = find_or_create_conversation(pinfo);
-        mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-        ctx->client_state = INVALID;
-        conversation_set_dissector(conv, ignore_je_handle);
-        return 0;
-    } else
-        return len + ret;
 }
 
 void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
@@ -139,7 +120,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
     return ctx;
 }
 
-int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
     mcje_protocol_context *ctx = get_context(pinfo);
@@ -184,7 +165,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
                                   read_pointer, var_len, "Invalid Compression VarInt");
             ctx->client_state = INVALID;
-            return tvb_captured_length(tvb);
+            return;
         }
 
         read_pointer += var_len;
@@ -201,7 +182,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             }
             new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
             if (new_tvb == NULL)
-                return 0;
+                return;
             add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
         } else {
             if (tree)
@@ -220,8 +201,6 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             sub_dissect_je(tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_server,
                            pinfo->fd->visited);
     }
-
-    return tvb_captured_length(tvb);
 }
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
@@ -247,19 +226,25 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     guint length = tvb_captured_length_remaining(tvb, 0);
     ctx = get_context_index(pinfo, 191981);
     bool is_server = pinfo->destport == ctx->server_port;
-    decrypt_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514);
-    if (ctx->server_cipher != NULL && ctx->client_cipher != NULL && frame_data != NULL && pinfo->fd->visited) {
-        tvb = tvb_new_child_real_data(tvb, frame_data->data, length, length);
-        add_new_data_source(pinfo, tvb, "Decrypted packet");
+    guint8 *decrypted = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514);
+    if (pinfo->fd->visited) {
+        if (ctx->server_cipher != NULL && is_server && decrypted != NULL) {
+            tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
+            add_new_data_source(pinfo, tvb, "Decrypted packet");
+        } else if (ctx->client_cipher != NULL && !is_server && decrypted != NULL) {
+            tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
+            add_new_data_source(pinfo, tvb, "Decrypted packet");
+        }
     } else {
         if (ctx->server_cipher != NULL && is_server) {
             guint last_decrypt_available = ctx->server_last_decrypt_available;
             guint to_decrypt = length - last_decrypt_available;
-            guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
+            decrypted = wmem_alloc(wmem_file_scope(), length);
             if (ctx->server_last_decrypt != NULL && last_decrypt_available > 0)
                 memcpy(decrypted, ctx->server_last_decrypt, last_decrypt_available);
             if (to_decrypt > 0) {
-                gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher, decrypted + last_decrypt_available,
+                gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher,
+                                                       decrypted + last_decrypt_available,
                                                        to_decrypt,
                                                        tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
                                                        to_decrypt);
@@ -272,18 +257,17 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             }
             tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted packet");
-            frame_data = wmem_new(wmem_file_scope(), decrypt_frame_data);
-            frame_data->data = decrypted;
-            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, frame_data);
+            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, decrypted);
         }
         if (ctx->client_cipher != NULL && !is_server) {
             guint last_decrypt_available = ctx->client_last_decrypt_available;
             guint to_decrypt = length - last_decrypt_available;
-            guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
+            decrypted = wmem_alloc(wmem_file_scope(), length);
             if (ctx->client_last_decrypt != NULL && last_decrypt_available > 0)
                 memcpy(decrypted, ctx->client_last_decrypt, last_decrypt_available);
             if (to_decrypt > 0) {
-                gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher, decrypted + last_decrypt_available,
+                gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher,
+                                                       decrypted + last_decrypt_available,
                                                        to_decrypt,
                                                        tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
                                                        to_decrypt);
@@ -296,9 +280,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             }
             tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted packet");
-            frame_data = wmem_new(wmem_file_scope(), decrypt_frame_data);
-            frame_data->data = decrypted;
-            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, frame_data);
+            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, decrypted);
         }
     }
 
@@ -309,7 +291,16 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
         guint packet_len;
         int packet_len_head = read_var_int(dt + offset, available, &packet_len);
-        if (packet_len_head <= 0) {
+
+        if (is_invalid(packet_len_head) && available > 5) {
+            col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Failed to parse payload length");
+            ctx->client_state = INVALID;
+            ctx->server_state = INVALID;
+            conversation_set_dissector(conv, ignore_je_handle);
+            return tvb_captured_length(tvb);
+        }
+
+        if (is_invalid(packet_len_head) && available <= 5) {
             pinfo->desegment_offset = offset;
             pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
             if (is_server) {
@@ -352,6 +343,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->client_last_decrypt_available = 0;
         ctx->client_last_decrypt = NULL;
     }
+
     return tvb_captured_length(tvb);
 }
 
