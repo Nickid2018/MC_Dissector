@@ -24,8 +24,13 @@ typedef struct {
     guint32 data_version;
     protocol_je_set protocol_set;
     gint32 compression_threshold;
+
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
+    guint server_last_decrypt_available;
+    guint client_last_decrypt_available;
+    guint8 *server_last_decrypt;
+    guint8 *client_last_decrypt;
 } mcje_protocol_context;
 
 typedef struct {

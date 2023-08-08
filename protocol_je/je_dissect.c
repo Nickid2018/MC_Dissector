@@ -233,29 +233,42 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         ctx->server_port = pinfo->destport;
         ctx->client_state = HANDSHAKE;
+        ctx->server_state = HANDSHAKE;
         ctx->compression_threshold = -1;
         ctx->server_cipher = NULL;
         ctx->client_cipher = NULL;
+        ctx->server_last_decrypt_available = 0;
+        ctx->client_last_decrypt_available = 0;
+        ctx->server_last_decrypt = NULL;
+        ctx->client_last_decrypt = NULL;
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
 
     guint length = tvb_captured_length_remaining(tvb, 0);
     ctx = get_context_index(pinfo, 191981);
+    bool is_server = pinfo->destport == ctx->server_port;
     decrypt_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514);
     if (ctx->server_cipher != NULL && ctx->client_cipher != NULL && frame_data != NULL && pinfo->fd->visited) {
         tvb = tvb_new_child_real_data(tvb, frame_data->data, length, length);
         add_new_data_source(pinfo, tvb, "Decrypted packet");
     } else {
-        bool is_server = pinfo->destport == ctx->server_port;
         if (ctx->server_cipher != NULL && is_server) {
+            guint last_decrypt_available = ctx->server_last_decrypt_available;
+            guint to_decrypt = length - last_decrypt_available;
             guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
-            gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher, decrypted, length,
-                                                   tvb_get_ptr(tvb, 0, length), length);
-            if (err != 0) {
-                col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
-                ctx->server_state = INVALID;
-                ctx->client_state = INVALID;
-                return tvb_captured_length(tvb);
+            if (ctx->server_last_decrypt != NULL)
+                memcpy(decrypted, ctx->server_last_decrypt, last_decrypt_available);
+            if (to_decrypt > 0) {
+                gcry_error_t err = gcry_cipher_decrypt(ctx->server_cipher, decrypted + last_decrypt_available,
+                                                       to_decrypt,
+                                                       tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
+                                                       to_decrypt);
+                if (err != 0) {
+                    col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
+                    ctx->server_state = INVALID;
+                    ctx->client_state = INVALID;
+                    return tvb_captured_length(tvb);
+                }
             }
             tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted packet");
@@ -264,14 +277,22 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 114514, frame_data);
         }
         if (ctx->client_cipher != NULL && !is_server) {
+            guint last_decrypt_available = ctx->client_last_decrypt_available;
+            guint to_decrypt = length - last_decrypt_available;
             guint8 *decrypted = wmem_alloc(wmem_file_scope(), length);
-            gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher, decrypted, length,
-                                                   tvb_get_ptr(tvb, 0, length), length);
-            if (err != 0) {
-                col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
-                ctx->server_state = INVALID;
-                ctx->client_state = INVALID;
-                return tvb_captured_length(tvb);
+            if (ctx->client_last_decrypt != NULL)
+                memcpy(decrypted, ctx->client_last_decrypt, last_decrypt_available);
+            if (to_decrypt > 0) {
+                gcry_error_t err = gcry_cipher_decrypt(ctx->client_cipher, decrypted + last_decrypt_available,
+                                                       to_decrypt,
+                                                       tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
+                                                       to_decrypt);
+                if (err != 0) {
+                    col_add_str(pinfo->cinfo, COL_INFO, "[Decryption Error]");
+                    ctx->server_state = INVALID;
+                    ctx->client_state = INVALID;
+                    return tvb_captured_length(tvb);
+                }
             }
             tvb = tvb_new_child_real_data(tvb, decrypted, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted packet");
@@ -291,12 +312,30 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         if (packet_len_head <= 0) {
             pinfo->desegment_offset = offset;
             pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-            return tvb_reported_length(tvb) + available;
+            if (is_server) {
+                ctx->server_last_decrypt_available = available;
+                ctx->server_last_decrypt = wmem_alloc(wmem_file_scope(), available);
+                memcpy(ctx->server_last_decrypt, dt + offset, available);
+            } else {
+                ctx->client_last_decrypt_available = available;
+                ctx->client_last_decrypt = wmem_alloc(wmem_file_scope(), available);
+                memcpy(ctx->client_last_decrypt, dt + offset, available);
+            }
+            return offset + 2 * available;
         }
 
         if (packet_len + packet_len_head > available) {
             pinfo->desegment_offset = offset;
             pinfo->desegment_len = packet_len + packet_len_head - available;
+            if (is_server) {
+                ctx->server_last_decrypt_available = available;
+                ctx->server_last_decrypt = wmem_alloc(wmem_file_scope(), available);
+                memcpy(ctx->server_last_decrypt, dt + offset, available);
+            } else {
+                ctx->client_last_decrypt_available = available;
+                ctx->client_last_decrypt = wmem_alloc(wmem_file_scope(), available);
+                memcpy(ctx->client_last_decrypt, dt + offset, available);
+            }
             return offset + packet_len_head + available;
         }
 
@@ -306,6 +345,13 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         offset += packet_len + packet_len_head;
     }
 
+    if (is_server) {
+        ctx->server_last_decrypt_available = 0;
+        ctx->server_last_decrypt = NULL;
+    } else {
+        ctx->client_last_decrypt_available = 0;
+        ctx->client_last_decrypt = NULL;
+    }
     return tvb_captured_length(tvb);
 }
 
@@ -320,9 +366,7 @@ int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, v
     if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
         col_add_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
         col_add_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
-    } else
-        tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0,
-                         get_packet_length_je, dissect_je_core, data);
+    }
 
     return tvb_captured_length(tvb);
 }
