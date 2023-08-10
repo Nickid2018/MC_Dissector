@@ -31,7 +31,7 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
 
 int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
 
-int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx, packet_info *pinfo);
 
 void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
                          guint length, mcje_protocol_context *ctx, bool is_client);

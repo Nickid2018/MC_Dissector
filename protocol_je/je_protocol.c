@@ -3,6 +3,8 @@
 //
 
 #include <epan/proto.h>
+#include <epan/proto_data.h>
+#include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
 #include "je_protocol_constants.h"
@@ -182,7 +184,7 @@ int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_c
     return 0;
 }
 
-int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
+int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx, packet_info *pinfo) {
     if (ctx->protocol_set == NULL) {
         ctx->client_state = ctx->server_state = INVALID;
         return -1;
@@ -204,12 +206,20 @@ int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_c
             gchar hex[3] = {secret_key_str[i * 2], secret_key_str[i * 2 + 1], '\0'};
             secret_key[i] = (guint8) strtol(hex, NULL, 16);
         }
-        gcry_cipher_open(&ctx->server_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-        gcry_cipher_setkey(ctx->server_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_setiv(ctx->server_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_open(&ctx->client_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-        gcry_cipher_setkey(ctx->client_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_setiv(ctx->client_cipher, secret_key, sizeof(secret_key));
+        mcje_decryption_context *decryption_context = wmem_new(wmem_file_scope(), mcje_decryption_context);
+        decryption_context->client_last_decrypt_available = 0;
+        decryption_context->server_last_decrypt_available = 0;
+        decryption_context->client_decrypt_length = 0;
+        decryption_context->server_decrypt_length = 0;
+        decryption_context->client_decrypt = wmem_alloc(wmem_file_scope(), 0);
+        decryption_context->server_decrypt = wmem_alloc(wmem_file_scope(), 0);
+        gcry_cipher_open(&decryption_context->server_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
+        gcry_cipher_setkey(decryption_context->server_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_setiv(decryption_context->server_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_open(&decryption_context->client_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
+        gcry_cipher_setkey(decryption_context->client_cipher, secret_key, sizeof(secret_key));
+        gcry_cipher_setiv(decryption_context->client_cipher, secret_key, sizeof(secret_key));
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFF, decryption_context);
     }
     return 0;
 }

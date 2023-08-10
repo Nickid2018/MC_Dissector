@@ -56,7 +56,7 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     proto_tree *tree, mcje_protocol_context *ctx,
                     bool is_client, bool visited);
 
-void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_);
+int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 
