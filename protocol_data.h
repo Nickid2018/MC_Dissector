@@ -19,6 +19,7 @@ typedef enum {
 typedef struct {
     je_state client_state;
     je_state server_state;
+    guint32 server_port;
     address server_address;
     guint32 protocol_version;
     guint32 data_version;

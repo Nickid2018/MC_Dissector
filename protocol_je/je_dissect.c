@@ -89,22 +89,6 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
     }
 }
 
-mcje_protocol_context *get_context_index(packet_info *pinfo, guint index) {
-    mcje_protocol_context *ctx;
-    if (pinfo->fd->visited) {
-        ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, index);
-    } else {
-        conversation_t *conv;
-        conv = find_or_create_conversation(pinfo);
-        ctx = conversation_get_proto_data(conv, proto_mcje);
-        mcje_protocol_context *save;
-        save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
-        *save = *ctx;
-        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, index, save);
-    }
-    return ctx;
-}
-
 mcje_protocol_context *get_context(packet_info *pinfo) {
     mcje_protocol_context *ctx;
     if (pinfo->fd->visited) {
@@ -130,7 +114,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     if (ctx == NULL)
         return tvb_captured_length(tvb);
 
-    bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address);
+    bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     guint read_pointer = 0;
     guint packet_length = tvb_reported_length(tvb);
     const guint8 *dt = tvb_get_ptr(tvb, 0, packet_length);
@@ -237,13 +221,14 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->client_state = HANDSHAKE;
         ctx->server_state = HANDSHAKE;
         ctx->compression_threshold = -1;
+        ctx->server_port = pinfo->destport;
         copy_address(&ctx->server_address, &pinfo->dst);
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
 
     guint length = tvb_captured_length_remaining(tvb, 0);
     bool is_visited = pinfo->fd->visited;
-    bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address);
+    bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     col_clear(pinfo->cinfo, COL_INFO);
     col_add_str(pinfo->cinfo, COL_INFO, is_server ? "[C => S]" : "[S => C]");
 
