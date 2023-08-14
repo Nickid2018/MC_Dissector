@@ -106,13 +106,12 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
     return ctx;
 }
 
-int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data) {
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
-    guint *read_counter = data;
-
+int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     mcje_protocol_context *ctx = get_context(pinfo);
-    if (ctx == NULL)
+    if (ctx == NULL) {
+        col_add_str(pinfo->cinfo, COL_INFO, "[Invalid Context]");
         return tvb_captured_length(tvb);
+    }
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     guint read_pointer = 0;
@@ -122,7 +121,6 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     guint packet_length_length = read_var_int(dt, packet_length, &packet_length_vari);
     read_pointer += packet_length_length;
     col_append_fstr(pinfo->cinfo, COL_INFO, " (%d bytes)", packet_length_vari);
-    *read_counter += packet_length_vari + packet_length_length;
 
     proto_tree *mcje_tree;
     if (tree) {
@@ -191,28 +189,46 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     return tvb_captured_length(tvb);
 }
 
+void mark_invalid(packet_info *pinfo) {
+    conversation_t *conv = find_or_create_conversation(pinfo);
+    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    ctx->client_state = INVALID;
+    ctx->server_state = INVALID;
+    conversation_set_dissector(conv, ignore_je_handle);
+}
+
 guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
     guint len;
     guint packet_length = tvb_reported_length(tvb);
     if (packet_length == 0)
         return 0;
 
+    reassemble_offset *reassemble_data = data;
     const guint8 *dt = tvb_get_ptr(tvb, offset, packet_length - offset);
     int ret = read_var_int(dt, packet_length - offset, &len);
     if (is_invalid(ret)) {
+        if (packet_length < 5) {
+            reassemble_data->record_latest = 0;
+            return 0;
+        }
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Failed to parse payload length");
-        conversation_t *conv = find_or_create_conversation(pinfo);
-        mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-        ctx->client_state = INVALID;
-        ctx->server_state = INVALID;
-        conversation_set_dissector(conv, ignore_je_handle);
+        mark_invalid(pinfo);
         return 0;
-    } else
+    } else {
+        reassemble_data->record_latest = len + ret;
+        reassemble_data->record_total += len + ret;
         return len + ret;
+    }
 }
 
+// 0xFFFFFFFF: Decrypted Data for first
+// 0xFFFFFFFE: Decrypted Data for second (if contains)
+// 0xFFFFFFFD: Sub Number for second
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
     pinfo->fd->subnum = 0;
+    if (pinfo->curr_layer_num == 7)
+        pinfo->fd->subnum = GPOINTER_TO_UINT(p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFD));
 
     conversation_t *conv = find_or_create_conversation(pinfo);
     mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
@@ -223,58 +239,77 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->compression_threshold = -1;
         ctx->server_port = pinfo->destport;
         copy_address(&ctx->server_address, &pinfo->dst);
+        ctx->decryption_context = NULL;
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
 
-    guint length = tvb_captured_length_remaining(tvb, 0);
+    guint length = tvb_reported_length_remaining(tvb, 0);
     bool is_visited = pinfo->fd->visited;
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     col_clear(pinfo->cinfo, COL_INFO);
-    col_add_str(pinfo->cinfo, COL_INFO, is_server ? "[C => S]" : "[S => C]");
+    col_add_str(pinfo->cinfo, COL_INFO, is_server ? "[C => S] " : "[S => C] ");
 
-    mcje_decryption_context *decryption_ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFF);
-    if (decryption_ctx != NULL) {
+    mcje_decryption_context *decryption_ctx = ctx->decryption_context;
+    bool is_encrypted = decryption_ctx != NULL;
+    if (is_encrypted) {
+        guint8 *decrypt;
         if (!is_visited) {
             gcry_cipher_hd_t cipher = is_server ? decryption_ctx->server_cipher : decryption_ctx->client_cipher;
             guint last_decrypt_available = is_server ? decryption_ctx->server_last_decrypt_available
                                                      : decryption_ctx->client_last_decrypt_available;
             guint to_decrypt = length - last_decrypt_available;
-            guint8 *write_to = is_server ? decryption_ctx->server_decrypt : decryption_ctx->client_decrypt;
+            guint8 **write_to = is_server ? &decryption_ctx->server_decrypt : &decryption_ctx->client_decrypt;
             guint *old_length = is_server ? &decryption_ctx->server_decrypt_length
                                           : &decryption_ctx->client_decrypt_length;
-            if (to_decrypt > 0) {
-                memmove(write_to, write_to + *old_length - last_decrypt_available, last_decrypt_available);
-                wmem_realloc(wmem_file_scope(), write_to, length);
-                gcry_error_t err = gcry_cipher_decrypt(cipher, write_to + last_decrypt_available, to_decrypt,
-                                                       tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
-                                                       to_decrypt);
-                if (err != 0) {
-                    col_append_str(pinfo->cinfo, COL_INFO, "<Decryption Error>");
-                    ctx->server_state = INVALID;
-                    ctx->client_state = INVALID;
-                    return tvb_captured_length(tvb);
-                }
-                *old_length = length;
+            guint8 *old = *write_to;
+            *write_to = decrypt = wmem_alloc(wmem_file_scope(), length);
+            memcpy(*write_to, old + *old_length - last_decrypt_available, last_decrypt_available);
+            gcry_error_t err = gcry_cipher_decrypt(cipher, *write_to + last_decrypt_available, to_decrypt,
+                                                   tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
+                                                   to_decrypt);
+            if (err != 0) {
+                col_append_str(pinfo->cinfo, COL_INFO, "<Decryption Error: Decrypt failed>");
+                mark_invalid(pinfo);
+                return tvb_captured_length(tvb);
             }
+            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje,
+                             pinfo->curr_layer_num == 6 ? 0xFFFFFFFF : 0xFFFFFFFE, *write_to);
+            *old_length = length;
+        } else {
+            if (pinfo->curr_layer_num == 6)
+                decrypt = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFF);
+            else
+                decrypt = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFE);
         }
-        guint8 *decrypt = is_server ? decryption_ctx->server_decrypt : decryption_ctx->client_decrypt;
-        guint decrypt_length = is_server ? decryption_ctx->server_decrypt_length
-                                         : decryption_ctx->client_decrypt_length;
         if (decrypt != NULL) {
             col_append_str(pinfo->cinfo, COL_INFO, "(Encrypted) ");
-            tvb = tvb_new_child_real_data(tvb, decrypt, decrypt_length, decrypt_length);
+            tvb = tvb_new_child_real_data(tvb, decrypt, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted Data");
         }
     }
 
-    guint read_len = 0;
+    reassemble_offset *reassemble_data = wmem_new(pinfo->pool, reassemble_offset);
+    reassemble_data->record_total = 0;
+    reassemble_data->record_latest = 0;
     tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 1, get_packet_length,
-                     dissect_je_core, &read_len);
-    if (decryption_ctx != NULL) {
+                     dissect_je_core, reassemble_data);
+    if (!is_visited && pinfo->curr_layer_num == 6)
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFD, GUINT_TO_POINTER(pinfo->fd->subnum));
+    if (!is_visited && is_encrypted) {
         guint *last_decrypt_available = is_server ? &decryption_ctx->server_last_decrypt_available
                                                   : &decryption_ctx->client_last_decrypt_available;
-        *last_decrypt_available = length - read_len;
+        gint read = reassemble_data->record_total;
+        if (read > length)
+            read -= reassemble_data->record_latest;
+        *last_decrypt_available = length - read;
+        ws_log("", LOG_LEVEL_CRITICAL, "Packet Num: %d, Desegment Offset: %d", pinfo->num, pinfo->curr_layer_num);
+        ws_log("", LOG_LEVEL_CRITICAL, is_server ? "C => S" : "S => C");
+        ws_log("", LOG_LEVEL_CRITICAL, "(%d length, %d bytes read, %d rem)", length, read, *last_decrypt_available);
+        if (reassemble_data->record_total > length)
+            ws_log("", LOG_LEVEL_CRITICAL, "Record Total: %d", reassemble_data->record_total);
+        ws_log("", LOG_LEVEL_CRITICAL, "Last Decrypt Available: %d", *last_decrypt_available);
     }
+    wmem_free(pinfo->pool, reassemble_data);
 
     return tvb_captured_length(tvb);
 }

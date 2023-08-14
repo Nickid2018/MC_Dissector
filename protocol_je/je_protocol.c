@@ -219,7 +219,7 @@ int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_c
         gcry_cipher_open(&decryption_context->client_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
         gcry_cipher_setkey(decryption_context->client_cipher, secret_key, sizeof(secret_key));
         gcry_cipher_setiv(decryption_context->client_cipher, secret_key, sizeof(secret_key));
-        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFF, decryption_context);
+        ctx->decryption_context = decryption_context;
     }
     return 0;
 }

@@ -17,17 +17,6 @@ typedef enum {
 } je_state;
 
 typedef struct {
-    je_state client_state;
-    je_state server_state;
-    guint32 server_port;
-    address server_address;
-    guint32 protocol_version;
-    guint32 data_version;
-    protocol_je_set protocol_set;
-    gint32 compression_threshold;
-} mcje_protocol_context;
-
-typedef struct {
     guint8 *server_decrypt;
     guint8 *client_decrypt;
     guint server_decrypt_length;
@@ -39,6 +28,23 @@ typedef struct {
     guint server_last_decrypt_available;
     guint client_last_decrypt_available;
 } mcje_decryption_context;
+
+typedef struct {
+    je_state client_state;
+    je_state server_state;
+    guint32 server_port;
+    address server_address;
+    guint32 protocol_version;
+    guint32 data_version;
+    protocol_je_set protocol_set;
+    gint32 compression_threshold;
+    mcje_decryption_context *decryption_context;
+} mcje_protocol_context;
+
+typedef struct {
+    gint record_total;
+    gint record_latest;
+} reassemble_offset;
 
 extern char *STATE_NAME[];
 
