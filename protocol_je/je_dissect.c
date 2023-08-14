@@ -256,7 +256,6 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             guint required_length = is_server ? decryption_ctx->server_required_length
                                               : decryption_ctx->client_required_length;
             if (required_length != 0 && required_length != length) {
-                ws_log("", LOG_LEVEL_CRITICAL, "Mismatch: %d / %d at Packet %d", required_length, length, pinfo->num);
                 col_append_str(pinfo->cinfo, COL_INFO, "<Decryption Error: TCP Data not successfully captured>");
                 mark_invalid(pinfo);
                 return tvb_captured_length(tvb);
