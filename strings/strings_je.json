@@ -39,7 +39,7 @@
     },
     "ping_time_je": {
       "name": "Ping Time",
-      "type": "u64"
+      "type": "i64"
     },
     "server_status_je": {
       "name": "Server Status",
@@ -209,7 +209,10 @@
     },
     "long": {
       "name": "Long Integer",
-      "type": "i64"
+      "type": [
+        "i64",
+        "u64"
+      ]
     },
     "float": {
       "name": "Float",
@@ -2361,7 +2364,8 @@
     "common_player_spawn_info/portalCooldown": "portal_cooldown",
     "chunk_batch_finished/batchSize": "batch_size",
     "chunk_batch_received/desiredBatchSize": "desired_batch_size",
-    "registry_data/registryData": "registry_data"
+    "registry_data/registryData": "registry_data",
+    "pong/time": "ping_time_je"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [

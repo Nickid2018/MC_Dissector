@@ -225,7 +225,6 @@ guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *dat
 // 0xFFFFFFFE: Decrypted Data for second (if contains)
 // 0xFFFFFFFD: Sub Number for second
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
     pinfo->fd->subnum = 0;
     if (pinfo->curr_layer_num == 7)
         pinfo->fd->subnum = GPOINTER_TO_UINT(p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFD));
@@ -254,6 +253,15 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     if (is_encrypted) {
         guint8 *decrypt;
         if (!is_visited) {
+            guint required_length = is_server ? decryption_ctx->server_required_length
+                                              : decryption_ctx->client_required_length;
+            if (required_length != 0 && required_length != length) {
+                ws_log("", LOG_LEVEL_CRITICAL, "Mismatch: %d / %d at Packet %d", required_length, length, pinfo->num);
+                col_append_str(pinfo->cinfo, COL_INFO, "<Decryption Error: TCP Data not successfully captured>");
+                mark_invalid(pinfo);
+                return tvb_captured_length(tvb);
+            }
+            col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
             gcry_cipher_hd_t cipher = is_server ? decryption_ctx->server_cipher : decryption_ctx->client_cipher;
             guint last_decrypt_available = is_server ? decryption_ctx->server_last_decrypt_available
                                                      : decryption_ctx->client_last_decrypt_available;
@@ -282,32 +290,33 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                 decrypt = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFE);
         }
         if (decrypt != NULL) {
+            col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
             col_append_str(pinfo->cinfo, COL_INFO, "(Encrypted) ");
             tvb = tvb_new_child_real_data(tvb, decrypt, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted Data");
         }
-    }
+    } else
+        col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
     reassemble_offset *reassemble_data = wmem_new(pinfo->pool, reassemble_offset);
     reassemble_data->record_total = 0;
     reassemble_data->record_latest = 0;
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 1, get_packet_length,
+    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0, get_packet_length,
                      dissect_je_core, reassemble_data);
     if (!is_visited && pinfo->curr_layer_num == 6)
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFD, GUINT_TO_POINTER(pinfo->fd->subnum));
     if (!is_visited && is_encrypted) {
         guint *last_decrypt_available = is_server ? &decryption_ctx->server_last_decrypt_available
                                                   : &decryption_ctx->client_last_decrypt_available;
+        guint *required_length = is_server ? &decryption_ctx->server_required_length
+                                           : &decryption_ctx->client_required_length;
         gint read = reassemble_data->record_total;
-        if (read > length)
+        if (read > length) {
             read -= reassemble_data->record_latest;
+            *required_length = reassemble_data->record_latest;
+        } else
+            *required_length = 0;
         *last_decrypt_available = length - read;
-        ws_log("", LOG_LEVEL_CRITICAL, "Packet Num: %d, Desegment Offset: %d", pinfo->num, pinfo->curr_layer_num);
-        ws_log("", LOG_LEVEL_CRITICAL, is_server ? "C => S" : "S => C");
-        ws_log("", LOG_LEVEL_CRITICAL, "(%d length, %d bytes read, %d rem)", length, read, *last_decrypt_available);
-        if (reassemble_data->record_total > length)
-            ws_log("", LOG_LEVEL_CRITICAL, "Record Total: %d", reassemble_data->record_total);
-        ws_log("", LOG_LEVEL_CRITICAL, "Last Decrypt Available: %d", *last_decrypt_available);
     }
     wmem_free(pinfo->pool, reassemble_data);
 

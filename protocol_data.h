@@ -27,6 +27,8 @@ typedef struct {
 
     guint server_last_decrypt_available;
     guint client_last_decrypt_available;
+    guint server_required_length;
+    guint client_required_length;
 } mcje_decryption_context;
 
 typedef struct {

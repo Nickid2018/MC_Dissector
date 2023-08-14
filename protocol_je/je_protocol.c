@@ -120,7 +120,7 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
             proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, p, -1, "Invalid time field");
             return;
         }
-        proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
+        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, read, *(gint64 *) &payload);
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
@@ -153,7 +153,7 @@ void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
             proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, p, -1, "Invalid time field");
             return;
         }
-        proto_tree_add_uint64(packet_tree, hf_ping_time_je, tvb, p, read, payload);
+        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, read, *(gint64 *) &payload);
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
@@ -211,6 +211,8 @@ int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_c
         decryption_context->server_last_decrypt_available = 0;
         decryption_context->client_decrypt_length = 0;
         decryption_context->server_decrypt_length = 0;
+        decryption_context->client_required_length = 0;
+        decryption_context->server_required_length = 0;
         decryption_context->client_decrypt = wmem_alloc(wmem_file_scope(), 0);
         decryption_context->server_decrypt = wmem_alloc(wmem_file_scope(), 0);
         gcry_cipher_open(&decryption_context->server_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
