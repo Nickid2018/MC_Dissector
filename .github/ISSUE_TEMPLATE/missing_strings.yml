@@ -1,0 +1,26 @@
+name: Missing Strings Report
+description: Create a report to help us fix missing strings
+title: "[Missing Strings]: "
+labels: [ "bug", "missing strings" ]
+
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: checkboxes
+    attributes:
+      label: Is the bug existing in the latest version?
+      description: Please check if the bug is existing in the latest version.
+      options:
+        - label: I have checked the latest version
+          required: true
+  - type: textarea
+    id: missing-strings
+    attributes:
+      label: Missing Strings
+      description: A clear and concise description of what the missing strings are.
+      placeholder: Describe the missing strings
