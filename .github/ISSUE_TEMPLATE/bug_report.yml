@@ -1,0 +1,51 @@
+name: Bug Report
+description: Create a report to help us improve
+title: "[Bug]: "
+labels: [ "bug" ]
+
+body:
+  - type: checkboxes
+    attributes:
+      label: Is there an existing issue for this?
+      description: Please search to see if an issue already exists for the bug you encountered.
+      options:
+        - label: I have searched the existing issues
+          required: true
+  - type: checkboxes
+    attributes:
+      label: Is the bug existing in the latest version?
+      description: Please check if the bug is existing in the latest version.
+      options:
+        - label: I have checked the latest version
+          required: true
+  - type: dropdown
+    id: version
+    attributes:
+      label: Minecraft Dissector Version
+      description: What version of the Minecraft dissector are you using?
+      options:
+        - 1.0.0-beta.1
+        - 1.0.0-beta.2
+        - 1.0.0-beta.3
+        - 1.0.0-beta.4
+        - 1.0.0-beta.5
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      placeholder: Windows 10
+  - type: input
+    id: wireshark-version
+    attributes:
+      label: Wireshark Version
+      description: What version of Wireshark are you using?
+      placeholder: 4.0.7
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the bug
+    validations:
+      required: true

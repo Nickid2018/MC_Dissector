@@ -242,6 +242,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
 
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
     guint length = tvb_reported_length_remaining(tvb, 0);
     bool is_visited = pinfo->fd->visited;
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
@@ -260,7 +261,6 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                 mark_invalid(pinfo);
                 return tvb_captured_length(tvb);
             }
-            col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
             gcry_cipher_hd_t cipher = is_server ? decryption_ctx->server_cipher : decryption_ctx->client_cipher;
             guint last_decrypt_available = is_server ? decryption_ctx->server_last_decrypt_available
                                                      : decryption_ctx->client_last_decrypt_available;
@@ -289,13 +289,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                 decrypt = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFE);
         }
         if (decrypt != NULL) {
-            col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
             col_append_str(pinfo->cinfo, COL_INFO, "(Encrypted) ");
             tvb = tvb_new_child_real_data(tvb, decrypt, length, length);
             add_new_data_source(pinfo, tvb, "Decrypted Data");
         }
-    } else
-        col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
+    }
 
     reassemble_offset *reassemble_data = wmem_new(pinfo->pool, reassemble_offset);
     reassemble_data->record_total = 0;
