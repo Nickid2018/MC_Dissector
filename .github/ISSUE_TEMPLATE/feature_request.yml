@@ -7,14 +7,14 @@ body:
   - type: checkboxes
     attributes:
       label: Is there an existing issue for this?
-      description: Please search to see if an issue already exists for the bug you encountered.
+      description: Please search to see if an issue already exists for the feature you encountered.
       options:
         - label: I have searched the existing issues
           required: true
   - type: checkboxes
     attributes:
       label: Is the feature existing in the latest version?
-      description: Please check if the bug is existing in the latest version.
+      description: Please check if the feature is existing in the latest version.
       options:
         - label: I have checked the latest version
           required: true
