@@ -207,7 +207,7 @@ guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *dat
     const guint8 *dt = tvb_get_ptr(tvb, offset, packet_length - offset);
     int ret = read_var_int(dt, packet_length - offset, &len);
     if (is_invalid(ret)) {
-        if (packet_length < 5) {
+        if (packet_length < 3) {
             reassemble_data->record_latest = 0;
             return 0;
         }
