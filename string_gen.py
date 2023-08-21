@@ -167,10 +167,12 @@ def read_data():
 
 def write_data():
     with open(code_gen_header, 'w', encoding='utf-8') as f:
+        f.write('// Auto generate codes, DO NOT MODIFY THIS FILE\n')
         f.write('#pragma once\n')
         f.write(f'void register_string_{edition}();')
     with open(code_gen_file, 'w', encoding='utf-8') as f:
         f.writelines('\n'.join([
+            '// Auto generate codes, DO NOT MODIFY THIS FILE',
             '#include "mc_dissector.h"',
             '#include <epan/packet.h>',
             f'int ett_mc{edition} = -1;',

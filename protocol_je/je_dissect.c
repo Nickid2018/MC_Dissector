@@ -244,6 +244,12 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     }
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
+
+    if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
+        return tvb_captured_length(tvb);
+    }
+
     guint length = tvb_reported_length_remaining(tvb, 0);
     bool is_visited = pinfo->fd->visited;
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;

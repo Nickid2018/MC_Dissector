@@ -67,88 +67,24 @@ else ()
     link_libraries(PkgConfig::gcrypt)
 endif ()
 
-# String data
-execute_process(COMMAND python3 "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
-        "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
-        ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
-
-if (NOT GEN_RESULT EQUAL 0)
-    execute_process(COMMAND python "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
-            "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je"
-            ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
-endif ()
-
-if (NOT GEN_RESULT EQUAL 0)
-    message(FATAL_ERROR "Failed to generate strings_je.c and strings_je.h\n${GEN_ERROR}")
-else ()
-    message(STATUS "Generate Output: ${GEN_OUTPUT}")
-endif ()
-
-# Protocol version data
-file(GLOB PROTOCOL_VERSION_JE_DATA_FILE "minecraft-data/data/pc/common/protocolVersions.json")
-file(GLOB PROTOCOL_VERSION_BE_DATA_FILE "minecraft-data/data/bedrock/common/protocolVersions.json")
-set(PROTOCOL_VERSION_HEADER "${GEN_RESOURCE_DIR}/protocolVersions.h")
-set(PROTOCOL_VERSION_SOURCE "${GEN_RESOURCE_DIR}/protocolVersions.c")
-
-file(WRITE ${PROTOCOL_VERSION_HEADER} "#pragma once\n")
-file(APPEND ${PROTOCOL_VERSION_HEADER} "extern const char* PROTOCOL_VERSIONS_JE;\n")
-file(APPEND ${PROTOCOL_VERSION_HEADER} "extern const char* PROTOCOL_VERSIONS_BE;\n")
-
-file(WRITE ${PROTOCOL_VERSION_SOURCE} "#include \"protocolVersions.h\"\n")
-file(APPEND ${PROTOCOL_VERSION_SOURCE} "const char* PROTOCOL_VERSIONS_JE = \"")
-file(READ ${PROTOCOL_VERSION_JE_DATA_FILE} FILE_DATA HEX)
-string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
-file(APPEND ${PROTOCOL_VERSION_SOURCE} "${FILE_DATA}\";\n")
-file(APPEND ${PROTOCOL_VERSION_SOURCE} "const char* PROTOCOL_VERSIONS_BE = \"")
-file(READ ${PROTOCOL_VERSION_BE_DATA_FILE} FILE_DATA HEX)
-string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
-file(APPEND ${PROTOCOL_VERSION_SOURCE} "${FILE_DATA}\";")
-
-# Protocol data
-file(GLOB PROTOCOL_JE_DATA_FILE "minecraft-data/data/pc/*")
-file(GLOB PROTOCOL_BE_DATA_FILE "minecraft-data/data/bedrock/*")
-
-set(PROTOCOL_SCHEMA_FILE ${GEN_RESOURCE_DIR}/protocolSchemas.h)
-file(WRITE ${PROTOCOL_SCHEMA_FILE} "#pragma once\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "extern const int JE_PROTOCOL_SIZE;\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "extern const char *JE_PROTOCOLS[];\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "extern const int BE_PROTOCOL_SIZE;\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "extern const char *BE_PROTOCOLS[];\n")
-
-set(PROTOCOL_SCHEMA_FILE ${GEN_RESOURCE_DIR}/protocolSchemas.c)
-file(WRITE ${PROTOCOL_SCHEMA_FILE} "#include \"protocolSchemas.h\"\n")
-
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "const char *JE_PROTOCOLS[] = {\n")
-set(JE_PROTOCOL_SIZE 0)
-foreach (INPUT_FILE ${PROTOCOL_JE_DATA_FILE})
-    if (NOT EXISTS ${INPUT_FILE}/protocol.json)
-        continue()
+macro(invoke_py message)
+    execute_process(COMMAND python3 ${ARGN} ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
+    if (NOT GEN_RESULT EQUAL 0)
+        message(STATUS "python3 not found or run failed, trying python")
+        execute_process(COMMAND python ${ARGN} ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
     endif ()
-    file(READ ${INPUT_FILE}/protocol.json FILE_DATA HEX)
-    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
-    get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
-    file(APPEND ${PROTOCOL_SCHEMA_FILE} "    \"${FILE_NAME}\", \"${FILE_DATA}\",\n")
-    message(STATUS "Found protocol data for JE${FILE_NAME}")
-    math(EXPR JE_PROTOCOL_SIZE "${JE_PROTOCOL_SIZE} + 1")
-endforeach ()
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "};\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "const int JE_PROTOCOL_SIZE = ${JE_PROTOCOL_SIZE};\n")
-
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "const char *BE_PROTOCOLS[] = {\n")
-set(BE_PROTOCOL_SIZE 0)
-foreach (INPUT_FILE ${PROTOCOL_BE_DATA_FILE})
-    if (NOT EXISTS ${INPUT_FILE}/protocol.json)
-        continue()
+    if (NOT GEN_RESULT EQUAL 0)
+        message(FATAL_ERROR "Failed to ${message}:\n${GEN_ERROR}")
+    else ()
+        message(STATUS "${message}:\n${GEN_OUTPUT}")
     endif ()
-    file(READ ${INPUT_FILE}/protocol.json FILE_DATA HEX)
-    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "\\\\x\\1" FILE_DATA ${FILE_DATA})
-    get_filename_component(FILE_NAME ${INPUT_FILE} NAME)
-    file(APPEND ${PROTOCOL_SCHEMA_FILE} "    \"${FILE_NAME}\", \"${FILE_DATA}\",\n")
-    message(STATUS "Found protocol data for BE${FILE_NAME}")
-    math(EXPR BE_PROTOCOL_SIZE "${BE_PROTOCOL_SIZE} + 1")
-endforeach ()
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "};\n")
-file(APPEND ${PROTOCOL_SCHEMA_FILE} "const int BE_PROTOCOL_SIZE = ${BE_PROTOCOL_SIZE};\n")
+endmacro(invoke_py)
+
+invoke_py("Generate Java String Data"
+        "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+        "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je")
+invoke_py("Generate Protocol Data"
+        "${PROJECT_SOURCE_DIR}/protocol_data.gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
