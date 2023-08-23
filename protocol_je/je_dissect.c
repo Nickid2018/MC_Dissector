@@ -106,6 +106,14 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
     return ctx;
 }
 
+void mark_invalid(packet_info *pinfo) {
+    conversation_t *conv = find_or_create_conversation(pinfo);
+    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    ctx->client_state = INVALID;
+    ctx->server_state = INVALID;
+    conversation_set_dissector(conv, ignore_je_handle);
+}
+
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     mcje_protocol_context *ctx = get_context(pinfo);
     if (ctx == NULL) {
@@ -147,8 +155,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         if (is_invalid(var_len)) {
             proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
                                   read_pointer, var_len, "Invalid Compression VarInt");
-            ctx->client_state = INVALID;
-            ctx->server_state = INVALID;
+            mark_invalid(pinfo);
             return tvb_captured_length(tvb);
         }
 
@@ -158,11 +165,14 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             if (tree) {
                 proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
                                     read_pointer - var_len, var_len, uncompressed_length);
-                if (uncompressed_length < ctx->compression_threshold)
+                if (uncompressed_length < ctx->compression_threshold) {
                     proto_tree_add_string_format_value(mcje_tree, hf_invalid_data_je, tvb, read_pointer - var_len,
                                                        var_len, "",
                                                        "Badly compressed packet - size of %d is below server threshold of %d",
                                                        uncompressed_length, ctx->compression_threshold);
+                    mark_invalid(pinfo);
+                    return tvb_captured_length(tvb);
+                }
             }
             new_tvb = tvb_uncompress(tvb, read_pointer, packet_length - read_pointer);
             if (new_tvb == NULL)
@@ -187,14 +197,6 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     }
 
     return tvb_captured_length(tvb);
-}
-
-void mark_invalid(packet_info *pinfo) {
-    conversation_t *conv = find_or_create_conversation(pinfo);
-    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-    ctx->client_state = INVALID;
-    ctx->server_state = INVALID;
-    conversation_set_dissector(conv, ignore_je_handle);
 }
 
 guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
