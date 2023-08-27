@@ -88,12 +88,12 @@ macro(invoke_py message)
 endmacro(invoke_py)
 
 invoke_py("Generate Java String Data"
-        "${PROJECT_SOURCE_DIR}/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
+        "${PROJECT_SOURCE_DIR}/codegen_script/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je")
 invoke_py("Generate Protocol Data"
-        "${PROJECT_SOURCE_DIR}/protocol_data_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
+        "${PROJECT_SOURCE_DIR}/codegen_script/protocol_data_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
 invoke_py("Generate Resources"
-        "${PROJECT_SOURCE_DIR}/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources" "${GEN_RESOURCE_DIR}")
+        "${PROJECT_SOURCE_DIR}/codegen_script/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources" "${GEN_RESOURCE_DIR}")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
