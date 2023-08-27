@@ -85,6 +85,8 @@ invoke_py("Generate Java String Data"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je")
 invoke_py("Generate Protocol Data"
         "${PROJECT_SOURCE_DIR}/protocol_data_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
+invoke_py("Generate Resources"
+        "${PROJECT_SOURCE_DIR}/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources" "${GEN_RESOURCE_DIR}")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")

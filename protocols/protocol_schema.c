@@ -488,7 +488,9 @@ void init_schema_data() {
     ADD_NATIVE(nbt, nbt, bytes, bytes)
     ADD_NATIVE(optionalNbt, optional_nbt, bytes, bytes)
 
-    ADD_FUNCTION(sync_entity_data, sync_entity_data);
+    ADD_FUNCTION(sync_entity_data, sync_entity_data)
+
+    init_protocol_functions();
 }
 
 int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags, gchar *type) {

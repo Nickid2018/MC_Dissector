@@ -32,6 +32,7 @@ FIELD_MAKE_TREE(be_##name) { \
 guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, \
     protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je)
 
+void init_protocol_functions();
 
 FIELD_MAKE_TREE(sync_entity_data);
 

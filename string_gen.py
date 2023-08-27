@@ -5,7 +5,6 @@ data_source_file = sys.argv[1]
 code_gen_file = sys.argv[2]
 code_gen_header = sys.argv[3]
 edition = sys.argv[4]
-print(f'code_gen_file: {code_gen_file}, edition: {edition}, data_source_file: {data_source_file}')
 
 hf_defines = []
 value_string_lines = []
@@ -167,14 +166,19 @@ def read_data():
 
 def write_data():
     with open(code_gen_header, 'w', encoding='utf-8') as f:
-        f.write('// Auto generate codes, DO NOT MODIFY THIS FILE\n')
-        f.write('#pragma once\n')
-        f.write(f'void register_string_{edition}();')
-    with open(code_gen_file, 'w', encoding='utf-8') as f:
-        f.writelines('\n'.join([
+        f.write('\n'.join([
             '// Auto generate codes, DO NOT MODIFY THIS FILE',
+            '#pragma once',
             '#include "mc_dissector.h"',
             '#include <epan/packet.h>',
+            f'void register_string_{edition}();',
+            f'int get_string_{edition}(const char *name, const char *type);',
+            ''
+        ]))
+    with open(code_gen_file, 'w', encoding='utf-8') as f:
+        f.write('\n'.join([
+            '// Auto generate codes, DO NOT MODIFY THIS FILE',
+            f'#include "strings_{edition}.h"',
             f'int ett_mc{edition} = -1;',
             f'int ett_{edition}_proto = -1;',
             f'int ett_sub_{edition} = -1;',
@@ -184,10 +188,12 @@ def write_data():
             f'wmem_map_t *unknown_hf_map_{edition} = NULL;',
             f'wmem_map_t *bitmask_hf_map_{edition} = NULL;',
             f'wmem_map_t *component_map_{edition} = NULL;',
+            f'wmem_map_t *hf_mapping_{edition} = NULL;',
             f'#define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_{edition}, name, GINT_TO_POINTER(hf_index));',
             f'#define ADD_COMPLEX_HF(name, map) wmem_map_insert(complex_name_map_{edition}, name, map);',
             f'#define ADD_CP(name, display_name) wmem_map_insert(component_map_{edition}, name, display_name);',
             f'#define ADD_BITMASK(name, link) wmem_map_insert(bitmask_hf_map_{edition}, name, link);',
+            f'#define ADD_HF_MAPPING(name, link) wmem_map_insert(hf_mapping_{edition}, name, link);',
             'true_false_string tf_string[] = {{ "true", "false" }};',
             ''
         ]))
@@ -195,13 +201,13 @@ def write_data():
         for hf_define in hf_defines:
             f.write(f'int {hf_define} = -1;\n')
         # write bitmask collection
-        f.writelines('\n'.join(bitmask_collection_defines))
+        f.write('\n'.join(bitmask_collection_defines))
         f.write('\n')
         # write value string
-        f.writelines('\n'.join(value_string_lines))
+        f.write('\n'.join(value_string_lines))
         f.write('\n')
         # main
-        f.writelines('\n'.join([
+        f.write('\n'.join([
             f'void register_string_{edition}() {{',
             f'\tname_hf_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tcomplex_name_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
@@ -209,14 +215,15 @@ def write_data():
             f'\tunknown_hf_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tbitmask_hf_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tcomponent_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
+            f'\thf_mapping_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tstatic gint *ett_{edition}[] = {{&ett_mc{edition}, &ett_{edition}_proto, &ett_sub_{edition}}};',
             f'\tstatic hf_register_info hf_je[] = {{',
             ''
         ]))
         # hf lines
-        f.writelines('\n'.join(hf_lines))
+        f.write('\n'.join(hf_lines))
         f.write('\n')
-        f.writelines('\n'.join([
+        f.write('\n'.join([
             f'\t}};',
             f'\tproto_register_field_array(proto_mc{edition}, hf_{edition}, array_length(hf_{edition}));',
             f'\tproto_register_subtree_array(ett_{edition}, array_length(ett_{edition}));',
@@ -232,8 +239,11 @@ def write_data():
             f'\twmem_map_insert(unknown_hf_map_{edition}, "uuid", GINT_TO_POINTER(hf_unknown_uuid_{edition}));',
             ''
         ]))
+        # mapping
+        for hf_define in hf_defines:
+            f.write(f'\tADD_HF_MAPPING("{hf_define}", &{hf_define})\n')
         # add hf
-        f.writelines('\n'.join(add_hf_lines))
+        f.write('\n'.join(add_hf_lines))
         f.write('\n')
         # add complex hf
         cpx_count = 0
@@ -244,12 +254,35 @@ def write_data():
             f.write(f'\twmem_map_insert(complex_hf_map_{edition}, "{key}", complex_{cpx_count});\n')
             cpx_count += 1
         # bitmask collection
-        f.writelines('\n'.join(bitmask_collection_lines))
+        f.write('\n'.join(bitmask_collection_lines))
         f.write('\n')
         # add cp
-        f.writelines('\n'.join(cp_lines))
-        f.write('\n}\n')
+        f.write('\n'.join(cp_lines))
+        f.write('\n}\n\n')
+        # get string
+        f.write('\n'.join([
+            f'int get_string_{edition}(const char *name, const char *type) {{',
+            '\tgchar *key = g_strdup_printf("hf_%s_%s", name, type);',
+            f'\tint *hf_index = wmem_map_lookup(hf_mapping_{edition}, key);',
+            '\tg_free(key);',
+            '\tif (hf_index != NULL)',
+            '\t\treturn *hf_index;',
+            '\tkey = g_strdup_printf("hf_%s", name);',
+            f'\thf_index = wmem_map_lookup(hf_mapping_{edition}, key);',
+            '\tg_free(key);',
+            '\tif (hf_index != NULL)',
+            '\t\treturn *hf_index;',
+            '\telse',
+            '\t\treturn -1;',
+            '}',
+            ''
+        ]))
 
 
 read_data()
 write_data()
+print(f'Generate {len(hf_defines)} hf defines.')
+print(f'Generate {len(add_hf_lines)} hf lines.')
+print(f'Generate {len(bitmask_collection_lines)} bitmask collection lines.')
+print(f'Generate {len(cp_lines)} component lines.')
+print(f'Generate {len(value_string_lines)} value string lines.')
