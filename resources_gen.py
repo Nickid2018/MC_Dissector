@@ -22,17 +22,22 @@ with open(code_gen_dir + '/resources.h', 'w') as f:
     f.write('\n'.join([
         '// Auto generate codes, DO NOT MODIFY THIS FILE',
         '#pragma once',
+        '#ifdef MC_DISSECTOR_FUNCTION_FEATURE',
         ''
     ]))
     f.write('\n'.join([f'extern const char* RESOURCE_{file[:file.rindex(".")].upper()};' for file in file_list]))
     f.write('\n')
+    f.write('#endif // MC_DISSECTOR_FUNCTION_FEATURE\n')
 
 with open(code_gen_dir + '/resources.c', 'w') as f:
     f.write('\n'.join([
         '// Auto generate codes, DO NOT MODIFY THIS FILE',
+        '#ifdef MC_DISSECTOR_FUNCTION_FEATURE',
         '#include "resources.h"',
         ''
     ]))
     f.write('\n'.join([f'const char* RESOURCE_{file[:file.rindex(".")].upper()} = "{get_data(data_dir + "/" + file)}";' for file in file_list]))
+    f.write('\n')
+    f.write('#endif // MC_DISSECTOR_FUNCTION_FEATURE\n')
 
 print(f'Generate {len(file_list)} resources.')

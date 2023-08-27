@@ -54,11 +54,27 @@ jobs:
       - name: Build dissector
         run: cmake --build build --target MC_Dissector
         working-directory: dissector
+      - name: Configure dissector - No Function Feature (Debug)
+        if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
+        run: cmake -S . -G Ninja -B build-no-function -DMC_DISSECTOR_FUNCTION_FEATURE=OFF
+        working-directory: dissector
+      - name: Configure dissector - No Function Feature (Release)
+        if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
+        run: cmake -DCMAKE_BUILD_TYPE=Release -S . -G Ninja -B build-no-function -DMC_DISSECTOR_FUNCTION_FEATURE=OFF
+        working-directory: dissector
+      - name: Build dissector - No Function Feature
+        run: cmake --build build-no-function --target MC_Dissector
+        working-directory: dissector
       - name: Upload dissector
         uses: actions/upload-artifact@v2
         with:
           name: windows
           path: dissector/build/mcdissector.dll
+      - name: Upload dissector (no function)
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-no-function
+          path: dissector/build-no-function/mcdissector.dll
 
   build-linux:
     runs-on: ubuntu-latest
@@ -79,11 +95,25 @@ jobs:
       - name: Build dissector
         run: make -j8
         working-directory: build
+      - name: Configure dissector - No Function (Debug)
+        if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
+        run: cmake -S . -B build-no-function -DMC_DISSECTOR_FUNCTION_FEATURE=OFF
+      - name: Configure dissector - No Function (Release)
+        if: "startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta')"
+        run: cmake -DCMAKE_BUILD_TYPE=Release -S . -B build-no-function -DMC_DISSECTOR_FUNCTION_FEATURE=OFF
+      - name: Build dissector - No Function
+        run: make -j8
+        working-directory: build-no-function
       - name: Upload dissector
         uses: actions/upload-artifact@v2
         with:
           name: linux
           path: build/mcdissector.so
+      - name: Upload dissector (no function)
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-no-function
+          path: build-no-function/mcdissector.so
 
   build-encryption-helper:
     runs-on: ubuntu-latest
@@ -117,10 +147,22 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: windows
+          path: windows
+      - name: Download windows artifact (no function)
+        uses: actions/download-artifact@v2
+        with:
+          name: windows-no-function
+          path: windows-no-function
       - name: Download linux artifact
         uses: actions/download-artifact@v2
         with:
           name: linux
+          path: linux
+      - name: Download linux artifact (no function)
+        uses: actions/download-artifact@v2
+        with:
+          name: linux-no-function
+          path: linux-no-function
       - name: Download encryption-helper artifact
         uses: actions/download-artifact@v2
         with:
@@ -141,8 +183,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./mcdissector.dll
+          asset_path: ./windows/mcdissector.dll
           asset_name: mcdissector.dll
+          asset_content_type: application/octet-stream
+      - name: Upload mcdissector-no-function.dll
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-no-function/mcdissector.dll
+          asset_name: mcdissector-no-function.dll
           asset_content_type: application/octet-stream
       - name: Upload mcdissector.so
         uses: actions/upload-release-asset@v1
@@ -150,8 +201,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./mcdissector.so
+          asset_path: ./linux/mcdissector.so
           asset_name: mcdissector.so
+          asset_content_type: application/octet-stream
+      - name: Upload mcdissector-no-function.so
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./linux-no-function/mcdissector.so
+          asset_name: mcdissector-no-function.so
           asset_content_type: application/octet-stream
       - name: Upload encryption-helper
         uses: actions/upload-release-asset@v1

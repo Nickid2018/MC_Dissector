@@ -40,6 +40,7 @@ typedef struct {
     guint32 data_version;
     protocol_je_set protocol_set;
     gint32 compression_threshold;
+    void *extra;
     mcje_decryption_context *decryption_context;
 } mcje_protocol_context;
 

@@ -3,6 +3,13 @@ project(MC_Dissector C)
 
 set(CMAKE_C_STANDARD 11)
 
+option(MC_DISSECTOR_FUNCTION_FEATURE "Enable function feature" ON)
+
+if (MC_DISSECTOR_FUNCTION_FEATURE)
+    message(STATUS "Enable function feature")
+    add_compile_definitions(MC_DISSECTOR_FUNCTION_FEATURE)
+endif ()
+
 file(GLOB SOURCES "./*.c")
 file(GLOB HEADERS "./*.h")
 file(GLOB PROTOCOL_JE_SOURCES "./protocol_je/*.c")

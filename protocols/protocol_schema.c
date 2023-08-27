@@ -181,12 +181,12 @@ DELEGATE_FIELD_MAKE_HEADER(container) {
         if (is_anon && not_top) {
             record_pop(recorder);
             record_start(recorder, now_record);
-            sub_field->make_tree(data, NULL, tvb, sub_field, offset, remaining, recorder);
+            sub_field->make_tree(data, NULL, tvb, extra, sub_field, offset, remaining, recorder);
             record_start(recorder, now_record);
             record_push(recorder);
         }
         record_start(recorder, sub_field->name);
-        guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
+        guint sub_length = sub_field->make_tree(data, tree, tvb, extra, sub_field, offset, remaining, recorder);
         offset += sub_length;
         total_length += sub_length;
         remaining -= sub_length;
@@ -209,7 +209,7 @@ FIELD_MAKE_TREE(option) {
         sub_field->hf_resolved = true;
     }
     if (is_present)
-        return sub_field->make_tree(data, tree, tvb, sub_field, offset + 1, remaining - 1, recorder) + 1;
+        return sub_field->make_tree(data, tree, tvb, extra, sub_field, offset + 1, remaining - 1, recorder) + 1;
     else
         return 1;
 }
@@ -231,7 +231,7 @@ FIELD_MAKE_TREE(mapper) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, "__subfield");
     gchar *recording = record_get_recording(recorder);
     record_start(recorder, "__mapperValue");
-    guint length = sub_field->make_tree(data, NULL, tvb, sub_field, offset, remaining, recorder);
+    guint length = sub_field->make_tree(data, NULL, tvb, extra, sub_field, offset, remaining, recorder);
     char *path[] = {"__mapperValue", NULL};
     gchar *map = record_query(recorder, path);
     gchar *map_name = wmem_map_lookup(field->additional_info, map);
@@ -276,7 +276,7 @@ DELEGATE_FIELD_MAKE_HEADER(array) {
         else
             sub_field->name = g_strdup_printf("[%d]", i);
         sub_field->display_name = g_strdup_printf("[%d]", i);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, sub_field, offset, remaining, recorder);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining, recorder);
         offset += sub_length;
         len += sub_length;
         remaining -= sub_length;
@@ -352,7 +352,7 @@ DELEGATE_FIELD_MAKE_HEADER(top_bit_set_terminated_array) {
         else
             sub_field->name = g_strdup_printf("[%d]", ord);
         sub_field->display_name = g_strdup_printf("[%d]", ord);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, sub_field, offset, remaining - len, recorder);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder);
         offset += sub_length;
         len += sub_length;
     } while ((now & 0x80) != 0);
@@ -380,7 +380,7 @@ FIELD_MAKE_TREE(switch) {
     }
     char *display_name_raw = sub_field_choose->display_name;
     sub_field_choose->display_name = field->display_name;
-    guint len = sub_field_choose->make_tree(data, tree, tvb, sub_field_choose, offset, remaining, recorder);
+    guint len = sub_field_choose->make_tree(data, tree, tvb, extra, sub_field_choose, offset, remaining, recorder);
     sub_field_choose->display_name = display_name_raw;
     return len;
 }
@@ -410,7 +410,7 @@ DELEGATE_FIELD_MAKE_HEADER(entity_metadata_loop) {
         else
             sub_field->name = g_strdup_printf("[%d]", count);
         sub_field->display_name = g_strdup_printf("[%d]", count);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, sub_field, offset, remaining - len, recorder);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder);
         offset += sub_length;
         len += sub_length;
         count++;
@@ -439,7 +439,7 @@ FIELD_MAKE_TREE(basic_type) {
     }
     char *display_name_raw = sub_field->display_name;
     sub_field->display_name = field->display_name;
-    guint sub_length = sub_field->make_tree(data, tree, tvb, sub_field, offset, remaining, recorder);
+    guint sub_length = sub_field->make_tree(data, tree, tvb, extra, sub_field, offset, remaining, recorder);
     sub_field->display_name = display_name_raw;
     record_clear_alias(recorder);
     return sub_length;
@@ -488,9 +488,11 @@ void init_schema_data() {
     ADD_NATIVE(nbt, nbt, bytes, bytes)
     ADD_NATIVE(optionalNbt, optional_nbt, bytes, bytes)
 
+#ifdef MC_DISSECTOR_FUNCTION_FEATURE
     ADD_FUNCTION(sync_entity_data, sync_entity_data)
 
     init_protocol_functions();
+#endif // MC_DISSECTOR_FUNCTION_FEATURE
 }
 
 int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags, gchar *type) {
@@ -906,10 +908,10 @@ protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_cli
     return wmem_map_lookup(packet_map, GUINT_TO_POINTER(packet_id));
 }
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, const guint8 *data, guint remaining) {
+bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, const guint8 *data, guint remaining) {
     if (entry->field != NULL) {
         data_recorder recorder = create_data_recorder();
-        guint len = entry->field->make_tree(data, tree, tvb, entry->field, 1, remaining - 1, recorder);
+        guint len = entry->field->make_tree(data, tree, tvb, extra, entry->field, 1, remaining - 1, recorder);
         destroy_data_recorder(recorder);
         if (len != remaining - 1)
             proto_tree_add_string_format_value(tree, hf_invalid_data_je, tvb, 1, remaining - 1,

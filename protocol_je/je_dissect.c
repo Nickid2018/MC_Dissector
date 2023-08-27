@@ -93,6 +93,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
     mcje_protocol_context *ctx;
     if (pinfo->fd->visited) {
         ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum);
+        ((extra_data *) ctx->extra)->allow_write = false;
     } else {
         conversation_t *conv;
         conv = find_or_create_conversation(pinfo);
@@ -101,6 +102,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
         save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         *save = *ctx;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
+        ((extra_data *) ctx->extra)->allow_write = true;
     }
     pinfo->fd->subnum++;
     return ctx;
@@ -241,6 +243,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->compression_threshold = -1;
         ctx->server_port = pinfo->destport;
         copy_address(&ctx->server_address, &pinfo->dst);
+        ctx->extra = wmem_alloc(wmem_file_scope(), sizeof(extra_data));
+        ((extra_data *) ctx->extra)->data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
         ctx->decryption_context = NULL;
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
