@@ -34,9 +34,13 @@ guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, extr
     protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je)
 
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
+
 void init_protocol_functions();
+
 FIELD_MAKE_TREE(record_entity_id);
+
 FIELD_MAKE_TREE(sync_entity_data);
+
 #endif //MC_DISSECTOR_FUNCTION_FEATURE
 
 #endif //MC_DISSECTOR_PROTOCOL_FUNCTIONS_H

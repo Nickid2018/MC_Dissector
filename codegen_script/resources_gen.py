@@ -36,7 +36,9 @@ with open(code_gen_dir + '/resources.c', 'w') as f:
         '#include "resources.h"',
         ''
     ]))
-    f.write('\n'.join([f'const char* RESOURCE_{file[:file.rindex(".")].upper()} = "{get_data(data_dir + "/" + file)}";' for file in file_list]))
+    f.write('\n'.join(
+        [f'const char* RESOURCE_{file[:file.rindex(".")].upper()} = "{get_data(data_dir + "/" + file)}";' for file in
+         file_list]))
     f.write('\n')
     f.write('#endif // MC_DISSECTOR_FUNCTION_FEATURE\n')
 

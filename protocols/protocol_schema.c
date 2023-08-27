@@ -352,7 +352,8 @@ DELEGATE_FIELD_MAKE_HEADER(top_bit_set_terminated_array) {
         else
             sub_field->name = g_strdup_printf("[%d]", ord);
         sub_field->display_name = g_strdup_printf("[%d]", ord);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len,
+                                                recorder);
         offset += sub_length;
         len += sub_length;
     } while ((now & 0x80) != 0);
@@ -410,7 +411,8 @@ DELEGATE_FIELD_MAKE_HEADER(entity_metadata_loop) {
         else
             sub_field->name = g_strdup_printf("[%d]", count);
         sub_field->display_name = g_strdup_printf("[%d]", count);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining - len,
+                                                recorder);
         offset += sub_length;
         len += sub_length;
         count++;
@@ -804,7 +806,11 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         field->make_tree = is_je ? make_tree_je_entity_metadata_loop : make_tree_be_entity_metadata_loop;
         return field;
     } else if (strcmp(type, "function") == 0) {
+#ifdef MC_DISSECTOR_FUNCTION_FEATURE
         field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
+#else
+        field->make_tree = make_tree_void;
+#endif // MC_DISSECTOR_FUNCTION_FEATURE
         return field;
     } else if (cJSON_HasObjectItem(types, type)) {
         protocol_field_t *type_data = wmem_map_lookup(basic_types, type);
@@ -908,7 +914,8 @@ protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_cli
     return wmem_map_lookup(packet_map, GUINT_TO_POINTER(packet_id));
 }
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, const guint8 *data, guint remaining) {
+bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, const guint8 *data,
+               guint remaining) {
     if (entry->field != NULL) {
         data_recorder recorder = create_data_recorder();
         guint len = entry->field->make_tree(data, tree, tvb, extra, entry->field, 1, remaining - 1, recorder);

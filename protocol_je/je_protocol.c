@@ -41,8 +41,8 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protoc
         ctx->protocol_set = get_protocol_je_set(nearest_java_version);
         ctx->protocol_version = protocol_version;
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
-        wmem_map_insert(((extra_data *)ctx->extra)->data, "protocol_version", GUINT_TO_POINTER(protocol_version));
-        wmem_map_insert(((extra_data *)ctx->extra)->data, "data_version", GUINT_TO_POINTER(ctx->data_version));
+        wmem_map_insert(((extra_data *) ctx->extra)->data, "protocol_version", GUINT_TO_POINTER(protocol_version));
+        wmem_map_insert(((extra_data *) ctx->extra)->data, "data_version", GUINT_TO_POINTER(ctx->data_version));
 #endif // MC_DISSECTOR_FUNCTION_FEATURE
         return 0;
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING)
