@@ -23,6 +23,7 @@ file(GLOB LIBRARY_CJSON_HEADERS "./cJSON/cJSON*.h")
 
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources")
 
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
 set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
@@ -81,7 +82,7 @@ macro(invoke_py message)
         execute_process(COMMAND python ${ARGN} ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
     endif ()
     if (NOT GEN_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to ${message}:\n${GEN_ERROR}")
+        message(FATAL_ERROR "Failed to ${message}:\n${GEN_OUTPUT}\n${GEN_ERROR}")
     else ()
         message(STATUS "${message}:\n${GEN_OUTPUT}")
     endif ()
@@ -92,8 +93,12 @@ invoke_py("Generate Java String Data"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je")
 invoke_py("Generate Protocol Data"
         "${PROJECT_SOURCE_DIR}/codegen_script/protocol_data_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
+invoke_py("Generate Entity ID Data"
+        "${PROJECT_SOURCE_DIR}/codegen_script/entity_id_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data/java"
+        "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources")
 invoke_py("Generate Resources"
-        "${PROJECT_SOURCE_DIR}/codegen_script/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources" "${GEN_RESOURCE_DIR}")
+        "${PROJECT_SOURCE_DIR}/codegen_script/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources"
+        "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources" "${GEN_RESOURCE_DIR}")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")

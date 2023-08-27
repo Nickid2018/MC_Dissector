@@ -9,6 +9,7 @@ code_gen_dir = sys.argv[2]
 def get_file_list(path):
     for root, dirs, files in os.walk(path):
         return dirs
+    return []
 
 
 def get_data(root):

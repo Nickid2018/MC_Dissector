@@ -49,6 +49,10 @@
       "name": "Legacy SLP Payload",
       "type": "u8"
     },
+    "entity_type_name": {
+      "name": "Entity Type Name",
+      "type": "string"
+    },
     "x": {
       "name": "X",
       "type": [
