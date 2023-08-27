@@ -7,6 +7,7 @@
 #include "protocol_data.h"
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
+#include "protocol_functions.h"
 
 #define BYTES_MAX_LENGTH 200
 
@@ -23,22 +24,7 @@ struct _protocol_entry {
     protocol_field field;
 };
 
-struct _protocol_field {
-    bool hf_resolved;
-    gchar *name;
-    gchar *display_name;
-    int hf_index;
-    wmem_map_t *additional_info;
-
-    guint (*make_tree)(const guint8 *data, proto_tree *tree, tvbuff_t *tvb,
-                       protocol_field field, guint offset, guint remaining, data_recorder recorder);
-};
-
 // ---------------------------------- Native Fields ----------------------------------
-#define FIELD_MAKE_TREE(name) \
-    guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, \
-    protocol_field field, guint offset, guint remaining, data_recorder recorder)
-
 FIELD_MAKE_TREE(var_int) {
     guint result;
     guint length = read_var_int(data + offset, remaining, &result);
@@ -83,15 +69,6 @@ FIELD_MAKE_TREE(var_buffer) {
     return read + length;
 }
 
-#define SINGLE_LENGTH_FIELD_MAKE(name, len, func_add, func_parse, record) \
-    FIELD_MAKE_TREE(name) {                                               \
-        if (tree)                                                         \
-            func_add(tree, field->hf_index, tvb, offset, len, record(recorder, func_parse(tvb, offset))); \
-        else                                                              \
-            record(recorder, func_parse(tvb, offset));                    \
-        return len;                                                       \
-    }
-
 SINGLE_LENGTH_FIELD_MAKE(u8, 1, proto_tree_add_uint, tvb_get_guint8, record_uint)
 
 SINGLE_LENGTH_FIELD_MAKE(u16, 2, proto_tree_add_uint, tvb_get_ntohs, record_uint)
@@ -113,18 +90,6 @@ SINGLE_LENGTH_FIELD_MAKE(f32, 4, proto_tree_add_float, tvb_get_ntohieee_float, r
 SINGLE_LENGTH_FIELD_MAKE(f64, 8, proto_tree_add_double, tvb_get_ntohieee_double, record_double)
 
 SINGLE_LENGTH_FIELD_MAKE(boolean, 1, proto_tree_add_boolean, tvb_get_guint8, record_bool)
-
-#define DELEGATE_FIELD_MAKE(name) \
-FIELD_MAKE_TREE(je_##name) { \
-    return make_tree_##name(data, tree, tvb, field, offset, remaining, recorder, true); \
-} \
-FIELD_MAKE_TREE(be_##name) { \
-    return make_tree_##name(data, tree, tvb, field, offset, remaining, recorder, false); \
-}                                 \
-
-#define DELEGATE_FIELD_MAKE_HEADER(name) \
-guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, \
-    protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je)
 
 FIELD_MAKE_TREE(rest_buffer) {
     if (tree) {
@@ -486,15 +451,21 @@ wmem_map_t *native_make_tree_map = NULL;
 wmem_map_t *native_unknown_fallback_map = NULL;
 wmem_map_t *native_types = NULL;
 
+wmem_map_t *function_make_tree = NULL;
+
 #define ADD_NATIVE(json_name, make_name, unknown_flag, type_name) \
     wmem_map_insert(native_make_tree_map, #json_name, make_tree_##make_name); \
     wmem_map_insert(native_unknown_fallback_map, #json_name, #unknown_flag); \
     wmem_map_insert(native_types, #json_name, #type_name);
 
+#define ADD_FUNCTION(json_name, func_name) \
+    wmem_map_insert(function_make_tree, #json_name, make_tree_##func_name);
+
 void init_schema_data() {
     native_make_tree_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     native_unknown_fallback_map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     native_types = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    function_make_tree = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
 
     ADD_NATIVE(varint, var_int, uint, u32)
     ADD_NATIVE(optvarint, var_int, uint, u32)
@@ -516,6 +487,8 @@ void init_schema_data() {
     ADD_NATIVE(void, void, uint, u32)
     ADD_NATIVE(nbt, nbt, bytes, bytes)
     ADD_NATIVE(optionalNbt, optional_nbt, bytes, bytes)
+
+    ADD_FUNCTION(sync_entity_data, sync_entity_data);
 }
 
 int search_hf_index(bool is_je, wmem_list_t *path_array, gchar *name, wmem_list_t *additional_flags, gchar *type) {
@@ -826,6 +799,9 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), GINT_TO_POINTER(end_val));
         field->make_tree = is_je ? make_tree_je_entity_metadata_loop : make_tree_be_entity_metadata_loop;
         return field;
+    } else if (strcmp(type, "function") == 0) {
+        field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
+        return field;
     } else if (cJSON_HasObjectItem(types, type)) {
         protocol_field_t *type_data = wmem_map_lookup(basic_types, type);
         if (type_data == NULL) {
@@ -853,7 +829,8 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     return NULL;
 }
 
-void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wmem_map_t *name_map, bool is_je, protocol_settings settings) {
+void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wmem_map_t *name_map, bool is_je,
+                          protocol_settings settings) {
     cJSON *packets = cJSON_GetObjectItem(data, "packet");
     // Path: [1].[0].type.[1].mappings
     cJSON *c1 = cJSON_GetArrayItem(packets, 1);

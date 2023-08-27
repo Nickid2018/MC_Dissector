@@ -13,6 +13,17 @@ typedef struct _protocol_set protocol_set_t, *protocol_set;
 typedef struct _protocol_entry protocol_entry_t, *protocol_entry;
 typedef struct _protocol_field protocol_field_t, *protocol_field;
 
+struct _protocol_field {
+    bool hf_resolved;
+    gchar *name;
+    gchar *display_name;
+    int hf_index;
+    wmem_map_t *additional_info;
+
+    guint (*make_tree)(const guint8 *data, proto_tree *tree, tvbuff_t *tvb,
+                       protocol_field field, guint offset, guint remaining, data_recorder recorder);
+};
+
 typedef struct {
     bool nbt_any_type;
 } protocol_settings;
