@@ -53,6 +53,10 @@
       "name": "Entity Type Name",
       "type": "string"
     },
+    "sync_entity_data": {
+      "name": "Sync Entity Data Type",
+      "type": "string"
+    },
     "x": {
       "name": "X",
       "type": [

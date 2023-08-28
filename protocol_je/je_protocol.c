@@ -3,6 +3,7 @@
 //
 
 #include <epan/proto.h>
+#include <epan/conversation.h>
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"

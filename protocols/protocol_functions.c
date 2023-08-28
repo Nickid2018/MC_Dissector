@@ -31,7 +31,7 @@ void init_entity_hierarchy() {
             wmem_list_append(path_array, GUINT_TO_POINTER(strlen(path)));
         else {
             path = g_strconcat(g_strndup(path, last_index), "/", now, NULL);
-            wmem_map_insert(entity_hierarchy, now, path);
+            wmem_map_insert(entity_hierarchy, now, path + 1);
         }
     }
     wmem_destroy_list(path_array);
@@ -98,6 +98,61 @@ FIELD_MAKE_TREE(record_entity_id) {
 }
 
 FIELD_MAKE_TREE(sync_entity_data) {
+    if (!tree)
+        return 0;
+    char *id_path[] = {"..", "entityId", NULL};
+    gchar *id = record_query(recorder, id_path);
+    char *key_path[] = {"key", NULL};
+    gchar *key = record_query(recorder, key_path);
+    guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
+    guint key_int = atoi(key);
+    char *type = wmem_map_lookup(wmem_map_lookup(extra->data, "entity_id_record"), id);
+    proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, type);
+    char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
+    if (hierarchy == NULL)
+        hierarchy = "";
+    char **split = g_strsplit(hierarchy, "/", 1000);
+    char **split_sync_data = g_strsplit(RESOURCE_SYNC_ENTITY_DATA, "\n", 1000);
+    char *found_name = NULL;
+    for (int now = 0; split[now] != NULL && found_name == NULL; now++) {
+        char *now_type = split[now];
+        for (int i = 0; split_sync_data[i * 2] != NULL && found_name == NULL; i++) {
+            if (strcmp(now_type, split_sync_data[i * 2]) == 0) {
+                char *sync_data = split_sync_data[i * 2 + 1];
+                char **split_sync_data_now = g_strsplit(sync_data, ",", 1000);
+                for (int j = 0; split_sync_data_now[j] != NULL; j++) {
+                    char *entry = split_sync_data_now[j];
+                    char **split_entry = g_strsplit(entry, " ", 10);
+                    bool flag = true;
+                    for (int flag_index = 1; split_entry[flag_index] != NULL; flag_index++) {
+                        int flag_now = atoi(split_entry[flag_index]);
+                        if (flag_now > 0) {
+                            if (flag_now > data_version)
+                                flag = false;
+                        } else {
+                            if (-flag_now < data_version)
+                                flag = false;
+                        }
+                    }
+                    if (flag) {
+                        if (key_int == 0) {
+                            found_name = g_strdup(split_entry[0]);
+                            g_strfreev(split_entry);
+                            break;
+                        } else
+                            key_int--;
+                    }
+                    g_strfreev(split_entry);
+                }
+                g_strfreev(split_sync_data_now);
+            }
+        }
+    }
+    g_strfreev(split);
+    g_strfreev(split_sync_data);
+    if (found_name == NULL)
+        found_name = "Unknown Sync Data!";
+    proto_tree_add_string(tree, get_string_je("sync_entity_data", "string"), tvb, 0, 0, found_name);
     return 0;
 }
 
