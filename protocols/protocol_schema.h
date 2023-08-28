@@ -15,7 +15,7 @@ typedef struct _protocol_field protocol_field_t, *protocol_field;
 
 typedef struct {
     wmem_map_t *data;
-    bool allow_write;
+    bool visited;
 } extra_data;
 
 struct _protocol_field {

@@ -93,7 +93,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
     mcje_protocol_context *ctx;
     if (pinfo->fd->visited) {
         ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum);
-        ((extra_data *) ctx->extra)->allow_write = false;
+        ((extra_data *) ctx->extra)->visited = true;
     } else {
         conversation_t *conv;
         conv = find_or_create_conversation(pinfo);
@@ -102,8 +102,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
         save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         *save = *ctx;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
-        save->extra = ctx->extra;
-        ((extra_data *) ctx->extra)->allow_write = true;
+        ((extra_data *) ctx->extra)->visited = false;
     }
     pinfo->fd->subnum++;
     return ctx;

@@ -26,12 +26,12 @@ void init_entity_hierarchy() {
         else
             last_index = 0;
         if (strcmp(now, "-") == 0)
-            wmem_list_remove(path_array, tail);
+            wmem_list_remove_frame(path_array, tail);
         else if (strcmp(now, "+") == 0)
             wmem_list_append(path_array, GUINT_TO_POINTER(strlen(path)));
         else {
             path = g_strconcat(g_strndup(path, last_index), "/", now, NULL);
-            wmem_map_insert(entity_hierarchy, now, path + 1);
+            wmem_map_insert(entity_hierarchy, now, g_strdup(path + 1));
         }
     }
     wmem_destroy_list(path_array);
@@ -90,27 +90,61 @@ FIELD_MAKE_TREE(record_entity_id) {
         wmem_map_insert(entity_ids, type, entity_id_data);
     }
     char *str_type = wmem_map_lookup(entity_id_data, type);
-    if (extra->allow_write)
-        wmem_map_insert(entity_id_record, id, str_type);
+    wmem_map_insert(entity_id_record, id, str_type);
     if (tree)
         proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, str_type);
+    return 0;
+}
+
+FIELD_MAKE_TREE(record_entity_id_player) {
+    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
+    if (entity_id_record == NULL) {
+        entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
+    }
+    char *id_path[] = {"entityId", NULL};
+    gchar *id = record_query(recorder, id_path);
+    wmem_map_insert(entity_id_record, id, "player");
+    return 0;
+}
+
+FIELD_MAKE_TREE(record_entity_id_experience_orb) {
+    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
+    if (entity_id_record == NULL) {
+        entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
+    }
+    char *id_path[] = {"entityId", NULL};
+    gchar *id = record_query(recorder, id_path);
+    wmem_map_insert(entity_id_record, id, "experience_orb");
     return 0;
 }
 
 FIELD_MAKE_TREE(sync_entity_data) {
     if (!tree)
         return 0;
+    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
+    if (entity_id_record == NULL) {
+        entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
+    }
     char *id_path[] = {"..", "entityId", NULL};
     gchar *id = record_query(recorder, id_path);
     char *key_path[] = {"key", NULL};
     gchar *key = record_query(recorder, key_path);
     guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
     guint key_int = atoi(key);
-    char *type = wmem_map_lookup(wmem_map_lookup(extra->data, "entity_id_record"), id);
-    proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, type);
+    char *type = wmem_map_lookup(entity_id_record, id);
+    if (type != NULL)
+        proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, type);
+    else {
+        proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, "Unknown");
+        return 0;
+    }
     char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
     if (hierarchy == NULL)
         hierarchy = "";
+    ws_log("", LOG_LEVEL_CRITICAL, "hierarchy: %s", hierarchy);
     char **split = g_strsplit(hierarchy, "/", 1000);
     char **split_sync_data = g_strsplit(RESOURCE_SYNC_ENTITY_DATA, "\n", 1000);
     char *found_name = NULL;
