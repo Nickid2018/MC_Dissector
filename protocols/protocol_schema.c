@@ -218,10 +218,10 @@ FIELD_MAKE_TREE(buffer) {
     guint length = GPOINTER_TO_UINT(wmem_map_lookup(field->additional_info, 0));
     if (tree) {
         if (length < BYTES_MAX_LENGTH)
-            proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
                                  tvb_memdup(wmem_packet_scope(), tvb, offset, length));
         else
-            proto_tree_add_bytes(tree, field->hf_index, tvb, offset + 1, length,
+            proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
                                  tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
     }
     return length;
@@ -492,6 +492,7 @@ void init_schema_data() {
 
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
     ADD_FUNCTION(sync_entity_data, sync_entity_data)
+    ADD_FUNCTION(record_entity_id, record_entity_id)
 
     init_protocol_functions();
 #endif // MC_DISSECTOR_FUNCTION_FEATURE
@@ -639,7 +640,14 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
     field->hf_resolved = false;
     field->display_name = search_name(is_je, path_array, path_name);
 
-    if (strcmp(type, "container") == 0) { // container
+    if (strcmp(type, "function") == 0) {
+#ifdef MC_DISSECTOR_FUNCTION_FEATURE
+        field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
+#else
+        field->make_tree = make_tree_void;
+#endif // MC_DISSECTOR_FUNCTION_FEATURE
+        return field;
+    } else if (strcmp(type, "container") == 0) { // container
         field->make_tree = is_je ? make_tree_je_container : make_tree_be_container;
         int size = cJSON_GetArraySize(fields);
         wmem_map_insert(field->additional_info, 0, GINT_TO_POINTER(size));
@@ -804,13 +812,6 @@ protocol_field parse_protocol(wmem_list_t *path_array, gchar *path_name, wmem_li
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(0), sub_field);
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), GINT_TO_POINTER(end_val));
         field->make_tree = is_je ? make_tree_je_entity_metadata_loop : make_tree_be_entity_metadata_loop;
-        return field;
-    } else if (strcmp(type, "function") == 0) {
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
-        field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
-#else
-        field->make_tree = make_tree_void;
-#endif // MC_DISSECTOR_FUNCTION_FEATURE
         return field;
     } else if (cJSON_HasObjectItem(types, type)) {
         protocol_field_t *type_data = wmem_map_lookup(basic_types, type);

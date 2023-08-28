@@ -5,6 +5,7 @@
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
 #include <stdlib.h>
+#include "protocol_je/je_dissect.h"
 #include "strings_je.h"
 #include "resources.h"
 #include "protocol_functions.h"
@@ -75,8 +76,11 @@ void init_protocol_functions() {
 }
 
 FIELD_MAKE_TREE(record_entity_id) {
-    if (!extra->allow_write)
-        return 0;
+    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
+    if (entity_id_record == NULL) {
+        entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
+    }
     char *id_path[] = {"entityId", NULL};
     gchar *id = record_query(recorder, id_path);
     char *type_path[] = {"type", NULL};
@@ -87,12 +91,8 @@ FIELD_MAKE_TREE(record_entity_id) {
         wmem_map_insert(entity_ids, type, entity_id_data);
     }
     char *str_type = wmem_map_lookup(entity_id_data, type);
-    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
-    if (entity_id_record == NULL) {
-        entity_id_record = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
-    }
-    wmem_map_insert(entity_id_record, id, str_type);
+    if (extra->allow_write)
+        wmem_map_insert(entity_id_record, id, str_type);
     if (tree)
         proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, str_type);
     return 0;

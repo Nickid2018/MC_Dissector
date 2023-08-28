@@ -102,6 +102,7 @@ mcje_protocol_context *get_context(packet_info *pinfo) {
         save = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
         *save = *ctx;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum, save);
+        save->extra = ctx->extra;
         ((extra_data *) ctx->extra)->allow_write = true;
     }
     pinfo->fd->subnum++;
