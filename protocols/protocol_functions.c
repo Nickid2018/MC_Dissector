@@ -144,7 +144,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
     char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
     if (hierarchy == NULL)
         hierarchy = "";
-    ws_log("", LOG_LEVEL_CRITICAL, "hierarchy: %s", hierarchy);
+//    ws_log("", LOG_LEVEL_CRITICAL, "hierarchy: %s", hierarchy);
     char **split = g_strsplit(hierarchy, "/", 1000);
     char **split_sync_data = g_strsplit(RESOURCE_SYNC_ENTITY_DATA, "\n", 1000);
     char *found_name = NULL;
