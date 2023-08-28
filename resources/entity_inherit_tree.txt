@@ -46,6 +46,7 @@ painting
 living_entity
 +
 armor_stand
+player
 mob
 +
 ender_dragon
@@ -178,6 +179,7 @@ drowned
 husk
 zombie_villager
 zombified_piglin
+zombie_pigman
 -
 -
 water_animal

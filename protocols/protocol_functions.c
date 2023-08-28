@@ -5,7 +5,6 @@
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
 #include <stdlib.h>
-#include "protocol_je/je_dissect.h"
 #include "strings_je.h"
 #include "resources.h"
 #include "protocol_functions.h"
