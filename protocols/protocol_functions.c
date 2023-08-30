@@ -31,7 +31,7 @@ void init_entity_hierarchy() {
             wmem_list_append(path_array, GUINT_TO_POINTER(strlen(path)));
         else {
             path = g_strconcat(g_strndup(path, last_index), "/", now, NULL);
-            wmem_map_insert(entity_hierarchy, now, g_strdup(path + 1));
+            wmem_map_insert(entity_hierarchy, g_strdup(now), g_strdup(path + 1));
         }
     }
     wmem_destroy_list(path_array);
@@ -123,6 +123,7 @@ FIELD_MAKE_TREE(record_entity_id_experience_orb) {
 FIELD_MAKE_TREE(sync_entity_data) {
     if (!tree)
         return 0;
+    WS_LOG("entity_hierarchy: %s", wmem_map_lookup(entity_hierarchy, "entity"));
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -144,7 +145,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
     char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
     if (hierarchy == NULL)
         hierarchy = "";
-//    ws_log("", LOG_LEVEL_CRITICAL, "hierarchy: %s", hierarchy);
+    WS_LOG("hierarchy: %s", hierarchy);
     char **split = g_strsplit(hierarchy, "/", 1000);
     char **split_sync_data = g_strsplit(RESOURCE_SYNC_ENTITY_DATA, "\n", 1000);
     char *found_name = NULL;

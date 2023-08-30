@@ -9,6 +9,7 @@ if (MC_DISSECTOR_FUNCTION_FEATURE)
     message(STATUS "Enable function feature")
     add_compile_definitions(MC_DISSECTOR_FUNCTION_FEATURE)
 endif ()
+add_compile_definitions(SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
 
 file(GLOB SOURCES "./*.c")
 file(GLOB HEADERS "./*.h")
