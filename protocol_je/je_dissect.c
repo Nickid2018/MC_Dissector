@@ -9,7 +9,6 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
-#include "je_protocol_constants.h"
 
 dissector_handle_t mcje_handle;
 dissector_handle_t ignore_je_handle;

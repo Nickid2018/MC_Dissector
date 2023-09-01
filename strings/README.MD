@@ -9,6 +9,7 @@ JSON 文件按照以下格式定义：
 * `bitmask_collection`：定义位掩码。
 * `value_mappings`：定义数据与字符串的映射。
 * `component_names`：定义协议描述组件名称。
+* `packet_names`：定义协议描述包名称。
 
 ### 定义基础字段
 

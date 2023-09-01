@@ -7,7 +7,7 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
-#include "je_protocol_constants.h"
+#include "strings_je.h"
 
 int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protocol_context *ctx) {
     guint packet_id;

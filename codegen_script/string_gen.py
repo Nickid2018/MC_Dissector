@@ -15,6 +15,8 @@ complex_hf = {}
 add_hf_lines = []
 bitmask_collection_lines = []
 cp_lines = []
+packet_client_lines = []
+packet_server_lines = []
 
 mapping = {
     'i32': 'INT32',
@@ -163,6 +165,12 @@ def read_data():
         for key, value in cp_lines_json.items():
             cp_lines.append(f'\tADD_CP("{key}", "{value}")')
 
+        packet_name_json = data['packet_names']
+        for key, value in packet_name_json['toClient'].items():
+            packet_client_lines.append(f'\tDEFINE_NAME_CLIENT({key}, {value})')
+        for key, value in packet_name_json['toServer'].items():
+            packet_server_lines.append(f'\tDEFINE_NAME_SERVER({key}, {value})')
+
 
 def write_data():
     with open(code_gen_header, 'w', encoding='utf-8') as f:
@@ -173,6 +181,8 @@ def write_data():
             '#include <epan/packet.h>',
             f'void register_string_{edition}();',
             f'int get_string_{edition}(const char *name, const char *type);',
+            f'extern wmem_map_t *protocol_name_map_client_{edition};',
+            f'extern wmem_map_t *protocol_name_map_server_{edition};',
             ''
         ]))
     with open(code_gen_file, 'w', encoding='utf-8') as f:
@@ -189,11 +199,15 @@ def write_data():
             f'wmem_map_t *bitmask_hf_map_{edition} = NULL;',
             f'wmem_map_t *component_map_{edition} = NULL;',
             f'wmem_map_t *hf_mapping_{edition} = NULL;',
+            f'wmem_map_t *protocol_name_map_client_{edition} = NULL;',
+            f'wmem_map_t *protocol_name_map_server_{edition} = NULL;',
             f'#define ADD_HF(name, hf_index) wmem_map_insert(name_hf_map_{edition}, name, GINT_TO_POINTER(hf_index));',
             f'#define ADD_COMPLEX_HF(name, map) wmem_map_insert(complex_name_map_{edition}, name, map);',
             f'#define ADD_CP(name, display_name) wmem_map_insert(component_map_{edition}, name, display_name);',
             f'#define ADD_BITMASK(name, link) wmem_map_insert(bitmask_hf_map_{edition}, name, link);',
             f'#define ADD_HF_MAPPING(name, link) wmem_map_insert(hf_mapping_{edition}, name, link);',
+            f'#define DEFINE_NAME_CLIENT(name, desc) wmem_map_insert(protocol_name_map_client_{edition}, #name, #desc);',
+            f'#define DEFINE_NAME_SERVER(name, desc) wmem_map_insert(protocol_name_map_server_{edition}, #name, #desc);',
             'true_false_string tf_string[] = {{ "true", "false" }};',
             ''
         ]))
@@ -258,6 +272,11 @@ def write_data():
         f.write('\n')
         # add cp
         f.write('\n'.join(cp_lines))
+        f.write('\n')
+        # add packet names
+        f.write('\n'.join(packet_client_lines))
+        f.write('\n')
+        f.write('\n'.join(packet_server_lines))
         f.write('\n}\n\n')
         # get string
         f.write('\n'.join([
@@ -286,3 +305,5 @@ print(f'Generate {len(add_hf_lines)} hf lines.')
 print(f'Generate {len(bitmask_collection_lines)} bitmask collection lines.')
 print(f'Generate {len(cp_lines)} component lines.')
 print(f'Generate {len(value_string_lines)} value string lines.')
+print(f'Generate {len(packet_client_lines)} packet client lines.')
+print(f'Generate {len(packet_server_lines)} packet server lines.')

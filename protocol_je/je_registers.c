@@ -6,7 +6,6 @@
 #include "mc_dissector.h"
 #include "strings_je.h"
 #include "je_protocol.h"
-#include "je_protocol_constants.h"
 
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
@@ -24,5 +23,4 @@ void proto_register_mcje() {
 
     register_string_je();
     init_je();
-    init_je_constants();
 }
