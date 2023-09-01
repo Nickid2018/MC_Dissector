@@ -8,6 +8,8 @@
 
 构建的文件可以在 Action 里面找到，稳定版可以在 Release 里面找到。
 
+对于每个平台都有两个版本，分别为带有额外解析函数的版本和不带有额外解析函数（`No Function`）的版本。额外解析函数可以解析实体 ID 和同步协议数据等。
+
 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
 
 ## 可调选项
