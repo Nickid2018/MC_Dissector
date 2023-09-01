@@ -120,6 +120,18 @@ FIELD_MAKE_TREE(record_entity_id_experience_orb) {
     return 0;
 }
 
+FIELD_MAKE_TREE(record_entity_id_painting) {
+    wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
+    if (entity_id_record == NULL) {
+        entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(extra->data, "entity_id_record", entity_id_record);
+    }
+    char *id_path[] = {"entityId", NULL};
+    gchar *id = record_query(recorder, id_path);
+    wmem_map_insert(entity_id_record, id, "painting");
+    return 0;
+}
+
 FIELD_MAKE_TREE(sync_entity_data) {
     if (!tree)
         return 0;

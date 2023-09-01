@@ -43,6 +43,8 @@ FIELD_MAKE_TREE(record_entity_id_player);
 
 FIELD_MAKE_TREE(record_entity_id_experience_orb);
 
+FIELD_MAKE_TREE(record_entity_id_painting);
+
 FIELD_MAKE_TREE(sync_entity_data);
 
 #endif //MC_DISSECTOR_FUNCTION_FEATURE
