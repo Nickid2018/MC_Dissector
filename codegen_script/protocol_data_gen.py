@@ -20,9 +20,10 @@ def get_data(root):
     available_versions = get_file_list(root)
     versions_data = {}
     for v in available_versions:
-        with open(f'{root}/{v}/protocol.json', 'r') as file:
-            data_json = json.load(file)
-            versions_data[v] = json.dumps(data_json).replace('"', '\\"')
+        if os.path.exists(f'{root}/{v}/protocol.json'):
+            with open(f'{root}/{v}/protocol.json', 'r') as file:
+                data_json = json.load(file)
+                versions_data[v] = json.dumps(data_json).replace('"', '\\"')
 
     return protocol_version_data, versions_data
 
