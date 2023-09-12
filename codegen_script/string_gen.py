@@ -230,6 +230,8 @@ def write_data():
             f'\tbitmask_hf_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tcomponent_map_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\thf_mapping_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
+            f'\tprotocol_name_map_client_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
+            f'\tprotocol_name_map_server_{edition} = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);',
             f'\tstatic gint *ett_{edition}[] = {{&ett_mc{edition}, &ett_{edition}_proto, &ett_sub_{edition}}};',
             f'\tstatic hf_register_info hf_je[] = {{',
             ''
