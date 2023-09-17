@@ -11,7 +11,9 @@
 
 对于每个平台都有两个版本，分别为带有额外解析函数的版本和不带有额外解析函数（`No Function`）的版本。额外解析函数可以解析实体 ID 和同步协议数据等。
 
-下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
+Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
+
+Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.0/epan`）并启动 Wireshark 即可。
 
 ## 可调选项
 
