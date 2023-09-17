@@ -117,6 +117,5 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
 
-install(TARGETS MC_Dissector)
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
 
