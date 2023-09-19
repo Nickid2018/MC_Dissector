@@ -1,90 +1,86 @@
-# Minecraft 协议解析器
+# Minecraft Parser
 
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Nickid2018/MC_Dissector/ci.yml)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Nickid2018/MC_Dissector)
 [![wakatime](https://wakatime.com/badge/user/74cf9ef2-54ee-470f-a4ae-03e46a1e3c77/project/07a6974f-bdb4-40ce-98f1-f16c123aa610.svg)](https://wakatime.com/badge/user/74cf9ef2-54ee-470f-a4ae-03e46a1e3c77/project/07a6974f-bdb4-40ce-98f1-f16c123aa610)
 
-## 使用方法
+## How To Use?
 
-构建的文件可以在 Action 里面找到，稳定版可以在 Release 里面找到。
+Built files can be found in Action, stable version can be found in Release.
 
-对于每个平台都有两个版本，分别为带有额外解析函数的版本和不带有额外解析函数（`No Function`）的版本。额外解析函数可以解析实体 ID 和同步协议数据等。
+For each platform there are 2 different versions with and without additional parse function (`No Function`). Additional parse function can parse entity ID and synchronize protocol data etc.
 
-Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
+After downloading:
 
-Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.0/epan`）并启动 Wireshark 即可。
+For Windows, put file `mcdissector.dll` into parser directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
 
-## 可调选项
+For Linux, put file `mcdissector.so` into parser directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
 
-可以在 Wireshark 的`首选项/Protocols`里面找到`MCJE`，在这里可以调整一些选项。
+## Tunable Options
 
-* Ignore Packets：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
-  代表发向服务端的包，`c`代表发向客户端的包。默认为`c:map_chunk`，
-  即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
-* Secret Key：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
-* TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+`MCJE` can be found in `Preferences/Protocols` in Wireshark, you can adjust some options here.
 
-## 加密连接
+* Ignore Packets: To stop parsing some packets to filt unwanted information. The format is in lists separated by commas made up by `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client. Default option `c:map_chunk` is to stop parsing server to client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
+* Secret Key: To encrypt connect keys for decrypting data. The format is in hexademical strings with length of 32.
+* TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
 
-如果你使用了正版进入 Minecraft 服务器，则客户端和服务端之间会使用`AES/CFB8/NoPadding`算法建立加密连接。
-此步骤在登录阶段压缩前执行，整个连接内的数据都会被加密，包括拆分数据的数据长度字段。
+## Encrypted Connection
 
-为了能监听加密连接内的数据，我们必须知道密钥是什么。项目内的`encryption-helper`可以做到这点，
-它利用对称加密的密钥由客户端执行生成这一特点，在客户端创建密钥时强制替换为指定的密钥而不是生成随机密钥。
+If you enter Minecraft servers in legitimated game client, encrypted connection will be built between server and client base on `AES/CFB8/NoPadding` algorithm.
+This step will execute before compression during login. All data in the connection will be encrypted, including data length fields of spilted data.
 
-`encryption-helper`是一个 Java Agent，在 Minecraft 运行时动态注入执行代码。它需要用下面的 JVM 参数附加到一个 Minecraft
-客户端中：
+To monitor data in encrypted connection, we need to know what a key is with the help of `encryption-helper` in the project.
+By using the character that the generation of symmetric encrypted keys was executed by client, it forced client to generate a specified key to replace a random one.
+
+`encryption-helper` is a Java Agent inject executive code dynamically when running Minecraft. It needs JVM parameters as follow to attach to a Minecraft client:
 
 ```shell
--javaagent:<文件位置>=<密钥>
+-javaagent:<document location>=<key>
 ```
 
-密钥是一个 32 长度的，只包含 0-F 的 16 进制字符串。如果输入格式错误，在启动客户端时会立刻报错崩溃。
+The key is a hexademical string only contains 0-F with length of 32. If the input format is incorrect, crash will be reported immediately when starting client.
 
-`encryption-helper`理论上可以运行在所有未混淆和混淆的可注入客户端中，因为它定位的注入点只包含下列不会被混淆的特征：
+Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated injectable clients, since the injection points it locates only contain features could not be obfuscated as follow:
 
-* 方法返回值为`javax.crypto.SecretKey`。
-* 方法没有参数。
-* 方法的第一个局部变量类型为`javax.crypto.KeyGenerator`。
+* Method return value is `javax.crypto.SecretKey`.
+* Method has no parameter.
+* The type of the first local variable of the method is `javax.crypto.KeyGenerator`.
 
-基本不会有模组会修改此处的逻辑，所以程序修改这里是安全的，应该不会和模组冲突。
+Very few mods modify logics here, so it's safe for the program to modify. It should not conflict with mods.
 
-只有一种可能会导致此程序失效：模组修改了原版的加密逻辑，导致此处不会被调用无法替换密钥，但那种协议就已经不在我们程序的使用范围内了。
+Only a single circumstance will disable the program: Mods have modified encryption logics here and resulted in failure in invoking and keys replacing.
 
-## 解析错误
+## Parsing Errors
 
-如果出现了解析错误，可能有下面两种情况：
+Parsing errors exists under 2 circumstances as follow:
 
-* Wireshark 没有抓取到所有数据。由于 Java 版使用 TCP，数据由长度字段拆分，一旦缺少某一部分，
-  数据就会立刻无法解析。如果你在数据解析错误的前后发现了`TCP Previous segment not captured`的错误，那么就是这种情况。
-* 程序还没有做好这部分的适配或相应的处理，或没有添加对应的字符串。这类错误可以在 Issues 里面提出来。
+* Wireshark failed to capture all data. Since Java version uses TCP, data is spilt by length field. Once missing anything, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
+* The program has not finished adaption or corresponding treatments for this part or has not added corresponding strings. Such error can be reported as an Issue.
 
-协议整体由`minecraft-data`内的协议描述文件动态构建，如果你确信是因为协议描述出现问题而导致错误，可以在`minecraft-data`
-仓库里面提出 Issue。
+The overall protocol is built by protocol description dynamic file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can report Issue in `minecraft-data` warehouse.
 
-## 构建项目（Windows）
+## To Build Projects (Windows)
 
-构建此项目需要有 Wireshark 的源码并需要配置依赖，且需要 python 用于代码生成。
+Building this project needs support from source code of Wireshark and dependency configuration, and python for code generation.
 
-1. 克隆 Wireshark 仓库到本地，配置好需要的依赖。
-2. 指定环境变量`PLATFORM`为`x64`，指定环境变量`WIRESHARK_LIB_DIR`为 Wireshark 依赖库目录（运行 cmake 时会自动创建）。
-3. 在 Wireshark 源码同级目录创建`build`，在 build 中运行`cmake -A x64 .. -DBUILD_wireshark=OFF`。
-4. 仍然在 build 中，运行`cmake --build . --config RelWithDebInfo --target epan`。
-5. 指定环境变量`WIRESHARK_DIR`（Wireshark 源码目录）、`WIRESHARK_BUILD_DIR`（build 目录位置）、`WIRESHARK_LIB_FILE_DIR`（构建产生的
-   RelWithDebInfo 目录位置）。
-6. 在项目根目录运行`cmake -S . -G Ninja -B build`。
-7. 在项目根目录运行`cmake --build build --target MC_Dissector`。
-8. 在 build 目录里面能看到构建出来的文件。
+1. Clone Wireshark store to local and configure necessary dependencies.
+2. Specify environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).
+3. Create `build` in peer directory of Wireshark source codes, and run `cmake -A x64 .. -DBUILD_wireshark=OFF` in "build".
+4. Still in "build", run `cmake --build . --config RelWithDebInfo --target epan`.
+5. Specify environment variable `WIRESHARK_DIR` (directory of Wireshark source code), `WIRESHARK_BUILD_DIR` (location of directory of "build") and `WIRESHARK_LIB_FILE_DIR` (location of directory of RelWithDebInfo generated by building the project).
+6. Run `cmake -S . -G Ninja -B build` in project root directory.
+7. Run `cmake --build build --target MC_Dissector` in project root directory.
+8. Built file can be discovered in "build" directory.
 
-## 构建项目（Linux）
+## To Build Projects (Linux)
 
-在 Linux 上构建要简单的多，具体看 ci.yml 就行（懒得写）。
+It is much easier to build on Linux, read ci.yml for details. (Too lazy to write here)
 
-## 当前计划
+## Current Plans
 
-- [x] 写的差不多了！（至少不炸了！）
-- [x] linux 支持 by @xtexChooser
-- [x] 支持加密。（应该没问题了！）
-- [ ] 版本兼容性。
-- [ ] 支持基岩版。
+- [x] Almost complete! (Crash free, at least!）
+- [x] Linux support by @xtexChooser
+- [x] Support encryption. (It should be OK!)
+- [ ] Version compatibility.
+- [ ] Support bedrock version.

@@ -1,26 +1,24 @@
-这个目录是程序内部使用的字符串定义文件目录，用于定义协议描述文件内的字段的显示名称、显示格式等。如果字符串缺失或错误，在最终显示时可能会发生异常。
+This directory is a string definition file directory for program internal use to define display name and display format of fields in protocol description file. If there are strings missing or containing errors, displaying exception can exist in final displaying.
 
-## 添加字符串
+## To Add Strings
 
-JSON 文件按照以下格式定义：
+JSON files should be defined basing on formats as follow:
 
-* `hf_defines`：定义基础字段。
-* `mappings`：定义字段与协议描述文件字段的映射。
-* `bitmask_collection`：定义位掩码。
-* `value_mappings`：定义数据与字符串的映射。
-* `component_names`：定义协议描述组件名称。
-* `packet_names`：定义协议描述包名称。
+* `hf_defines`：To define basic fields.
+* `mappings`：To define mapping between fields and protocol description file fields.
+* `bitmask_collection`：To define bitmasks.
+* `value_mappings`：To define mapping between data and strings.
+* `component_names`：To define names of protocol define components.
+* `packet_names`：To define names of protocol define packets.
 
-### 定义基础字段
+### To Define Basic Fields
 
-如果一个协议描述文件之中的字段类型为基础类型（如`varint`，`string`等）或为`buffer`、`mapping`、`bitfield`
-内的字段、`switch`中的以上列类型作为值的项或带有上列类型作为附加参数的`option`
-，则这个字段要求写入`hf_defines`。`hf_defines`内元素的定义如下：
+If the fields in a protocol description file are: 1. Basic ones（for example `varint`，`string`; 2. Fields in `buffer`、`mapping`、`bitfield`; 3. Items with types mentioned upon as values in `switch`; 4. `option` with types mentioned upon as additional parameters; `hf_defines` should be wrote into the field. Definition of elements in `hf_defines` are as follow:
 
-* `name`：字段描述，用于展示这个字段的实际用途。
-* `type`：字段类型。字段类型名称和协议描述文件内的字段类型名称不完全一致，下方为对照表。
+* `name`：Field description, to display real usage of the field.
+* `type`：Field type. Field type names are not full equivalences of field types in protocol description files. Comparison table is as follow:
 
-|  协议描述文件内字段类型  |  字段类型名称  |
+|  Field type in protocol description files  |  Field type names  |
 |:-------------:|:--------:|
 |   `varint`    |  `u32`   |
 |   `varlong`   |  `u64`   |
@@ -31,22 +29,21 @@ JSON 文件按照以下格式定义：
 |     `nbt`     | `bytes`  |
 | `optionalNbt` | `bytes`  |
 |   `string`    | `string` |
-|     其他类型      |   名称相同   |
+|     Other types      |   Identical   |
 
-* `display`：字段显示格式，可选，可以为`DEC`、`HEX`等。如果字段类型和显示格式无法对应则编译出的插件加载时会直接报错。
-* `bitamsk`：如果字段是在`bitfield`内定义的，它还必须附加位掩码的信息，以16进制数字写入，不带`0x`。
-* `value_mapping`：定义字段内值与显示值的映射，可以不存在。这些值要在`value_mappings`内定义，键为字段的值，值为映射后显示的值。
+* `display`：Format of field displaying, optional, can be `DEC`, `HEX` etc., If field types cannot correspond to its displaying format, crash will be reported when loading complied plugins.
+* `bitmask`：If fields were defined in `bitfield`, it needs additional information of bitmasks written in hexademical numbers without `0x`.
+* `value_mapping`：To define mappings between values and displaying values in the fields. These values should be defined in `value_mappings`. Keys are values of fields, values are values display after mapping.
 
-协议描述字段和定义字段需要使用`mappings`绑定，其值为定义字段的名称，键为**协议字段路径**。协议字段路径的定义如下：
+Protocol description fields and definition fields should be bound by using `mappings`, values are names of defined fields, keys are **paths of protocol fields**. Definitions of path of protocol fields are as follow:
 
-* 协议字段路径是按照后缀查找的，即`a/b/c`会先查找`a/b/c`，如果不存在则查找`b/c`，如果还不存在则查找`c`。
-* 路径的节点名称为每一层`container`或`bitfield`定义的名称，如果对应字段没有写`name`则为`[unnamed]`。
-* 如果字段的类型引用其他非基本类型，则需要在整个路径的最后再添加上一个`/<type>`，其中`<type>`为非基本类型的名称。
-* 如果字段在`switch`内（父节点在`switch`内也算），则可以指定`switch`分支，只需要在整个路径后面加上`[<case>]`，其中`case`
-  为分支名称。
-* 对于`packet_`开头的根节点，其`packet_`需要被省略。
+* Path of protocol fields is found by suffixes that `a/b/c` will find `a/b/c` first, and find `b/c` if it does not exist，and find `c` if still not exist.
+* Node name of the path is the name defined by `container` or `bitfield`, if no `name` exists in corresponding fields, it should be `[unnamed]`.
+* If field types are quotations of other nonfundamental types, `/<type>` should be added at the end of the whole path, in which `<type>` represents names of nonfundamental types.
+* If fields are in `switch` (including circumstances with father nodes in `switch`), `switch` branch can be specified only to add `[<case>]` at the end of the whole path, in which `case` represents branch names.
+* `packet_` should be omitted in root nodes begins from `packet_`.
 
-以`slot`举例：
+Take `slot` as an example:
 
 ```json
 {
@@ -91,15 +88,15 @@ JSON 文件按照以下格式定义：
 }
 ```
 
-`slot`内部共有4个基础字段和1个组件（`container`），分别为：
+4 basic fields and a module (`container`) is contained in `slot`, they are:
 
 * `slot/present`
-* `slot/[unnamed]/itemId`（或`slot/[unnamed]/itemId[true]`）
-* `slot/[unnamed]/itemCount`（或`slot/[unnamed]/itemCount[true]`）
-* `slot/[unnamed]/nbtData`（或`slot/[unnamed]/nbtData[true]`）
+* `slot/[unnamed]/itemId`（or `slot/[unnamed]/itemId[true]`）
+* `slot/[unnamed]/itemCount`（or `slot/[unnamed]/itemCount[true]`）
+* `slot/[unnamed]/nbtData`（or `slot/[unnamed]/nbtData[true]`）
 * `slot/[unnamed]`
 
-再以`packet_set_slot`为例：
+Take `packet_set_slot` as another example
 
 ```json
 {
@@ -127,20 +124,18 @@ JSON 文件按照以下格式定义：
 }
 ```
 
-`packet_set_slot`内部共有3个基础字段和1个组件（`slot`），分别为：
+3 basic fields and a module (`slot`) is contained in `packet_set_slot`, they are:
 
 * `set_slot/windowId`
 * `set_slot/stateId`
 * `set_slot/slot`
 * `set_slot/item/slot`
 
-### 定义位掩码字段
+### To Define Bitmask Fields
 
-如果一个字段的类型是`bitfield`，则它需要在`bitmask_collection`内定义，名称的格式为`([<bitsize>]<name>)+`，其中`bitsize`
-为位数，`name`为名称，必须按照顺序定义。例如22位的`x`、22位的`z`和20位的`y`定义为`[22]x[22]z[20]y`
-。值为一个列表，按照顺序填写上文中定义的基础字段，如果位置上没有定义基础字段则置为`null`。
+If the type if a field is `bitfield`, it should be defined in `bitmask_collection` with name format `([<bitsize>]<name>)+`, in which `bitsize` represents digit, `name` represents name. The definition needs to be finished in sequence, for example, a 22-digit `x`, a 22-digit `z` and a 20-digit `y` should be defined as `[22]x[22]z[20]y`. Values are contained in a list with basic fields defined in above texts. `null` should exists at positions with no basic field defined.
 
-以`[6]unused[1]max_present[1]min_present`举例：
+Take `[6]unused[1]max_present[1]min_present` as an example:
 
 ```json
 [
@@ -165,7 +160,7 @@ JSON 文件按照以下格式定义：
 ]
 ```
 
-对应的定义为：
+Corresponding definition should be:
 
 ```json
 {
@@ -177,6 +172,6 @@ JSON 文件按照以下格式定义：
 }
 ```
 
-### 定义组件
+### To Define Modules
 
-如果一个字段的类型是`container`、`array`或其他非基础类型，它就属于组件，应该在`component_names`内定义。其键为协议字段路径，值为名称。
+If the type of a field is `container`, `array` or other nonfundamental types, it is a module and should be defined in `component_names`. Key is path of protocol fields, value is its name.
