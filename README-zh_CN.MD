@@ -1,3 +1,5 @@
+[English](./README.MD) | 简体中文
+
 # Minecraft 协议解析器
 
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
