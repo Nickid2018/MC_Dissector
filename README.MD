@@ -64,7 +64,7 @@ The overall protocol is dynamically built by protocol description file in `minec
 
 ## How To Build Projects (Windows)
 
-Building this project needs support from source code of Wireshark and dependency configuration, and python is needed for code generation.
+Building this project requires Wireshark source code with configured dependencies and python for code generation.
 
 1. Clone Wireshark repository to local and configure necessary dependencies.
 2. Set environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).
