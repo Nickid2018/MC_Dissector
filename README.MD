@@ -57,8 +57,8 @@ Only a single circumstance will disable the program: Mods have modified encrypti
 
 Parsing error exists under 2 circumstances as follow:
 
-* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field， and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
-* The program has not finished adaption or process properly for this part， or has not added corresponding strings. Such errors can be reported by open issues.
+* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
+* The program has not finished adaption or process properly for this part, or has not added corresponding strings. Such errors can be reported by open issues.
 
 The overall protocol is dynamically built by protocol description file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can open an issue in `minecraft-data` repository.
 
