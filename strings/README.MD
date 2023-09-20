@@ -172,6 +172,6 @@ Corresponding definition should be:
 }
 ```
 
-### To Define Modules
+### To Define Components
 
-If the type of a field is `container`, `array` or other nonfundamental types, it is a module and should be defined in `component_names`. Key is path of protocol fields, value is its name.
+If the type of a field is `container`, `array` or other nonfundamental types, it is a component and should be defined in `component_names`. Key is path of protocol fields, value is its name.

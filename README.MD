@@ -1,4 +1,4 @@
-# Minecraft Parser
+# Minecraft Protocol Dissector
 
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Nickid2018/MC_Dissector/ci.yml)
@@ -13,16 +13,16 @@ For each platform there are 2 different versions with and without additional par
 
 After downloading:
 
-For Windows, put file `mcdissector.dll` into parser directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
+For Windows, put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
 
-For Linux, put file `mcdissector.so` into parser directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
+For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.local/lib/wireshark/plugins/4.0/epan`) and run Wireshark.
 
 ## Tunable Options
 
 `MCJE` can be found in `Preferences/Protocols` in Wireshark, you can adjust some options here.
 
 * Ignore Packets: To stop parsing some packets to filt unwanted information. The format is in lists separated by commas made up by `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client. Default option `c:map_chunk` is to stop parsing server to client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
-* Secret Key: To encrypt connect keys for decrypting data. The format is in hexademical strings with length of 32.
+* Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexademical strings with length of 32.
 * TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
 
 ## Encrypted Connection
@@ -36,7 +36,7 @@ By using the character that the generation of symmetric encrypted keys was execu
 `encryption-helper` is a Java Agent inject executive code dynamically when running Minecraft. It needs JVM parameters as follow to attach to a Minecraft client:
 
 ```shell
--javaagent:<document location>=<key>
+-javaagent:<jarfile>=<key>
 ```
 
 The key is a hexademical string only contains 0-F with length of 32. If the input format is incorrect, crash will be reported immediately when starting client.
@@ -53,7 +53,7 @@ Only a single circumstance will disable the program: Mods have modified encrypti
 
 ## Parsing Errors
 
-Parsing errors exists under 2 circumstances as follow:
+Parsing error exists under 2 circumstances as follow:
 
 * Wireshark failed to capture all data. Since Java version uses TCP, data is spilt by length field. Once missing anything, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
 * The program has not finished adaption or corresponding treatments for this part or has not added corresponding strings. Such error can be reported as an Issue.
