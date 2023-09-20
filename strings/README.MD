@@ -13,7 +13,14 @@ JSON files should be defined basing on formats as follow:
 
 ### To Define Basic Fields
 
-If the fields in a protocol description file are: 1. Basic ones（for example `varint`，`string`; 2. Fields in `buffer`、`mapping`、`bitfield`; 3. Items with types mentioned upon as values in `switch`; 4. `option` with types mentioned upon as additional parameters; `hf_defines` should be wrote into the field. Definition of elements in `hf_defines` are as follow:
+If fields in a protocol description file are: 
+
+1. Basic ones（for example `varint`，`string`)
+2. Fields in `buffer`、`mapping`、`bitfield`
+3. Items with types mentioned upon as values in `switch`
+4. `option` with types mentioned upon as additional parameters
+
+`hf_defines` should be wrote into the field. Definition of elements in `hf_defines` are as follow:
 
 * `name`：Field description, to display real usage of the field.
 * `type`：Field type. Field type names are not full equivalences of field types in protocol description files. Comparison table is as follow:
@@ -37,7 +44,7 @@ If the fields in a protocol description file are: 1. Basic ones（for example `v
 
 Protocol description fields and definition fields should be bound by using `mappings`, values are names of defined fields, keys are **paths of protocol fields**. Definitions of path of protocol fields are as follow:
 
-* Path of protocol fields is found by suffixes that `a/b/c` will find `a/b/c` first, and find `b/c` if it does not exist，and find `c` if still not exist.
+* Path of protocol fields is found by suffixes that `a/b/c` will find `a/b/c` first, and find `b/c` if `a/b/c` does not exist，and find `c` if `b/c` still not exist.
 * Node name of the path is the name defined by `container` or `bitfield`, if no `name` exists in corresponding fields, it should be `[unnamed]`.
 * If field types are quotations of other nonfundamental types, `/<type>` should be added at the end of the whole path, in which `<type>` represents names of nonfundamental types.
 * If fields are in `switch` (including circumstances with father nodes in `switch`), `switch` branch can be specified only to add `[<case>]` at the end of the whole path, in which `case` represents branch names.
