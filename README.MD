@@ -1,3 +1,5 @@
+English | [简体中文](./README-zh_CN.MD)
+
 # Minecraft Protocol Dissector
 
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
@@ -7,7 +9,7 @@
 
 ## How To Use?
 
-Built files can be found in Action, stable version can be found in Release.
+Built files can be found in Actions, stable version can be found in Release.
 
 For each platform there are 2 different versions with and without additional parse function (`No Function`). Additional parse function can parse entity ID and synchronize protocol data etc.
 
@@ -19,27 +21,27 @@ For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.
 
 ## Tunable Options
 
-`MCJE` can be found in `Preferences/Protocols` in Wireshark, you can adjust some options here.
+`MCJE` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
-* Ignore Packets: To stop parsing some packets to filt unwanted information. The format is in lists separated by commas made up by `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client. Default option `c:map_chunk` is to stop parsing server to client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
+* Ignore Packets: Prevent parsing some packets to filt unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client.The default is `c:map_chunk` which stops parsing server-to-client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
 * Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexademical strings with length of 32.
 * TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
 
 ## Encrypted Connection
 
 If you enter Minecraft servers in legitimated game client, encrypted connection will be built between server and client base on `AES/CFB8/NoPadding` algorithm.
-This step will execute before compression during login. All data in the connection will be encrypted, including data length fields of spilted data.
+This step will execute before compression during login. All data in the connection will be encrypted, including data length fields used to spilt data.
 
-To monitor data in encrypted connection, we need to know what a key is with the help of `encryption-helper` in the project.
-By using the character that the generation of symmetric encrypted keys was executed by client, it forced client to generate a specified key to replace a random one.
+To listen data in encrypted connection, we need to know what the key is with the help of `encryption-helper` in the project.
+By using the feature that the generation of symmetric encrypted keys was executed by client, it forced client to use a specified key, instead create a random one.
 
-`encryption-helper` is a Java Agent inject executive code dynamically when running Minecraft. It needs JVM parameters as follow to attach to a Minecraft client:
+`encryption-helper` is a Java Agent injects executive code dynamically when running Minecraft. It needs JVM parameters as follow to attach to a Minecraft client:
 
 ```shell
--javaagent:<jarfile>=<key>
+-javaagent:<jarfile path>=<key>
 ```
 
-The key is a hexademical string only contains 0-F with length of 32. If the input format is incorrect, crash will be reported immediately when starting client.
+The key is a hexademical string only contains 0-F with length of 32. If the input format is incorrect, it will crash immediately and throw an error when starting client.
 
 Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated injectable clients, since the injection points it locates only contain features could not be obfuscated as follow:
 
@@ -49,31 +51,31 @@ Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated in
 
 Very few mods modify logics here, so it's safe for the program to modify. It should not conflict with mods.
 
-Only a single circumstance will disable the program: Mods have modified encryption logics here and resulted in failure in invoking and keys replacing.
+Only a single circumstance will disable the program: Mods have modified encryption logics here and resulted in failure in call to replace keys, but that kind of protocol is out of the scope of our program's use.
 
 ## Parsing Errors
 
 Parsing error exists under 2 circumstances as follow:
 
-* Wireshark failed to capture all data. Since Java version uses TCP, data is spilt by length field. Once missing anything, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
-* The program has not finished adaption or corresponding treatments for this part or has not added corresponding strings. Such error can be reported as an Issue.
+* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
+* The program has not finished adaption or process properly for this part, or has not added corresponding strings. Such errors can be reported by open issues.
 
-The overall protocol is built by protocol description dynamic file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can report Issue in `minecraft-data` warehouse.
+The overall protocol is dynamically built by protocol description file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can open an issue in `minecraft-data` repository.
 
-## To Build Projects (Windows)
+## How To Build Projects (Windows)
 
-Building this project needs support from source code of Wireshark and dependency configuration, and python for code generation.
+Building this project requires Wireshark source code with configured dependencies and python for code generation.
 
-1. Clone Wireshark store to local and configure necessary dependencies.
-2. Specify environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).
-3. Create `build` in peer directory of Wireshark source codes, and run `cmake -A x64 .. -DBUILD_wireshark=OFF` in "build".
+1. Clone Wireshark repository to local and configure necessary dependencies.
+2. Set environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).
+3. Create `build` in same directory of Wireshark source codes, and run `cmake -A x64 .. -DBUILD_wireshark=OFF` in "build".
 4. Still in "build", run `cmake --build . --config RelWithDebInfo --target epan`.
-5. Specify environment variable `WIRESHARK_DIR` (directory of Wireshark source code), `WIRESHARK_BUILD_DIR` (location of directory of "build") and `WIRESHARK_LIB_FILE_DIR` (location of directory of RelWithDebInfo generated by building the project).
+5. Set environment variable `WIRESHARK_DIR` (directory of Wireshark source code), `WIRESHARK_BUILD_DIR` (path of directory of "build") and `WIRESHARK_LIB_FILE_DIR` (path of directory of RelWithDebInfo generated by building the project).
 6. Run `cmake -S . -G Ninja -B build` in project root directory.
 7. Run `cmake --build build --target MC_Dissector` in project root directory.
 8. Built file can be discovered in "build" directory.
 
-## To Build Projects (Linux)
+## How To Build Projects (Linux)
 
 It is much easier to build on Linux, read ci.yml for details. (Too lazy to write here)
 
@@ -83,4 +85,4 @@ It is much easier to build on Linux, read ci.yml for details. (Too lazy to write
 - [x] Linux support by @xtexChooser
 - [x] Support encryption. (It should be OK!)
 - [ ] Version compatibility.
-- [ ] Support bedrock version.
+- [ ] Support bedrock edition.
