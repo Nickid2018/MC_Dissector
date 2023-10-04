@@ -496,6 +496,7 @@ void init_schema_data() {
     ADD_FUNCTION(record_entity_id_player, record_entity_id_player)
     ADD_FUNCTION(record_entity_id_experience_orb, record_entity_id_experience_orb)
     ADD_FUNCTION(record_entity_id_painting, record_entity_id_painting)
+    ADD_FUNCTION(entity_event, entity_event)
 
     init_protocol_functions();
 #endif // MC_DISSECTOR_FUNCTION_FEATURE

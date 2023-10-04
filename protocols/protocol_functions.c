@@ -11,6 +11,8 @@
 
 wmem_map_t *entity_hierarchy;
 wmem_map_t *entity_ids;
+wmem_map_t *entity_event;
+wmem_map_t *level_event;
 
 void init_entity_hierarchy() {
     entity_hierarchy = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
@@ -69,8 +71,20 @@ wmem_map_t *init_entity_ids(guint data_version) {
     return wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
 }
 
+void init_events() {
+    entity_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    level_event = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+    char **split = g_strsplit(RESOURCE_ENTITY_EVENT, "\n", 256);
+    for (int i = 0; split[i] != NULL; i++) {
+        char *now = split[i];
+        wmem_map_insert(entity_event, g_strdup_printf("%d", i), g_strdup(now));
+    }
+    g_strfreev(split);
+}
+
 void init_protocol_functions() {
     init_entity_hierarchy();
+    init_events();
     entity_ids = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
 }
 
@@ -198,6 +212,18 @@ FIELD_MAKE_TREE(sync_entity_data) {
     if (found_name == NULL)
         found_name = "Unknown Sync Data!";
     proto_tree_add_string(tree, get_string_je("sync_entity_data", "string"), tvb, 0, 0, found_name);
+    return 0;
+}
+
+FIELD_MAKE_TREE(entity_event) {
+    if (!tree)
+        return 0;
+    char *event_id_path[] = {"entityStatus", NULL};
+    gchar *event_id = record_query(recorder, event_id_path);
+    gchar *event_name = wmem_map_lookup(entity_event, event_id);
+    if (event_name == NULL)
+        event_name = "Unknown";
+    proto_tree_add_string(tree, get_string_je("entity_status_name", "string"), tvb, 0, 0, event_name);
     return 0;
 }
 

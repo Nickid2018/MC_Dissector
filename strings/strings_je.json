@@ -669,7 +669,7 @@
       ]
     },
     "entity_status": {
-      "name": "Entity Status",
+      "name": "Entity Event",
       "type": "i8"
     },
     "radius": {
@@ -1678,6 +1678,10 @@
     "registry_data": {
       "name": "Registry Data",
       "type": "bytes"
+    },
+    "entity_status_name": {
+      "name": "Entity Event Name",
+      "type": "string"
     }
   },
   "mappings": {
@@ -2557,7 +2561,7 @@
       "craft_progress_bar": "Client Container Set Data",
       "set_slot": "Client Container Set Slot",
       "set_cooldown": "Client Cooldown",
-      "chat_suggestions": "Client Custom Chat Completations",
+      "chat_suggestions": "Client Custom Chat Completions",
       "custom_payload": "Client Custom Payload",
       "damage_event": "Client Damage Event",
       "hide_message": "Client Delete Chat",

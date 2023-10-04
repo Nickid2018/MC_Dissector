@@ -47,6 +47,8 @@ FIELD_MAKE_TREE(record_entity_id_painting);
 
 FIELD_MAKE_TREE(sync_entity_data);
 
+FIELD_MAKE_TREE(entity_event);
+
 #endif //MC_DISSECTOR_FUNCTION_FEATURE
 
 #endif //MC_DISSECTOR_PROTOCOL_FUNCTIONS_H
