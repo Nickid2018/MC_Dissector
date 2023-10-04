@@ -30,7 +30,7 @@ jobs:
           path: wireshark
           ref: wireshark-4.0.6
       - name: Choco install Wireshark Deps
-        run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle make mingw
+        run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle make mingw ninja
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
         with:
