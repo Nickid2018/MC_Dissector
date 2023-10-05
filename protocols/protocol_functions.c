@@ -9,6 +9,12 @@
 #include "resources.h"
 #include "protocol_functions.h"
 
+typedef struct {
+    char *name;
+    int min_version;
+    int max_version;
+} level_event_entry;
+
 wmem_map_t *entity_hierarchy;
 wmem_map_t *entity_ids;
 wmem_map_t *entity_event;
@@ -73,11 +79,37 @@ wmem_map_t *init_entity_ids(guint data_version) {
 
 void init_events() {
     entity_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    level_event = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+    level_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
     char **split = g_strsplit(RESOURCE_ENTITY_EVENT, "\n", 256);
     for (int i = 0; split[i] != NULL; i++) {
         char *now = split[i];
         wmem_map_insert(entity_event, g_strdup_printf("%d", i), g_strdup(now));
+    }
+    g_strfreev(split);
+    split = g_strsplit(RESOURCE_LEVEL_EVENT, "\n", 1000);
+    for (int i = 0; split[i] != NULL; i++) {
+        char *now = split[i];
+        char **split_now = g_strsplit(now, " ", 2);
+        char **versions = g_strsplit(split_now[0], "|", 3);
+        char *event = versions[0];
+        int min_version = 0, max_version = 0x7fffffff;
+        if (versions[1] != NULL) {
+            min_version = atoi(versions[1]);
+            if (versions[2] != NULL)
+                max_version = atoi(versions[2]);
+        }
+        wmem_list_t *event_data = wmem_map_lookup(level_event, event);
+        if (event_data == NULL) {
+            event_data = wmem_list_new(wmem_epan_scope());
+            wmem_map_insert(level_event, g_strdup(event), event_data);
+        }
+        level_event_entry *entry = wmem_new(wmem_epan_scope(), level_event_entry);
+        entry->name = g_strdup(split_now[1]);
+        entry->min_version = min_version;
+        entry->max_version = max_version;
+        wmem_list_append(event_data, entry);
+        g_strfreev(split_now);
+        g_strfreev(versions);
     }
     g_strfreev(split);
 }
@@ -230,6 +262,23 @@ FIELD_MAKE_TREE(entity_event) {
 FIELD_MAKE_TREE(level_event) {
     if (!tree)
         return 0;
+    char *event_id_path[] = {"effectId", NULL};
+    gchar *event_id = record_query(recorder, event_id_path);
+    wmem_list_t *event_data = wmem_map_lookup(level_event, event_id);
+    char *event_name = "Unknown";
+    if (event_data != NULL) {
+        guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
+        wmem_list_frame_t *entry = wmem_list_head(event_data);
+        while (entry != NULL) {
+            level_event_entry *entry_data = wmem_list_frame_data(entry);
+            if (entry_data->min_version <= data_version && data_version <= entry_data->max_version) {
+                event_name = entry_data->name;
+                break;
+            }
+            entry = wmem_list_frame_next(entry);
+        }
+    }
+    proto_tree_add_string(tree, get_string_je("level_event_name", "string"), tvb, 0, 0, event_name);
     return 0;
 }
 

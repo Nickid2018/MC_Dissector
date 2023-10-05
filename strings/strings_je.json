@@ -1682,6 +1682,10 @@
     "entity_status_name": {
       "name": "Entity Event Name",
       "type": "string"
+    },
+    "level_event_name": {
+      "name": "Level Event Name",
+      "type": "string"
     }
   },
   "mappings": {
