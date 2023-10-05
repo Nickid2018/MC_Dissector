@@ -227,4 +227,10 @@ FIELD_MAKE_TREE(entity_event) {
     return 0;
 }
 
+FIELD_MAKE_TREE(level_event) {
+    if (!tree)
+        return 0;
+    return 0;
+}
+
 #endif //MC_DISSECTOR_FUNCTION_FEATURE
