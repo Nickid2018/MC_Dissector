@@ -2,7 +2,6 @@
 // Created by Nickid2018 on 2023/10/6.
 //
 
-#include <minmax.h>
 #include "nbt.h"
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
@@ -47,7 +46,7 @@ void parse_to_string(tvbuff_t *tvb, const guint8 *data, int offset_global, guint
                                  ((data[2] & 0xff) << 8) | (data[3] & 0xff));
             gint element_length = type == TAG_BYTE_ARRAY ? 1 : (type == TAG_INT_ARRAY ? 4 : 8);
             *length += array_length * element_length;
-            gint record_length = min(array_length, 20);
+            gint record_length = array_length > 20 ? 20 : array_length;
             char **elements = g_new0(char *, record_length);
             for (int i = 0; i < record_length; i++) {
                 if (type == TAG_BYTE_ARRAY)
