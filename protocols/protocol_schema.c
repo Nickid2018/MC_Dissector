@@ -9,6 +9,7 @@
 #include "protocol_be/be_dissect.h"
 #include "protocol_functions.h"
 #include "utils/nbt.h"
+#include "mc_dissector.h"
 
 #define BYTES_MAX_LENGTH 200
 

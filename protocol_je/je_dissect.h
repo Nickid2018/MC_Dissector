@@ -38,7 +38,6 @@ extern int hf_unknown_string_je;
 extern int hf_unknown_boolean_je;
 extern int hf_unknown_uuid_je;
 extern int hf_array_length_je;
-extern int hf_text_je;
 
 extern int ett_mcje;
 extern int ett_je_proto;

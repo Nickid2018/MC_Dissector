@@ -83,7 +83,7 @@ void init_events() {
     char **split = g_strsplit(RESOURCE_ENTITY_EVENT, "\n", 256);
     for (int i = 0; split[i] != NULL; i++) {
         char *now = split[i];
-        wmem_map_insert(entity_event, g_strdup_printf("%d", i), g_strdup(now));
+        wmem_map_insert(entity_event, g_strdup_printf("%d", i + 1), g_strdup(now));
     }
     g_strfreev(split);
     split = g_strsplit(RESOURCE_LEVEL_EVENT, "\n", 1000);

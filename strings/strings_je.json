@@ -47,7 +47,10 @@
     },
     "text_je": {
       "name": "Text",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "legacy_slp_payload": {
       "name": "Legacy SLP Payload",
@@ -1690,6 +1693,10 @@
     "level_event_name": {
       "name": "Level Event Name",
       "type": "string"
+    },
+    "do_limited_crafting": {
+      "name": "Do Limited Crafting",
+      "type": "bool"
     }
   },
   "mappings": {
@@ -1983,6 +1990,7 @@
     "login/simulationDistance": "simulation_distance",
     "login/reducedDebugInfo": "reduced_debug_info",
     "login/enableRespawnScreen": "enable_respawn_screen",
+    "login/doLimitedCrafting": "do_limited_crafting",
     "login/isDebug": "is_debug",
     "login/isFlat": "is_flat",
     "login/dimensionName": "dimension_name",
