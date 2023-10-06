@@ -19,6 +19,7 @@ int hf_unknown_string_be = -1;
 int hf_unknown_boolean_be = -1;
 int hf_unknown_uuid_be = -1;
 int hf_array_length_be = -1;
+int hf_text_be = -1;
 
 int ett_sub_be = -1;
 wmem_map_t *name_hf_map_be = NULL;

@@ -12,6 +12,7 @@ extern dissector_handle_t mcje_handle;
 extern dissector_handle_t ignore_je_handle;
 extern gchar *pref_ignore_packets_je;
 extern gchar *pref_secret_key;
+extern gboolean pref_do_nbt_decode;
 
 extern int hf_invalid_data_je;
 extern int hf_ignored_packet_je;
@@ -37,6 +38,7 @@ extern int hf_unknown_string_je;
 extern int hf_unknown_boolean_je;
 extern int hf_unknown_uuid_je;
 extern int hf_array_length_je;
+extern int hf_text_je;
 
 extern int ett_mcje;
 extern int ett_je_proto;

@@ -45,6 +45,10 @@
       "name": "Server Status",
       "type": "string"
     },
+    "text_je": {
+      "name": "Text",
+      "type": "string"
+    },
     "legacy_slp_payload": {
       "name": "Legacy SLP Payload",
       "type": "u8"

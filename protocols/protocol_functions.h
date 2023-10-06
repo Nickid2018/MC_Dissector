@@ -10,7 +10,7 @@
 
 #define FIELD_MAKE_TREE(name) \
     guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, \
-    protocol_field field, guint offset, guint remaining, data_recorder recorder)
+    protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je)
 
 #define SINGLE_LENGTH_FIELD_MAKE(name, len, func_add, func_parse, record) \
     FIELD_MAKE_TREE(name) {                                               \
@@ -20,18 +20,6 @@
             record(recorder, func_parse(tvb, offset));                    \
         return len;                                                       \
     }
-
-#define DELEGATE_FIELD_MAKE(name) \
-FIELD_MAKE_TREE(je_##name) { \
-    return make_tree_##name(data, tree, tvb, extra, field, offset, remaining, recorder, true); \
-} \
-FIELD_MAKE_TREE(be_##name) { \
-    return make_tree_##name(data, tree, tvb, extra, field, offset, remaining, recorder, false); \
-}
-
-#define DELEGATE_FIELD_MAKE_HEADER(name) \
-guint make_tree_##name(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, extra_data *extra,\
-    protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je)
 
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 

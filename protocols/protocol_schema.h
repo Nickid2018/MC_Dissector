@@ -7,7 +7,7 @@
 
 #include <epan/proto.h>
 #include "cJSON/cJSON.h"
-#include "data_recorder.h"
+#include "utils/data_recorder.h"
 
 typedef struct _protocol_set protocol_set_t, *protocol_set;
 typedef struct _protocol_entry protocol_entry_t, *protocol_entry;
@@ -26,7 +26,7 @@ struct _protocol_field {
     wmem_map_t *additional_info;
 
     guint (*make_tree)(const guint8 *data, proto_tree *tree, tvbuff_t *tvb, extra_data *extra,
-                       protocol_field field, guint offset, guint remaining, data_recorder recorder);
+                       protocol_field field, guint offset, guint remaining, data_recorder recorder, bool is_je);
 };
 
 typedef struct {

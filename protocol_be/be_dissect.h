@@ -28,6 +28,7 @@ extern int hf_unknown_string_be;
 extern int hf_unknown_boolean_be;
 extern int hf_unknown_uuid_be;
 extern int hf_array_length_be;
+extern int hf_text_be;
 
 void proto_register_mcbe();
 
