@@ -25,6 +25,7 @@ For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.
 
 * Ignore Packets: Prevent parsing some packets to filt unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client.The default is `c:map_chunk` which stops parsing server-to-client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
 * Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexademical strings with length of 32.
+* NBT Decoding: To decode NBT data.
 * TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
 
 ## Encrypted Connection
