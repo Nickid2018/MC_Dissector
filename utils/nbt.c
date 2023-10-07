@@ -92,8 +92,9 @@ guint add_primitive_type_hf(proto_tree *tree, tvbuff_t *tvb,
     guint length;
     char *text;
     parse_to_string(tvb, data, offset_global, type, &length, &text);
-    proto_item *item = proto_tree_add_item(tree, hfindex, tvb, offset_global, length, ENC_NA);
-    proto_item_append_text(item, ": %s", text);
+    proto_item *item = proto_tree_add_bytes(tree, hfindex, tvb, offset_global, 1, data);
+    proto_item_append_text(item, " - <%s>", text);
+    proto_item_set_len(item, length);
     return length;
 }
 
@@ -102,8 +103,9 @@ guint add_primitive_type(proto_tree *tree, tvbuff_t *tvb, gint hf_text,
     guint length;
     char *text;
     parse_to_string(tvb, data, offset_global, type, &length, &text);
-    proto_item *item = proto_tree_add_item(tree, hf_text, tvb, offset_global, length, ENC_NA);
+    proto_item *item = proto_tree_add_bytes(tree, hf_text, tvb, offset_global, 0, data);
     proto_item_set_text(item, "%s: %s", sup_name, text);
+    proto_item_set_len(item, length);
     return length;
 }
 
@@ -196,7 +198,7 @@ guint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, const guint8 *data,
     } else {
         int ett = is_je ? ett_sub_je : ett_sub_be;
         int hf_text = is_je ? get_string_je("text_je", "bytes") : hf_text_be;
-        proto_item *item = proto_tree_add_item(tree, hfindex, tvb, offset, 1, ENC_NA);
+        proto_item *item = proto_tree_add_bytes(tree, hfindex, tvb, offset, 1, data + offset);
         proto_tree *subtree = proto_item_add_subtree(item, ett);
         guint length = 0;
         if (type == TAG_LIST)

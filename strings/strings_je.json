@@ -239,7 +239,10 @@
     },
     "component": {
       "name": "Component",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "boolean": {
       "name": "Boolean",
@@ -348,7 +351,10 @@
     },
     "name": {
       "name": "Name",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "key": {
       "name": "Key",
@@ -414,7 +420,10 @@
     },
     "reason": {
       "name": "Reason",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "server_id": {
       "name": "Server ID",
@@ -505,11 +514,17 @@
     },
     "title": {
       "name": "Title",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "desc": {
       "name": "Description",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "frame_type": {
       "name": "Frame Type",
@@ -603,7 +618,10 @@
     },
     "tooltip": {
       "name": "Tooltip",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "root_index": {
       "name": "Root Index",
@@ -659,13 +677,17 @@
     },
     "message": {
       "name": "Message",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "target": {
       "name": "Target",
       "type": [
         "string",
-        "u32"
+        "u32",
+        "bytes"
       ]
     },
     "entity_id": {
@@ -973,7 +995,10 @@
     },
     "unsigned_chat_content": {
       "name": "Unsigned Chat Content",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "filter_type": {
       "name": "Filter Type",
@@ -985,11 +1010,17 @@
     },
     "network_name": {
       "name": "Network Name",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "network_target_name": {
       "name": "Network Target Name",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "duration": {
       "name": "Duration",
@@ -1069,7 +1100,10 @@
     },
     "prompt_message": {
       "name": "Prompt Message",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "copy_metadata": {
       "name": "Copy Metadata",
@@ -1112,7 +1146,10 @@
     },
     "display_text": {
       "name": "Display Text",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "team": {
       "name": "Team",
@@ -1140,11 +1177,17 @@
     },
     "prefix": {
       "name": "Prefix",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "suffix": {
       "name": "Suffix",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "player": {
       "name": "Player",
@@ -1219,11 +1262,17 @@
     },
     "header": {
       "name": "Header",
-      "type": "bool"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "footer": {
       "name": "Footer",
-      "type": "bool"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "collected_entity_id": {
       "name": "Collected Entity ID",
@@ -1263,7 +1312,10 @@
     },
     "motd": {
       "name": "MOTD",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "icon_bytes": {
       "name": "Icon",
@@ -1323,7 +1375,10 @@
     },
     "text": {
       "name": "Text",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "diameter": {
       "name": "Diameter",
