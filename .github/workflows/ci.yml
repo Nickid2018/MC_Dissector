@@ -2,7 +2,7 @@ name: CI
 on:
   push:
     paths-ignore:
-      - '.github/**'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches:
       - master
@@ -32,6 +32,8 @@ jobs:
           ref: wireshark-4.0.6
       - name: Choco install Wireshark Deps
         run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
+      - name: pip install
+        run: pip install asn2wrs
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
         with:
