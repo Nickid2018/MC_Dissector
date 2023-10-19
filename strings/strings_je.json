@@ -1752,6 +1752,14 @@
     "do_limited_crafting": {
       "name": "Do Limited Crafting",
       "type": "bool"
+    },
+    "slot_id": {
+      "name": "Slot ID",
+      "type": "u32"
+    },
+    "new_state": {
+      "name": "New State",
+      "type": "bool"
     }
   },
   "mappings": {
@@ -2448,7 +2456,10 @@
     "chunk_batch_finished/batchSize": "batch_size",
     "chunk_batch_received/desiredBatchSize": "desired_batch_size",
     "registry_data/registryData": "registry_data",
-    "pong/time": "ping_time_je"
+    "pong/time": "ping_time_je",
+    "window_slot_state_changed/windowId": "window_id",
+    "window_slot_state_changed/slotId": "slot_id",
+    "window_slot_state_changed/newState": "new_state"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -2785,7 +2796,8 @@
       "use_item": "Server Use Item",
       "chunk_batch_received": "Server Chunk Batch Received",
       "configuration_acknowledgement": "Server Configuration ACK",
-      "finish_configuration": "Server Finish Configuration"
+      "finish_configuration": "Server Finish Configuration",
+      "window_slot_state_changed": "Server Container Slot State Changed"
     }
   }
 }
