@@ -49,13 +49,15 @@
 1046|2683 Sound Drip Lava Into Cauldron
 1047|2683 Sound Drip Water Into Cauldron
 1048|2690 Sound Skeleton to Stray
+1049|3684 Sound Crafter Craft
+1050|3684 Sound Crafter Fail
 1500 Composter Fill
 1501 Lava Fizz
 1502 Redstone Torch Burnout
 1503 End Portal Frame Fill
 1504|2683 Dripstone Drip
 1505|2709 Particles & Sound Plant Growth
-2000 Particles Shoot
+2000 Particles Shoot Smoke
 2001 Particles Destroy Block
 2002 Particles Spell Potion Splash
 2003 Particles Eye of Ender Death
@@ -65,6 +67,7 @@
 2007 Particles Instant Potion Splash
 2008 Particles Dragon Block Break
 2009|2203 Particles Water Evaporating
+2010|3684 Particles Shoot White Smoke
 3000 Animation End Gateway Spawn
 3001 Animation Dragon Spawn Roar
 3002|2703 Particles Electric Spark
