@@ -1760,6 +1760,26 @@
     "new_state": {
       "name": "New State",
       "type": "bool"
+    },
+    "selection_priority": {
+      "name": "Selection Priority",
+      "type": "u32"
+    },
+    "placement_priority": {
+      "name": "Placement Priority",
+      "type": "u32"
+    },
+    "tick_rate": {
+      "name": "Tick Rate",
+      "type": "f32"
+    },
+    "is_frozen": {
+      "name": "Is Frozen",
+      "type": "bool"
+    },
+    "tick_steps": {
+      "name": "Tick Steps",
+      "type": "u32"
     }
   },
   "mappings": {
@@ -2419,6 +2439,8 @@
     "update_jigsaw_block/pool": "pool",
     "update_jigsaw_block/finalState": "final_state",
     "update_jigsaw_block/jointType": "joint_type",
+    "update_jigsaw_block/selectionPriority": "selection_priority",
+    "update_jigsaw_block/placementPriority": "placement_priority",
     "update_sign/isFrontText": "is_front_text",
     "update_sign/text1": "text_1",
     "update_sign/text2": "text_2",
@@ -2459,7 +2481,10 @@
     "pong/time": "ping_time_je",
     "window_slot_state_changed/windowId": "window_id",
     "window_slot_state_changed/slotId": "slot_id",
-    "window_slot_state_changed/newState": "new_state"
+    "window_slot_state_changed/newState": "new_state",
+    "ticking_state/tickRate": "tick_rate",
+    "ticking_state/isFrozen": "is_frozen",
+    "ticking_step/tickSteps": "tick_steps"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
