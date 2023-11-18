@@ -2173,6 +2173,8 @@
     "entity_destroy/entityIds": "entity_id",
     "remove_entity_effect/entityId": "entity_id",
     "remove_entity_effect/effectId": "effect_id",
+    "reset_score/owner": "item_name",
+    "reset_score/objectiveName": "score_name",
     "resource_pack_send/url": "url",
     "resource_pack_send/hash": "hash",
     "resource_pack_send/forced": "forced",
@@ -2214,6 +2216,8 @@
     "scoreboard_objective/action": "action",
     "scoreboard_objective/displayText": "display_text",
     "scoreboard_objective/type": "type",
+    "scoreboard_objective/numberFormat/type": "type",
+    "scoreboard_objective/numberFormat/data": "data",
     "set_passengers/entityId": "entity_id",
     "set_passengers/passengers": "entity_id",
     "teams/team": "team",
@@ -2227,9 +2231,11 @@
     "teams/suffix": "suffix",
     "teams/players": "player",
     "scoreboard_score/itemName": "item_name",
-    "scoreboard_score/action": "action",
     "scoreboard_score/scoreName": "score_name",
     "scoreboard_score/value": "value",
+    "scoreboard_score/displayText": "display_text",
+    "scoreboard_score/numberFormat/type": "type",
+    "scoreboard_score/numberFormat/data": "data",
     "spawn_position/angle": "angle",
     "update_time/age": "age",
     "update_time/time": "time",
@@ -2637,7 +2643,9 @@
     "login/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info",
     "respawn/playerSpawnInfo/common_player_spawn_info": "Common Player Spawn Info",
     "unlock_recipes/recipes1": "Recipes 1",
-    "unlock_recipes/recipes2": "Recipes 2"
+    "unlock_recipes/recipes2": "Recipes 2",
+    "scoreboard_objective/numberFormat": "Number Format",
+    "scoreboard_score/numberFormat": "Number Format"
   },
   "packet_names": {
     "toClient": {
@@ -2761,7 +2769,8 @@
       "chunk_batch_start": "Client Chunk Batch Start",
       "start_configuration": "Client Start Configuration",
       "finish_configuration": "Client Finish Configuration",
-      "registry_data": "Client Registry Data"
+      "registry_data": "Client Registry Data",
+      "reset_score": "Client Reset Score"
     },
     "toServer": {
       "login_start": "Server Hello",
