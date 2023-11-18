@@ -29,7 +29,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: wireshark-4.0.6
+          ref: wireshark-4.0.11
       - name: Choco install Wireshark Deps
         run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
       - name: Add msbuild to PATH
