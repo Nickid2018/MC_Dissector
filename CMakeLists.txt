@@ -51,10 +51,9 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
         if (NOT IS_DIRECTORY ${LIB})
             continue()
         endif ()
-        string(FIND ${LIB} "win64ws" IS_WIN64_WS)
         string(FIND ${LIB} "libgcrypt" IS_LIB_GCRYPT)
         string(FIND ${LIB} "vcpkg-export" IS_LIB_GLIB)
-        if (NOT IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GLIB EQUAL -1)
+        if (NOT IS_LIB_GLIB EQUAL -1)
             message(STATUS "Found glib: ${LIB}")
             include_directories(
                     ${LIB}/installed/x64-windows/include/glib-2.0
@@ -63,12 +62,12 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
             link_directories(${LIB}/installed/x64-windows/lib)
             link_libraries(glib-2.0)
         endif ()
-        if (NOT IS_WIN64_WS EQUAL -1 AND NOT IS_LIB_GCRYPT EQUAL -1)
+        if (NOT IS_LIB_GCRYPT EQUAL -1)
             message(STATUS "Found gcrypt: ${LIB}")
             include_directories(
-                    ${LIB}/installed/x64-windows/include
+                    ${LIB}/include
             )
-            link_directories(${LIB}/installed/x64-windows/lib)
+            link_directories(${LIB}/lib)
             link_libraries(gcrypt-20)
         endif ()
     endforeach ()
