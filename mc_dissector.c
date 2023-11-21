@@ -3,8 +3,6 @@
 //
 #include <ws_version.h>
 
-#define WS_BUILD_DLL
-
 #include "mc_dissector.h"
 #include "protocol_data.h"
 #include "protocol_je/je_dissect.h"

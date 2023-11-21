@@ -15,6 +15,8 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     add_compile_definitions(DEBUG)
 endif ()
 
+add_compile_definitions(WS_BUILD_DLL)
+
 file(GLOB SOURCES "./*.c")
 file(GLOB HEADERS "./*.h")
 file(GLOB PROTOCOL_JE_SOURCES "./protocol_je/*.c")
