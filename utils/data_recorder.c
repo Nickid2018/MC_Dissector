@@ -55,7 +55,7 @@ guint64 record_uint64(data_recorder recorder, guint64 data) {
     if (recorder->recording == NULL)
         return data;
     wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%llu", data));
+                    g_strdup_printf("%lu", data));
     return data;
 }
 
@@ -71,7 +71,7 @@ gint64 record_int64(data_recorder recorder, gint64 data) {
     if (recorder->recording == NULL)
         return data;
     wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%lld", data));
+                    g_strdup_printf("%ld", data));
     return data;
 }
 

@@ -26,7 +26,7 @@ void parse_to_string(tvbuff_t *tvb, const guint8 *data, int offset_global, guint
             break;
         case TAG_LONG:
             *length = 8;
-            *text = g_strdup_printf("%lld", ((((gint64) data[0] & 0xff) << 56) | ((gint64) (data[1] & 0xff) << 48) |
+            *text = g_strdup_printf("%ld", ((((gint64) data[0] & 0xff) << 56) | ((gint64) (data[1] & 0xff) << 48) |
                                              ((gint64) (data[2] & 0xff) << 40) | ((gint64) (data[3] & 0xff) << 32) |
                                              ((gint64) (data[4] & 0xff) << 24) | ((gint64) (data[5] & 0xff) << 16) |
                                              ((gint64) (data[6] & 0xff) << 8) | ((gint64) (data[7] & 0xff))));
@@ -37,7 +37,7 @@ void parse_to_string(tvbuff_t *tvb, const guint8 *data, int offset_global, guint
             break;
         case TAG_DOUBLE:
             *length = 8;
-            *text = g_strdup_printf("%llf", tvb_get_ntohieee_double(tvb, offset_global));
+            *text = g_strdup_printf("%lf", tvb_get_ntohieee_double(tvb, offset_global));
             break;
         case TAG_BYTE_ARRAY:
         case TAG_INT_ARRAY:
@@ -58,7 +58,7 @@ void parse_to_string(tvbuff_t *tvb, const guint8 *data, int offset_global, guint
                                                          ((data[4 + i * 4 + 2] & 0xff) << 8) |
                                                          (data[4 + i * 4 + 3] & 0xff)));
                 else
-                    elements[i] = g_strdup_printf("%lld", ((((gint64) data[4 + i * 8] & 0xff) << 56) |
+                    elements[i] = g_strdup_printf("%ld", ((((gint64) data[4 + i * 8] & 0xff) << 56) |
                                                            ((gint64) (data[4 + i * 8 + 1] & 0xff) << 48) |
                                                            ((gint64) (data[4 + i * 8 + 2] & 0xff) << 40) |
                                                            ((gint64) (data[4 + i * 8 + 3] & 0xff) << 32) |
