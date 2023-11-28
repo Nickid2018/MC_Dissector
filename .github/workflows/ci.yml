@@ -20,12 +20,12 @@ jobs:
       WIRESHARK_LIB_FILE_DIR: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
           path: dissector
       - name: Checkout Wireshark
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: wireshark/wireshark
           path: wireshark
@@ -33,7 +33,7 @@ jobs:
       - name: Choco install Wireshark Deps
         run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
         with:
           vs-version: 16.4
       - name: Make build dir
@@ -67,12 +67,12 @@ jobs:
         run: cmake --build build-no-function --target MC_Dissector
         working-directory: dissector
       - name: Upload dissector
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows
           path: dissector/build/mcdissector.dll
       - name: Upload dissector (no function)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows-no-function
           path: dissector/build-no-function/mcdissector.dll
@@ -82,7 +82,7 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
       - name: Install Deps
@@ -106,12 +106,12 @@ jobs:
         run: make -j8
         working-directory: build-no-function
       - name: Upload dissector
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux
           path: build/mcdissector.so
       - name: Upload dissector (no function)
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-no-function
           path: build-no-function/mcdissector.so
@@ -121,9 +121,9 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 8
       - name: Chmod Gradlew
@@ -133,7 +133,7 @@ jobs:
         run: ./gradlew shadowJar
         working-directory: encryption-helper
       - name: Upload Encryption Helper
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: encryption-helper
           path: encryption-helper/build/libs/encryption-helper-1.0-all.jar
@@ -145,27 +145,27 @@ jobs:
     permissions: write-all
     steps:
       - name: Download windows artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: windows
           path: windows
       - name: Download windows artifact (no function)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: windows-no-function
           path: windows-no-function
       - name: Download linux artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: linux
           path: linux
       - name: Download linux artifact (no function)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: linux-no-function
           path: linux-no-function
       - name: Download encryption-helper artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: encryption-helper
       - name: Create Release
