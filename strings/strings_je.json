@@ -1780,6 +1780,14 @@
     "tick_steps": {
       "name": "Tick Steps",
       "type": "u32"
+    },
+    "small_explosion_particles": {
+      "name": "Small Explosion Particles",
+      "type": "u32"
+    },
+    "large_explosion_particles": {
+      "name": "Large Explosion Particles",
+      "type": "u32"
     }
   },
   "mappings": {
@@ -2020,6 +2028,10 @@
     "explosion/playerMotionX": "player_motion_x",
     "explosion/playerMotionY": "player_motion_y",
     "explosion/playerMotionZ": "player_motion_z",
+    "explosion/smallExplosionParticles": "small_explosion_particles",
+    "explosion/largeExplosionParticles": "large_explosion_particles",
+    "explosion/sound/resource": "resource",
+    "explosion/sound/range": "range",
     "unload_chunk/chunkX": "chunk_x",
     "unload_chunk/chunkZ": "chunk_z",
     "game_state_change/reason": "event",
@@ -2652,7 +2664,10 @@
     "unlock_recipes/recipes1": "Recipes 1",
     "unlock_recipes/recipes2": "Recipes 2",
     "scoreboard_objective/numberFormat": "Number Format",
-    "scoreboard_score/numberFormat": "Number Format"
+    "scoreboard_score/numberFormat": "Number Format",
+    "explosion/sound": "Sound",
+    "explosion/smallExplosionParticlesData": "Small Explosion Particles Data",
+    "explosion/largeExplosionParticlesData": "Large Explosion Particles Data"
   },
   "packet_names": {
     "toClient": {
