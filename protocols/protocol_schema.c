@@ -289,7 +289,8 @@ FIELD_MAKE_TREE(array) {
         else
             sub_field->name = g_strdup_printf("[%d]", i);
         sub_field->display_name = g_strdup_printf("[%d]", i);
-        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+        guint sub_length = sub_field->make_tree(data, sub_tree, tvb, extra, sub_field, offset, remaining, recorder,
+                                                is_je);
         offset += sub_length;
         len += sub_length;
         remaining -= sub_length;
@@ -390,7 +391,8 @@ FIELD_MAKE_TREE(switch) {
     }
     char *display_name_raw = sub_field_choose->display_name;
     sub_field_choose->display_name = field->display_name;
-    guint len = sub_field_choose->make_tree(data, tree, tvb, extra, sub_field_choose, offset, remaining, recorder, is_je);
+    guint len = sub_field_choose->make_tree(data, tree, tvb, extra, sub_field_choose, offset, remaining, recorder,
+                                            is_je);
     sub_field_choose->display_name = display_name_raw;
     return len;
 }
@@ -931,7 +933,8 @@ bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data
                guint remaining) {
     if (entry->field != NULL) {
         data_recorder recorder = create_data_recorder();
-        guint len = entry->field->make_tree(data, tree, tvb, extra, entry->field, 1, remaining - 1, recorder, entry->is_je);
+        guint len = entry->field->make_tree(data, tree, tvb, extra, entry->field, 1, remaining - 1, recorder,
+                                            entry->is_je);
         destroy_data_recorder(recorder);
         if (len != remaining - 1)
             proto_tree_add_string_format_value(tree, hf_invalid_data_je, tvb, 1, remaining - 1,
