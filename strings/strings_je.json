@@ -2794,7 +2794,9 @@
       "start_configuration": "Client Start Configuration",
       "finish_configuration": "Client Finish Configuration",
       "registry_data": "Client Registry Data",
-      "reset_score": "Client Reset Score"
+      "reset_score": "Client Reset Score",
+      "ticking_state": "Client Ticking State",
+      "ticking_step": "Client Ticking Step"
     },
     "toServer": {
       "login_start": "Server Hello",
