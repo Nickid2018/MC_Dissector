@@ -358,7 +358,10 @@
     },
     "key": {
       "name": "Key",
-      "type": "string"
+      "type": [
+        "string",
+        "u32"
+      ]
     },
     "value": {
       "name": "Value",
