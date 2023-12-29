@@ -22,7 +22,7 @@ void proto_reg_handoff_mcje() {
 void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     proto_tree *tree, mcje_protocol_context *ctx,
                     bool is_server, bool visited) {
-    const guint8 *data = tvb_get_ptr(tvb, pinfo->desegment_offset, length);
+    const guint8 *data = tvb_memdup(pinfo->pool, tvb, pinfo->desegment_offset, length);
     if (is_server) {
         switch (ctx->server_state) {
             case HANDSHAKE:
@@ -117,15 +117,11 @@ void mark_invalid(packet_info *pinfo) {
 
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     mcje_protocol_context *ctx = get_context(pinfo);
-    if (ctx == NULL) {
-        col_add_str(pinfo->cinfo, COL_INFO, "[Invalid Context]");
-        return tvb_captured_length(tvb);
-    }
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     guint read_pointer = 0;
     guint packet_length = tvb_reported_length(tvb);
-    const guint8 *dt = tvb_get_ptr(tvb, 0, packet_length);
+    const guint8 *dt = tvb_memdup(pinfo->pool, tvb, 0, packet_length);
     guint packet_length_vari;
     guint packet_length_length = read_var_int(dt, packet_length, &packet_length_vari);
     read_pointer += packet_length_length;
@@ -154,8 +150,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         guint uncompressed_length;
         int var_len = read_var_int(dt + read_pointer, packet_length - read_pointer, &uncompressed_length);
         if (is_invalid(var_len)) {
-            proto_tree_add_string(mcje_tree, hf_invalid_data_je, tvb,
-                                  read_pointer, var_len, "Invalid Compression VarInt");
+            col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression VarInt");
             mark_invalid(pinfo);
             return tvb_captured_length(tvb);
         }
@@ -167,10 +162,9 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
                 proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
                                     read_pointer - var_len, var_len, uncompressed_length);
                 if (uncompressed_length < ctx->compression_threshold) {
-                    proto_tree_add_string_format_value(mcje_tree, hf_invalid_data_je, tvb, read_pointer - var_len,
-                                                       var_len, "",
-                                                       "Badly compressed packet - size of %d is below server threshold of %d",
-                                                       uncompressed_length, ctx->compression_threshold);
+                    col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Badly compressed packet");
+                    col_append_fstr(pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
+                                    uncompressed_length, ctx->compression_threshold);
                     mark_invalid(pinfo);
                     return tvb_captured_length(tvb);
                 }
@@ -208,7 +202,7 @@ guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *dat
 
     reassemble_offset *reassemble_data = data;
     guint remaining = packet_length - offset;
-    const guint8 *dt = tvb_get_ptr(tvb, offset, remaining > 3 ? 3 : remaining);
+    const guint8 *dt = tvb_memdup(pinfo->pool, tvb, offset, remaining > 3 ? 3 : remaining);
     int ret = read_var_int(dt, remaining > 3 ? 3 : remaining, &len);
     if (is_invalid(ret)) {
         if (remaining < 3) {
@@ -269,7 +263,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             guint required_length = is_server ? decryption_ctx->server_required_length
                                               : decryption_ctx->client_required_length;
             if (required_length != 0 && required_length != length) {
-                col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: TCP Data not successfully captured");
+                col_append_str(pinfo->cinfo, COL_INFO,
+                               "[Invalid] Decryption Error: TCP Data not successfully captured");
                 mark_invalid(pinfo);
                 return tvb_captured_length(tvb);
             }
@@ -284,7 +279,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             *write_to = decrypt = wmem_alloc(wmem_file_scope(), length);
             memcpy(*write_to, old + *old_length - last_decrypt_available, last_decrypt_available);
             gcry_error_t err = gcry_cipher_decrypt(cipher, *write_to + last_decrypt_available, to_decrypt,
-                                                   tvb_get_ptr(tvb, last_decrypt_available, to_decrypt),
+                                                   tvb_memdup(pinfo->pool, tvb, last_decrypt_available, to_decrypt),
                                                    to_decrypt);
             if (err != 0) {
                 col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Decryption failed");
