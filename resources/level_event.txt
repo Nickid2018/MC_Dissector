@@ -62,12 +62,14 @@
 2002 Particles Spell Potion Splash
 2003 Particles Eye of Ender Death
 2004 Particles Mob Block Spawn
-2005 Particles Plant Growth
+2005|0|3801 Particles Plant Growth
 2006 Particles Dragon Fireball Splash
 2007 Particles Instant Potion Splash
 2008 Particles Dragon Block Break
 2009|2203 Particles Water Evaporating
 2010|3684 Particles Shoot White Smoke
+2011|3801 Particles Bee Growth
+2012|3801 Particles Turtle Egg Placement
 3000 Animation End Gateway Spawn
 3001 Animation Dragon Spawn Roar
 3002|2703 Particles Electric Spark

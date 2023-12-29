@@ -60,6 +60,8 @@ abstract_villager
 unhappy_counter
 villager
 villager_data
+armadillo
+armadillo_state
 axolotl
 variant,playing_dead,from_bucket
 bee
