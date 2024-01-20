@@ -30,7 +30,7 @@ int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protoc
         read = read_var_int(data + p, length - p, &next_state);
         if (is_invalid(read))
             return INVALID_DATA;
-        if (next_state != 1 && next_state != 2)
+        if (next_state < 1 || next_state > 3)
             return INVALID_DATA;
         gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
         ctx->data_version = get_java_data_version(unchecked_java_version);

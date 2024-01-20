@@ -36,6 +36,7 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     handle_server_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
             case LOGIN:
+            case TRANSFER:
                 if (!visited && is_invalid(handle_server_login_switch(data, length, ctx, pinfo)))
                     return;
                 if (tree)
@@ -64,6 +65,7 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
                     handle_client_slp(tree, tvb, pinfo, data, length, ctx);
                 return;
             case LOGIN:
+            case TRANSFER:
                 if (!visited && is_invalid(handle_client_login_switch(data, length, ctx)))
                     return;
                 if (tree)
