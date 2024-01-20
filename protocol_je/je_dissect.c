@@ -194,7 +194,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     return tvb_captured_length(tvb);
 }
 
-guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data _U_) {
+guint get_packet_length(packet_info *pinfo, tvbuff_t *tvb, int offset, void *data) {
     guint len;
     guint packet_length = tvb_reported_length(tvb);
     if (packet_length == 0)

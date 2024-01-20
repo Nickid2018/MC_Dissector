@@ -1791,6 +1791,18 @@
     "large_explosion_particles": {
       "name": "Large Explosion Particles",
       "type": "u32"
+    },
+    "host": {
+      "name": "Host",
+      "type": "string"
+    },
+    "port": {
+      "name": "Port",
+      "type": "u32"
+    },
+    "should_authenticate": {
+      "name": "Should Authenticate",
+      "type": "bool"
     }
   },
   "mappings": {
@@ -2312,6 +2324,7 @@
     "server_data/motd": "motd",
     "server_data/iconBytes": "icon_bytes",
     "server_data/enforcesSecureChat": "enforces_secure_chat",
+    "login/enforcesSecureChat": "enforces_secure_chat",
     "type": "type",
     "recipeId": "recipe_id",
     "declare_recipes/recipes/data/group": "group",
@@ -2512,7 +2525,15 @@
     "window_slot_state_changed/newState": "new_state",
     "ticking_state/tickRate": "tick_rate",
     "ticking_state/isFrozen": "is_frozen",
-    "ticking_step/tickSteps": "tick_steps"
+    "ticking_step/tickSteps": "tick_steps",
+    "store_cookie/key": "key",
+    "store_cookie/payload": "data",
+    "transfer/host": "host",
+    "transfer/port": "port",
+    "cookie_request/key": "key",
+    "cookie_response/key": "key",
+    "cookie_response/payload": "data",
+    "encryption_begin/shouldAuthenticate": "should_authenticate"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -2799,7 +2820,10 @@
       "registry_data": "Client Registry Data",
       "reset_score": "Client Reset Score",
       "ticking_state": "Client Ticking State",
-      "ticking_step": "Client Ticking Step"
+      "ticking_step": "Client Ticking Step",
+      "store_cookie": "Client Store Cookie",
+      "transfer": "Client Transfer",
+      "cookie_request": "Client Request Cookie"
     },
     "toServer": {
       "login_start": "Server Hello",
@@ -2861,7 +2885,8 @@
       "chunk_batch_received": "Server Chunk Batch Received",
       "configuration_acknowledgement": "Server Configuration ACK",
       "finish_configuration": "Server Finish Configuration",
-      "window_slot_state_changed": "Server Container Slot State Changed"
+      "window_slot_state_changed": "Server Container Slot State Changed",
+      "cookie_response": "Server Cookie Response"
     }
   }
 }
