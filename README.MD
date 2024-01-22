@@ -56,9 +56,10 @@ Only a single circumstance will disable the program: Mods have modified encrypti
 
 ## Parsing Errors
 
-Parsing error exists under 2 circumstances as follow:
+Parsing error exists under 3 circumstances as follow:
 
-* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered error `TCP Previous segment not captured` near the data parsing error.
+* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered `TCP Previous segment not captured` near the data parsing error.
+* Packets arrived in wrong order because of network problems. Though TCP will ensure packets arrive in order, our program can not parse packets in wrong order. Unfortunately, we can not solve this problem now. You can confirm this circumstance if you have discovered `TCP Out-Of-Order` or `TCP Dupe ACK` near the data parsing error.
 * The program has not finished adaption or process properly for this part, or has not added corresponding strings. Such errors can be reported by open issues.
 
 The overall protocol is dynamically built by protocol description file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can open an issue in `minecraft-data` repository.
