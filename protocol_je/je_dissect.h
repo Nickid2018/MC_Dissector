@@ -9,7 +9,6 @@
 #include "protocol_data.h"
 
 extern dissector_handle_t mcje_handle;
-extern dissector_handle_t ignore_je_handle;
 extern gchar *pref_ignore_packets_je;
 extern gchar *pref_secret_key;
 extern gboolean pref_do_nbt_decode;
@@ -60,7 +59,5 @@ void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
-
-int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 
 #endif //MC_DISSECTOR_JE_DISSECT_H

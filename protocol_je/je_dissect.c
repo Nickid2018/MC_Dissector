@@ -11,11 +11,9 @@
 #include "je_protocol.h"
 
 dissector_handle_t mcje_handle;
-dissector_handle_t ignore_je_handle;
 
 void proto_reg_handoff_mcje() {
     mcje_handle = create_dissector_handle(dissect_je_conv, proto_mcje);
-    ignore_je_handle = create_dissector_handle(dissect_je_ignore, proto_mcje);
     dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_handle);
 }
 
@@ -114,11 +112,15 @@ void mark_invalid(packet_info *pinfo) {
     mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     ctx->client_state = INVALID;
     ctx->server_state = INVALID;
-    conversation_set_dissector(conv, ignore_je_handle);
 }
 
 int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     mcje_protocol_context *ctx = get_context(pinfo);
+
+    if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
+        return tvb_captured_length(tvb);
+    }
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     guint read_pointer = 0;
@@ -246,11 +248,6 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
-    if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
-        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
-        return tvb_captured_length(tvb);
-    }
-
     guint length = tvb_reported_length_remaining(tvb, 0);
     bool is_visited = pinfo->fd->visited;
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
@@ -318,10 +315,5 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     }
     wmem_free(pinfo->pool, reassemble_data);
 
-    return tvb_captured_length(tvb);
-}
-
-int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
-    pinfo->fd->subnum = 0;
     return tvb_captured_length(tvb);
 }
