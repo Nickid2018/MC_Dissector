@@ -262,14 +262,6 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     if (is_encrypted) {
         guint8 *decrypt;
         if (!is_visited) {
-            guint required_length = is_server ? decryption_ctx->server_required_length
-                                              : decryption_ctx->client_required_length;
-            if (required_length != 0 && required_length != length) {
-                col_append_str(pinfo->cinfo, COL_INFO,
-                               "[Invalid] Decryption Error: TCP Data not successfully captured");
-                mark_invalid(pinfo);
-                return tvb_captured_length(tvb);
-            }
             gcry_cipher_hd_t cipher = is_server ? decryption_ctx->server_cipher : decryption_ctx->client_cipher;
             guint last_decrypt_available = is_server ? decryption_ctx->server_last_decrypt_available
                                                      : decryption_ctx->client_last_decrypt_available;
@@ -331,16 +323,5 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
 int dissect_je_ignore(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
     pinfo->fd->subnum = 0;
-
-    mcje_protocol_context *ctx;
-    conversation_t *conv = find_or_create_conversation(pinfo);
-    if (!(ctx = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, pinfo->fd->subnum)))
-        ctx = conversation_get_proto_data(conv, proto_mcje);
-
-    if (ctx->client_state == INVALID || ctx->server_state == INVALID) {
-        col_add_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
-        col_add_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
-    }
-
     return tvb_captured_length(tvb);
 }
