@@ -839,7 +839,10 @@
     },
     "world_type": {
       "name": "World Type",
-      "type": "string"
+      "type": [
+        "string",
+        "u32"
+      ]
     },
     "world_name": {
       "name": "World Name",
