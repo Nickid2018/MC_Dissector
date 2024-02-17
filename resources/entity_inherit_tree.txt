@@ -227,6 +227,11 @@ abstract_hurting_projectile
 +
 dragon_fireball
 wither_skull
+abstract_wind_charge
++
+breeze_wind_charge
+wind_charge
+-
 abstract_fireball
 +
 fireball

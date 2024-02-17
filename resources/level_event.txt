@@ -81,8 +81,11 @@
 3008|3085|3090 Particles Allay Dust
 3008|3329 Particles & Sound Brush Block Complete
 3009|3442 Particles Egg Crack
-3010|3690 Particles Gust Dust
+3010|3690|3805 Particles Gust Dust
 3011|3690 Particles Trial Spawner Spawn
 3012|3690 Particles Trial Spawner Spawn Mob At
 3013|3690 Particles Trial Spawner Detect Player
 3014|3690 Particles Trial Spawner Eject Item
+3015|3809 Animation Vault Activate
+3016|3809 Animation Vault Deactivate
+3017|3809 Animation Vault Eject Item

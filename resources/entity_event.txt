@@ -61,3 +61,4 @@ Poof
 Tendrils Shiver
 Sonic Charge
 Sniffer Digging Sound
+Armadillo Peek
