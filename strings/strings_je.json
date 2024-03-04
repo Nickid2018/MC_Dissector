@@ -405,7 +405,8 @@
         "i32",
         "i64",
         "f32",
-        "f64"
+        "f64",
+        "string"
       ]
     },
     "max": {
@@ -414,7 +415,8 @@
         "i32",
         "i64",
         "f32",
-        "f64"
+        "f64",
+        "string"
       ]
     },
     "suggestion_type": {
@@ -582,7 +584,10 @@
     },
     "color": {
       "name": "Color",
-      "type": "u32"
+      "type": [
+        "u32",
+        "i32"
+      ]
     },
     "dividers": {
       "name": "Dividers",
@@ -664,11 +669,17 @@
     },
     "property": {
       "name": "Property",
-      "type": "i16"
+      "type": [
+        "i16",
+        "string"
+      ]
     },
     "slot": {
       "name": "Slot",
-      "type": "i16"
+      "type": [
+        "i16",
+        "u32"
+      ]
     },
     "cooldown_ticks": {
       "name": "Cooldown Ticks",
@@ -1221,7 +1232,10 @@
     },
     "sound_id": {
       "name": "Sound ID",
-      "type": "u32"
+      "type": [
+        "u32",
+        "string"
+      ]
     },
     "resource": {
       "name": "Resource",
@@ -1821,6 +1835,239 @@
     "version": {
       "name": "Version",
       "type": "string"
+    },
+    "ambient": {
+      "name": "Ambient",
+      "type": "bool"
+    },
+    "show_particles": {
+      "name": "Show Particles",
+      "type": "bool"
+    },
+    "show_icon": {
+      "name": "Show Icon",
+      "type": "bool"
+    },
+    "data_component_count": {
+      "name": "Data Component Count",
+      "type": "u32"
+    },
+    "void_component_count": {
+      "name": "Void Component Count",
+      "type": "u32"
+    },
+    "component_type": {
+      "name": "Component Type",
+      "type": "string"
+    },
+    "damage": {
+      "name": "Damage",
+      "type": "u32"
+    },
+    "unbreakable": {
+      "name": "Unbreakable",
+      "type": "bool"
+    },
+    "custom_name": {
+      "name": "Custom Name",
+      "type": [
+        "string",
+        "bytes"
+      ]
+    },
+    "show_in_tooltip": {
+      "name": "Show In Tooltip",
+      "type": "bool"
+    },
+    "value_matcher_type": {
+      "name": "Value Matcher Type",
+      "type": "bool"
+    },
+    "nbt_predicate": {
+      "name": "NBT Predicate",
+      "type": "bytes"
+    },
+    "attribute": {
+      "name": "Attribute",
+      "type": "u32"
+    },
+    "custom_model_data": {
+      "name": "Custom Model Data",
+      "type": "u32"
+    },
+    "repair_cost": {
+      "name": "Repair Cost",
+      "type": "u32"
+    },
+    "enchantment_glint_override": {
+      "name": "Enchantment Glint Override",
+      "type": "bool"
+    },
+    "map_color": {
+      "name": "Map Color",
+      "type": "i32"
+    },
+    "map_post_processing": {
+      "name": "Map Post Processing",
+      "type": "u32"
+    },
+    "potion": {
+      "name": "Potion",
+      "type": "u32"
+    },
+    "custom_color": {
+      "name": "Custom Color",
+      "type": "i32"
+    },
+    "raw": {
+      "name": "Raw String",
+      "type": [
+        "string",
+        "bytes"
+      ]
+    },
+    "filtered": {
+      "name": "Filtered String",
+      "type": [
+        "string",
+        "bytes"
+      ]
+    },
+    "title_raw": {
+      "name": "Title Raw String",
+      "type": "string"
+    },
+    "title_filtered": {
+      "name": "Title Filtered String",
+      "type": "string"
+    },
+    "author": {
+      "name": "Author",
+      "type": "string"
+    },
+    "generation": {
+      "name": "Generation",
+      "type": "u32"
+    },
+    "trim_material": {
+      "name": "Trim Material",
+      "type": "u32"
+    },
+    "asset_name": {
+      "name": "Asset Name",
+      "type": "string"
+    },
+    "ingredient": {
+      "name": "Ingredient",
+      "type": "u32"
+    },
+    "item_model_index": {
+      "name": "Item Model Index",
+      "type": "f32"
+    },
+    "armor_material": {
+      "name": "Armor Material",
+      "type": "u32"
+    },
+    "texture": {
+      "name": "Texture",
+      "type": "string"
+    },
+    "trim_pattern": {
+      "name": "Trim Pattern",
+      "type": "u32"
+    },
+    "asset_id": {
+      "name": "Asset ID",
+      "type": "string"
+    },
+    "template_item": {
+      "name": "Template Item",
+      "type": "u32"
+    },
+    "decal": {
+      "name": "Decal",
+      "type": "bool"
+    },
+    "entity_data": {
+      "name": "Entity Data",
+      "type": "bytes"
+    },
+    "bucket_entity_data": {
+      "name": "Bucket Entity Data",
+      "type": "bytes"
+    },
+    "block_entity_data": {
+      "name": "Block Entity Data",
+      "type": "bytes"
+    },
+    "instrument": {
+      "name": "Instrument",
+      "type": "u32"
+    },
+    "sound_event": {
+      "name": "Sound Event",
+      "type": "u32"
+    },
+    "useDuration": {
+      "name": "Use Duration",
+      "type": "i32"
+    },
+    "dimension": {
+      "name": "Dimension",
+      "type": "u32"
+    },
+    "tracked": {
+      "name": "Tracked",
+      "type": "bool"
+    },
+    "shape": {
+      "name": "Shape",
+      "type": "u32"
+    },
+    "has_trail": {
+      "name": "Has Trail",
+      "type": "bool"
+    },
+    "has_twinkle": {
+      "name": "Has Twinkle",
+      "type": "bool"
+    },
+    "flight_duration": {
+      "name": "Flight Duration",
+      "type": "u32"
+    },
+    "note_block_sound": {
+      "name": "Note Block Sound",
+      "type": "string"
+    },
+    "pattern": {
+      "name": "Pattern",
+      "type": "u32"
+    },
+    "base_color": {
+      "name": "Base Color",
+      "type": "u32"
+    },
+    "property_name": {
+      "name": "Property Name",
+      "type": "string"
+    },
+    "property_value": {
+      "name": "Property Value",
+      "type": "string"
+    },
+    "custom_data": {
+      "name": "Custom Data",
+      "type": "bytes"
+    },
+    "ticks_in_hive": {
+      "name": "Ticks In Hive",
+      "type": "u32"
+    },
+    "min_ticks_in_hive": {
+      "name": "Min Ticks In Hive",
+      "type": "u32"
     }
   },
   "mappings": {
@@ -2556,7 +2803,106 @@
     "debug_sample_subscription/debugSampleType": "debug_sample_type",
     "select_known_packs/knownPacks/namespace": "namespace",
     "select_known_packs/knownPacks/id": "id",
-    "select_known_packs/knownPacks/version": "version"
+    "select_known_packs/knownPacks/version": "version",
+    "effect_detail/amplifier": "amplifier",
+    "effect_detail/duration": "duration",
+    "effect_detail/ambient": "ambient",
+    "effect_detail/showParticles": "show_particles",
+    "effect_detail/showIcon": "show_icon",
+    "slot/itemCount": "item_count",
+    "slot/[unnamed]/componentData/dataComponentCount": "data_component_count",
+    "slot/[unnamed]/componentData/voidComponentCount": "void_component_count",
+    "data_component/componentType": "component_type",
+    "data_component/componentData[damage]": "damage",
+    "data_component/componentData[1]": "damage",
+    "data_component/componentData[unbreakable]": "unbreakable",
+    "data_component/componentData[2]": "unbreakable",
+    "data_component/componentData[custom_name]": "custom_name",
+    "data_component/componentData[3]": "custom_name",
+    "data_component/componentData/showInTooltip": "show_in_tooltip",
+    "data_component/componentData/blockPredicates/statePredicate/property": "property",
+    "data_component/componentData/blockPredicates/statePredicate/valueMatcherType": "value_matcher_type",
+    "data_component/componentData/blockPredicates/statePredicate/valueMatcher/min": "min",
+    "data_component/componentData/blockPredicates/statePredicate/valueMatcher/max": "max",
+    "data_component/componentData/modifiers/attribute": "attribute",
+    "data_component/componentData/modifiers/uuid": "uuid",
+    "data_component/componentData/modifiers/name": "name",
+    "data_component/componentData/modifiers/amount": "amount",
+    "data_component/componentData/modifiers/operation": "operation",
+    "data_component/componentData/slot": "slot",
+    "data_component/componentData[custom_model_data]": "custom_model_data",
+    "data_component/componentData[9]": "custom_model_data",
+    "data_component/componentData[repair_cost]": "repair_cost",
+    "data_component/componentData[11]": "repair_cost",
+    "data_component/componentData[enchantment_glint_override]": "enchantment_glint_override",
+    "data_component/componentData[13]": "enchantment_glint_override",
+    "data_component/componentData/color": "color",
+    "data_component/componentData[map_color]": "map_color",
+    "data_component/componentData[17]": "map_color",
+    "data_component/componentData[map_id]": "map_id",
+    "data_component/componentData[18]": "map_id",
+    "data_component/componentData[map_post_processing]": "map_post_processing",
+    "data_component/componentData[20]": "map_post_processing",
+    "data_component/componentData/potion": "potion",
+    "data_component/componentData/customColor": "custom_color",
+    "data_component/componentData/customEffects/effect": "effect_id",
+    "data_component/componentData/effect": "effect_id",
+    "data_component/componentData/duration": "duration",
+    "data_component/componentData/raw": "raw",
+    "data_component/componentData/filtered": "filtered",
+    "data_component/componentData/titleRaw": "title_raw",
+    "data_component/componentData/titleFiltered": "title_filtered",
+    "data_component/componentData/author": "author",
+    "data_component/componentData/generation": "generation",
+    "data_component/componentData/pages/raw": "raw",
+    "data_component/componentData/pages/filtered": "filtered",
+    "data_component/componentData/trimMaterial": "trim_material",
+    "data_component/componentData/trimMaterialDirectData/assetName": "asset_name",
+    "data_component/componentData/trimMaterialDirectData/ingredient": "ingredient",
+    "data_component/componentData/trimMaterialDirectData/itemModelIndex": "item_model_index",
+    "data_component/componentData/trimMaterialDirectData/armorMaterialMap/armorMaterial": "armor_material",
+    "data_component/componentData/trimMaterialDirectData/armorMaterialMap/texture": "texture",
+    "data_component/componentData/trimPattern": "trim_pattern",
+    "data_component/componentData/trimPatternDirectData/assetId": "asset_id",
+    "data_component/componentData/trimPatternDirectData/templateItem": "template_item",
+    "data_component/componentData/trimPatternDirectData/description": "desc",
+    "data_component/componentData/trimPatternDirectData/decal": "decal",
+    "data_component/componentData[entity_data]": "entity_data",
+    "data_component/componentData[29]": "entity_data",
+    "data_component/componentData[bucket_entity_data]": "bucket_entity_data",
+    "data_component/componentData[30]": "bucket_entity_data",
+    "data_component/componentData[block_entity_data]": "block_entity_data",
+    "data_component/componentData[31]": "block_entity_data",
+    "data_component/componentData/instrument": "instrument",
+    "data_component/componentData/instrumentDirectData/soundEvent": "sound_event",
+    "data_component/componentData/instrumentDirectData/soundEventDirectData/soundId": "sound_id",
+    "data_component/componentData/instrumentDirectData/soundEventDirectData/range": "range",
+    "data_component/componentData/instrumentDirectData/useDuration": "use_duration",
+    "data_component/componentData/instrumentDirectData/range": "range",
+    "data_component/componentData/dimension": "dimension",
+    "data_component/componentData/tracked": "tracked",
+    "data_component/componentData/shape": "shape",
+    "data_component/componentData/hasTrail": "has_trail",
+    "data_component/componentData/hasTwinkle": "has_twinkle",
+    "data_component/componentData/flightDuration": "flight_duration",
+    "data_component/componentData/explosions/shape": "shape",
+    "data_component/componentData/explosions/hasTrail": "has_trail",
+    "data_component/componentData/explosions/hasTwinkle": "has_twinkle",
+    "data_component/componentData/name": "name",
+    "data_component/componentData/uuid": "uuid",
+    "data_component/componentData/properties/key": "key",
+    "data_component/componentData/properties/value": "value",
+    "data_component/componentData/properties/signature": "signature",
+    "data_component/componentData[note_block_sound]": "note_block_sound",
+    "data_component/componentData[38]": "note_block_sound",
+    "data_component/componentData/pattern": "pattern",
+    "data_component/componentData[base_color]": "base_color",
+    "data_component/componentData[40]": "base_color",
+    "data_component/componentData/propertyName": "property_name",
+    "data_component/componentData/propertyValue": "property_value",
+    "data_component/componentData/customData": "custom_data",
+    "data_component/componentData/ticksInHive": "ticks_in_hive",
+    "data_component/componentData/minTicksInHive": "min_ticks_in_hive"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -2716,7 +3062,30 @@
     "explosion/smallExplosionParticlesData": "Small Explosion Particles Data",
     "explosion/largeExplosionParticlesData": "Large Explosion Particles Data",
     "debug_sample/sample": "Sample Data",
-    "select_known_packs/knownPacks": "Known Packs"
+    "select_known_packs/knownPacks": "Known Packs",
+    "slot/[unnamed]/componentData": "Component Data",
+    "slot/[unnamed]/componentData/dataComponents": "Data Components",
+    "slot/[unnamed]/componentData/voidComponents": "Void Components",
+    "data_component/componentData": "Component Data",
+    "data_component/componentData/blockPredicates": "Block Predicates",
+    "data_component/componentData/blockPredicates/blocks": "Blocks",
+    "data_component/componentData/blockPredicates/statePredicate": "State Predicate",
+    "data_component/componentData/blockPredicates/statePredicate/valueMatcher": "Value Matcher",
+    "data_component/componentData/modifiers": "Modifiers",
+    "data_component/componentData/enchantments": "Enchantments",
+    "data_component/componentData/customEffects": "Custom Effects",
+    "data_component/componentData/customEffects/detail": "Effect Detail",
+    "data_component/componentData/pages": "Pages",
+    "data_component/componentData/trimMaterialDirectData": "Trim Material Direct Data",
+    "data_component/componentData/trimMaterialDirectData/armorMaterialMap": "Armor Material Map",
+    "data_component/componentData/instrumentDirectData": "Instrument Direct Data",
+    "data_component/componentData/colors": "Colors",
+    "data_component/componentData/fadeColors": "Fade Colors",
+    "data_component/componentData/explosions": "Explosions",
+    "data_component/componentData/explosions/colors": "Colors",
+    "data_component/componentData/explosions/fadeColors": "Fade Colors",
+    "data_component/componentData/properties": "Properties",
+    "effect_detail/hiddenEffect": "Hidden Effect"
   },
   "packet_names": {
     "toClient": {
