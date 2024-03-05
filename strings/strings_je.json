@@ -2068,6 +2068,10 @@
     "min_ticks_in_hive": {
       "name": "Min Ticks In Hive",
       "type": "u32"
+    },
+    "use_duration": {
+      "name": "Use Duration",
+      "type": "u32"
     }
   },
   "mappings": {
