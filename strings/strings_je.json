@@ -2072,6 +2072,10 @@
     "use_duration": {
       "name": "Use Duration",
       "type": "u32"
+    },
+    "translation_key": {
+      "name": "Translation Key",
+      "type": "string"
     }
   },
   "mappings": {
@@ -2884,6 +2888,7 @@
     "data_component/componentData/instrumentDirectData/useDuration": "use_duration",
     "data_component/componentData/instrumentDirectData/range": "range",
     "data_component/componentData/dimension": "dimension",
+    "data_component/componentData/globalPos/dimension": "dimension",
     "data_component/componentData/tracked": "tracked",
     "data_component/componentData/shape": "shape",
     "data_component/componentData/hasTrail": "has_trail",
@@ -2900,6 +2905,8 @@
     "data_component/componentData[note_block_sound]": "note_block_sound",
     "data_component/componentData[38]": "note_block_sound",
     "data_component/componentData/pattern": "pattern",
+    "data_component/componentData/patternDirectData/assetId": "asset_id",
+    "data_component/componentData/patternDirectData/translationKey": "translation_key",
     "data_component/componentData[base_color]": "base_color",
     "data_component/componentData[40]": "base_color",
     "data_component/componentData/propertyName": "property_name",
@@ -3089,7 +3096,9 @@
     "data_component/componentData/explosions/colors": "Colors",
     "data_component/componentData/explosions/fadeColors": "Fade Colors",
     "data_component/componentData/properties": "Properties",
-    "effect_detail/hiddenEffect": "Hidden Effect"
+    "effect_detail/hiddenEffect": "Hidden Effect",
+    "data_component/componentData/globalPos": "Global Position",
+    "data_component/componentData/patternDirectData": "Pattern Direct Data"
   },
   "packet_names": {
     "toClient": {
