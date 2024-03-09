@@ -246,7 +246,7 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
     protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, is_client);
     proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (protocol == NULL) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
+        proto_tree_add_string(packet_tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
     gchar *packet_name = get_packet_name(protocol);

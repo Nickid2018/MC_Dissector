@@ -25,6 +25,10 @@
       "name": "Packet Name",
       "type": "string"
     },
+    "unknown_packet_je": {
+      "name": "Packet Name",
+      "type": "string"
+    },
     "protocol_version_je": {
       "name": "Protocol Version",
       "type": "string"
