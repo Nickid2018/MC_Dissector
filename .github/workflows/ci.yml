@@ -86,7 +86,7 @@ jobs:
         with:
           submodules: true
       - name: Install Deps
-        run: sudo apt install cmake libglib2.0 libgcrypt-dev libwireshark-dev make clang --fix-missing
+        run: sudo apt install cmake libglib2.0 libgcrypt-dev libwireshark-dev make clang
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -B build
