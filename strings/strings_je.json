@@ -1216,7 +1216,10 @@
     },
     "item_name": {
       "name": "Item Name",
-      "type": "string"
+      "type": [
+        "string",
+        "bytes"
+      ]
     },
     "score_name": {
       "name": "Score Name",
@@ -1386,7 +1389,10 @@
     },
     "speed": {
       "name": "Speed",
-      "type": "u32"
+      "type": [
+        "u32",
+        "f32"
+      ]
     },
     "portal_teleport_boundary": {
       "name": "Portal Teleport Boundary",
@@ -2080,6 +2086,42 @@
     "translation_key": {
       "name": "Translation Key",
       "type": "string"
+    },
+    "probability": {
+      "name": "Probability",
+      "type": "f32"
+    },
+    "nutrition": {
+      "name": "Nutrition",
+      "type": "f32"
+    },
+    "saturation_modifier": {
+      "name": "Saturation Modifier",
+      "type": "f32"
+    },
+    "can_always_eat": {
+      "name": "Can Always Eat",
+      "type": "bool"
+    },
+    "eat_seconds": {
+      "name": "Eat Seconds",
+      "type": "f32"
+    },
+    "correct_for_drops": {
+      "name": "Correct For Drops",
+      "type": "bool"
+    },
+    "default_mining_speed": {
+      "name": "Default Mining Speed",
+      "type": "f32"
+    },
+    "damage_per_block": {
+      "name": "Damage Per Block",
+      "type": "f32"
+    },
+    "ominous_bottle_amplifier": {
+      "name": "Ominous Bottle Amplifier",
+      "type": "u32"
     }
   },
   "mappings": {
@@ -2652,6 +2694,13 @@
     "chat_command/argumentSignatures/signature": "signature",
     "chat_command/messageCount": "message_count",
     "chat_command/acknowledged": "acknowledged",
+    "chat_command_signed/command": "command",
+    "chat_command_signed/timestamp": "timestamp",
+    "chat_command_signed/salt": "salt",
+    "chat_command_signed/argumentSignatures/argumentName": "argument_name",
+    "chat_command_signed/argumentSignatures/signature": "signature",
+    "chat_command_signed/messageCount": "message_count",
+    "chat_command_signed/acknowledged": "acknowledged",
     "chat_message/message": "message",
     "chat_message/timestamp": "timestamp",
     "chat_message/salt": "salt",
@@ -2826,11 +2875,8 @@
     "slot/[unnamed]/componentData/voidComponentCount": "void_component_count",
     "data_component/componentType": "component_type",
     "data_component/componentData[damage]": "damage",
-    "data_component/componentData[1]": "damage",
     "data_component/componentData[unbreakable]": "unbreakable",
-    "data_component/componentData[2]": "unbreakable",
     "data_component/componentData[custom_name]": "custom_name",
-    "data_component/componentData[3]": "custom_name",
     "data_component/componentData/showInTooltip": "show_in_tooltip",
     "data_component/componentData/blockPredicates/statePredicate/property": "property",
     "data_component/componentData/blockPredicates/statePredicate/valueMatcherType": "value_matcher_type",
@@ -2843,18 +2889,12 @@
     "data_component/componentData/modifiers/operation": "operation",
     "data_component/componentData/slot": "slot",
     "data_component/componentData[custom_model_data]": "custom_model_data",
-    "data_component/componentData[9]": "custom_model_data",
     "data_component/componentData[repair_cost]": "repair_cost",
-    "data_component/componentData[11]": "repair_cost",
     "data_component/componentData[enchantment_glint_override]": "enchantment_glint_override",
-    "data_component/componentData[13]": "enchantment_glint_override",
     "data_component/componentData/color": "color",
     "data_component/componentData[map_color]": "map_color",
-    "data_component/componentData[17]": "map_color",
     "data_component/componentData[map_id]": "map_id",
-    "data_component/componentData[18]": "map_id",
     "data_component/componentData[map_post_processing]": "map_post_processing",
-    "data_component/componentData[20]": "map_post_processing",
     "data_component/componentData/potion": "potion",
     "data_component/componentData/customColor": "custom_color",
     "data_component/componentData/customEffects/effect": "effect_id",
@@ -2880,11 +2920,8 @@
     "data_component/componentData/trimPatternDirectData/description": "desc",
     "data_component/componentData/trimPatternDirectData/decal": "decal",
     "data_component/componentData[entity_data]": "entity_data",
-    "data_component/componentData[29]": "entity_data",
     "data_component/componentData[bucket_entity_data]": "bucket_entity_data",
-    "data_component/componentData[30]": "bucket_entity_data",
     "data_component/componentData[block_entity_data]": "block_entity_data",
-    "data_component/componentData[31]": "block_entity_data",
     "data_component/componentData/instrument": "instrument",
     "data_component/componentData/instrumentDirectData/soundEvent": "sound_event",
     "data_component/componentData/instrumentDirectData/soundEventDirectData/soundId": "sound_id",
@@ -2907,17 +2944,27 @@
     "data_component/componentData/properties/value": "value",
     "data_component/componentData/properties/signature": "signature",
     "data_component/componentData[note_block_sound]": "note_block_sound",
-    "data_component/componentData[38]": "note_block_sound",
     "data_component/componentData/pattern": "pattern",
     "data_component/componentData/patternDirectData/assetId": "asset_id",
     "data_component/componentData/patternDirectData/translationKey": "translation_key",
     "data_component/componentData[base_color]": "base_color",
-    "data_component/componentData[40]": "base_color",
     "data_component/componentData/propertyName": "property_name",
     "data_component/componentData/propertyValue": "property_value",
     "data_component/componentData/customData": "custom_data",
     "data_component/componentData/ticksInHive": "ticks_in_hive",
-    "data_component/componentData/minTicksInHive": "min_ticks_in_hive"
+    "data_component/componentData/minTicksInHive": "min_ticks_in_hive",
+    "data_component/componentData/possibleEffect/effect": "effect_id",
+    "data_component/componentData/possibleEffect/probability": "probability",
+    "data_component/componentData/nutrition": "nutrition",
+    "data_component/componentData/saturationModifier": "saturation_modifier",
+    "data_component/componentData/canAlwaysEat": "can_always_eat",
+    "data_component/componentData/eatSeconds": "eat_seconds",
+    "data_component/componentData/rules/speed": "speed",
+    "data_component/componentData/rules/correctForDrops": "correct_for_drops",
+    "data_component/componentData/defaultMiningSpeed": "default_mining_speed",
+    "data_component/componentData/damagePerBlock": "damage_per_block",
+    "data_component/componentData[ominous_bottle_amplifier]": "ominous_bottle_amplifier",
+    "data_component/componentData[item_name]": "item_name"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -3102,7 +3149,11 @@
     "data_component/componentData/properties": "Properties",
     "effect_detail/hiddenEffect": "Hidden Effect",
     "data_component/componentData/globalPos": "Global Position",
-    "data_component/componentData/patternDirectData": "Pattern Direct Data"
+    "data_component/componentData/patternDirectData": "Pattern Direct Data",
+    "data_component/componentData/possibleEffect": "Possible Effect",
+    "data_component/componentData/possibleEffect/detail": "Effect Detail",
+    "data_component/componentData/rules": "Rules",
+    "data_component/componentData/rules/blocks": "Blocks"
   },
   "packet_names": {
     "toClient": {
@@ -3236,7 +3287,8 @@
       "transfer": "Client Transfer",
       "cookie_request": "Client Request Cookie",
       "debug_sample": "Client Debug Sample",
-      "select_known_packs": "Client Select Known Packs"
+      "select_known_packs": "Client Select Known Packs",
+      "reset_chat": "Client Reset Chat"
     },
     "toServer": {
       "login_start": "Server Hello",
@@ -3248,6 +3300,7 @@
       "set_difficulty": "Server Change Difficulty",
       "message_acknowledgement": "Server Chat ACK",
       "chat_command": "Server Chat Command",
+      "chat_command_signed": "Server Signed Chat Command",
       "chat_message": "Server Chat",
       "chat_session_update": "Server Chat Session Update",
       "client_command": "Server Client Command",
