@@ -70,6 +70,7 @@
 2010|3684 Particles Shoot White Smoke
 2011|3801 Particles Bee Growth
 2012|3801 Particles Turtle Egg Placement
+2013|3826 Particles Smash Attack
 3000 Animation End Gateway Spawn
 3001 Animation Dragon Spawn Roar
 3002|2703 Particles Electric Spark
@@ -89,3 +90,7 @@
 3015|3809 Animation Vault Activate
 3016|3809 Animation Vault Deactivate
 3017|3809 Animation Vault Eject Item
+3018|3826 Animate Spawn Cobweb
+3019|3826 Particles Trial Spawner Detect Player Ominous
+3020|3826 Particles Trial Spawner Become Ominous
+3021|3826 Particles Trial Spawner Spawn Item

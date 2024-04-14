@@ -12,6 +12,8 @@ interaction
 width,height,response
 item
 item
+ominous_item_spawner
+item
 tnt
 fuse
 abstract_minecart

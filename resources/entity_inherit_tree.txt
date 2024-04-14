@@ -10,6 +10,7 @@ interaction
 item
 lightning_bolt
 marker
+ominous_item_spawner
 tnt
 abstract_minecart
 +

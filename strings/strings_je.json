@@ -2122,6 +2122,18 @@
     "ominous_bottle_amplifier": {
       "name": "Ominous Bottle Amplifier",
       "type": "u32"
+    },
+    "x_power": {
+      "name": "X Power",
+      "type": "f64"
+    },
+    "y_power": {
+      "name": "Y Power",
+      "type": "f64"
+    },
+    "z_power": {
+      "name": "Z Power",
+      "type": "f64"
     }
   },
   "mappings": {
@@ -2964,7 +2976,11 @@
     "data_component/componentData/defaultMiningSpeed": "default_mining_speed",
     "data_component/componentData/damagePerBlock": "damage_per_block",
     "data_component/componentData[ominous_bottle_amplifier]": "ominous_bottle_amplifier",
-    "data_component/componentData[item_name]": "item_name"
+    "data_component/componentData[item_name]": "item_name",
+    "projectile_power/entityId": "entity_id",
+    "projectile_power/xPower": "x_power",
+    "projectile_power/yPower": "y_power",
+    "projectile_power/zPower": "z_power"
   },
   "bitmask_collection": {
     "[26]x[26]z[12]y": [
@@ -3288,7 +3304,8 @@
       "cookie_request": "Client Request Cookie",
       "debug_sample": "Client Debug Sample",
       "select_known_packs": "Client Select Known Packs",
-      "reset_chat": "Client Reset Chat"
+      "reset_chat": "Client Reset Chat",
+      "projectile_power": "Client Projectile Power"
     },
     "toServer": {
       "login_start": "Server Hello",
