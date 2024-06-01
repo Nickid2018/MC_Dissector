@@ -250,6 +250,8 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         return;
     }
     gchar *packet_name = get_packet_name(protocol);
+    if (packet_id == 1) // Temp fix for debugging
+        return;
     gchar *better_name = wmem_map_lookup(is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
                                          packet_name);
     if (better_name == NULL)

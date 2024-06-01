@@ -21,10 +21,10 @@
 #define TAG_INT_ARRAY  11
 #define TAG_LONG_ARRAY 12
 
-guint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, gint offset, int hfindex, bool is_je, bool need_skip);
+gint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, gint offset, int hfindex, bool is_je, bool need_skip);
 
-guint count_nbt_length_with_type(const guint8 *data, guint type);
+gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type);
 
-guint count_nbt_length(const guint8 *data);
+gint count_nbt_length(tvbuff_t *tvb, gint offset);
 
 #endif //MC_DISSECTOR_NBT_H
