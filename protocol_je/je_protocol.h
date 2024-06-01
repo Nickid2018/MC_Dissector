@@ -18,36 +18,36 @@
 #define PACKET_ID_CLIENT_COMPRESS 0x03
 #define PACKET_ID_SERVER_ENCRYPTION_BEGIN 0x01
 
-int handle_server_handshake_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_server_handshake_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                             guint length, mcje_protocol_context *ctx);
+                             gint length, mcje_protocol_context *ctx);
 
 void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       guint length, mcje_protocol_context *ctx);
+                       gint length, mcje_protocol_context *ctx);
 
 void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       guint length, mcje_protocol_context *ctx);
+                       gint length, mcje_protocol_context *ctx);
 
-int handle_client_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_client_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-int handle_server_login_switch(const guint8 *data, guint length, mcje_protocol_context *ctx, packet_info *pinfo);
+int handle_server_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                  guint length, mcje_protocol_context *ctx, bool is_client);
+                  gint length, mcje_protocol_context *ctx, bool is_client);
 
-int handle_client_play_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_client_play_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx);
 
-int handle_server_play_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_server_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                 guint length, mcje_protocol_context *ctx, bool is_client);
+                 gint length, mcje_protocol_context *ctx, bool is_client);
 
-int handle_client_configuration_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_client_configuration_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-int handle_server_configuration_switch(const guint8 *data, guint length, mcje_protocol_context *ctx);
+int handle_server_configuration_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                          guint length, mcje_protocol_context *ctx, bool is_client);
+                          gint length, mcje_protocol_context *ctx, bool is_client);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H

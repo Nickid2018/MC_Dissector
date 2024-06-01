@@ -53,7 +53,7 @@ void proto_register_mcje();
 
 void proto_reg_handoff_mcje();
 
-void sub_dissect_je(guint length, tvbuff_t *tvb, packet_info *pinfo,
+void sub_dissect_je(gint length, tvbuff_t *tvb, packet_info *pinfo,
                     proto_tree *tree, mcje_protocol_context *ctx,
                     bool is_client, bool visited);
 

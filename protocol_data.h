@@ -19,16 +19,16 @@ typedef enum {
 typedef struct {
     guint8 *server_decrypt;
     guint8 *client_decrypt;
-    guint server_decrypt_length;
-    guint client_decrypt_length;
+    gint server_decrypt_length;
+    gint client_decrypt_length;
 
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
 
-    guint server_last_decrypt_available;
-    guint client_last_decrypt_available;
-    guint server_required_length;
-    guint client_required_length;
+    gint server_last_decrypt_available;
+    gint client_last_decrypt_available;
+    gint server_required_length;
+    gint client_required_length;
 } mcje_decryption_context;
 
 typedef struct {
@@ -51,14 +51,12 @@ typedef struct {
 
 extern char *STATE_NAME[];
 
-gint read_var_int(const guint8 *data, guint max_length, guint *result);
+gint read_var_int(tvbuff_t *tvb, gint offset, gint *result);
 
-gint read_var_long(const guint8 *data, guint max_length, guint64 *result);
+gint read_var_int_with_limit(tvbuff_t *tvb, gint offset, gint max_length, gint *result);
 
-gint read_ushort(const guint8 *data, guint16 *result);
+gint read_var_long(tvbuff_t *tvb, gint offset, gint64 *result);
 
-gint read_ulong(const guint8 *data, guint64 *result);
-
-gint read_buffer(const guint8 *data, guint8 **result);
+gint read_buffer(tvbuff_t *tvb, gint offset, guint8 **result);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H
