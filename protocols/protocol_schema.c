@@ -122,7 +122,7 @@ FIELD_MAKE_TREE(void) {
 
 FIELD_MAKE_TREE(nbt) {
     if (pref_do_nbt_decode && is_je)
-        return do_nbt_tree(tree, tvb, data, offset, remaining, field->hf_index, is_je, true);
+        return do_nbt_tree(tree, tvb, offset, field->hf_index, is_je, true);
     else {
         guint length = count_nbt_length(data + offset);
         if (tree) {
@@ -141,7 +141,7 @@ FIELD_MAKE_TREE(optional_nbt) {
     guint8 present = data[offset];
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
-            return do_nbt_tree(tree, tvb, data, offset, remaining, field->hf_index, is_je, true);
+            return do_nbt_tree(tree, tvb, offset, field->hf_index, is_je, true);
         else {
             guint length = count_nbt_length(data + offset);
             if (tree) {
@@ -162,7 +162,7 @@ FIELD_MAKE_TREE(nbt_any_type) {
     guint8 present = data[offset];
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
-            return do_nbt_tree(tree, tvb, data, offset, remaining, field->hf_index, is_je, false);
+            return do_nbt_tree(tree, tvb, offset, field->hf_index, is_je, false);
         else {
             guint length = count_nbt_length_with_type(data + offset + 1, present);
             if (tree) {
