@@ -247,9 +247,9 @@ gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type) {
         return sub_length + 1;
     }
     if (type == TAG_INT_ARRAY)
-        return 4 + tvb_get_gint32(tvb, offset, BIG_ENDIAN) * 4;
+        return 4 + tvb_get_gint32(tvb, offset, ENC_BIG_ENDIAN) * 4;
     if (type == TAG_LONG_ARRAY)
-        return 4 + tvb_get_gint32(tvb, offset, BIG_ENDIAN) * 8;
+        return 4 + tvb_get_gint32(tvb, offset, ENC_BIG_ENDIAN) * 8;
     return 0;
 }
 
