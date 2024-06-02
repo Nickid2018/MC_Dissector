@@ -25,7 +25,7 @@ struct _protocol_field {
     int hf_index;
     wmem_map_t *additional_info;
 
-    gint (*make_tree)(proto_tree *tree, tvbuff_t *tvb, extra_data *extra, protocol_field field,
+    gint (*make_tree)(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra, protocol_field field,
             gint offset, gint remaining, data_recorder recorder, bool is_je);
 };
 
@@ -45,6 +45,6 @@ gint get_packet_id(protocol_set set, gchar *name, bool is_client);
 
 protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_client);
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, gint remaining);
+bool make_tree(protocol_entry entry, proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra, gint remaining);
 
 #endif //MC_DISSECTOR_PROTOCOL_SCHEMA_H

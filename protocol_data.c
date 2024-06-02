@@ -46,12 +46,12 @@ gint read_var_long(tvbuff_t *tvb, gint offset, gint64 *result) {
     return p;
 }
 
-gint read_buffer(tvbuff_t *tvb, gint offset, guint8 **result) {
+gint read_buffer(tvbuff_t *tvb, gint offset, guint8 **result, wmem_allocator_t *allocator) {
     gint length;
     gint read = read_var_int(tvb, offset, &length);
     if (is_invalid(read))
         return INVALID_DATA;
-    *result = wmem_alloc(wmem_packet_scope(), length + 1);
+    *result = wmem_alloc(allocator, length + 1);
     tvb_memcpy(tvb, *result, offset + read, length);
     (*result)[length] = '\0';
     return read + length;

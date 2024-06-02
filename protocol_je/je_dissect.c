@@ -24,7 +24,7 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_pr
                 if (!visited && is_invalid(handle_server_handshake_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_server_handshake(tree, tvb);
+                    handle_server_handshake(tree, pinfo, tvb);
                 return;
             case PING:
                 if (tree)
@@ -35,19 +35,19 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_pr
                 if (!visited && is_invalid(handle_server_login_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_login(tree, tvb, ctx, false);
+                    handle_login(tree, pinfo, tvb, ctx, false);
                 return;
             case PLAY:
                 if (!visited && is_invalid(handle_server_play_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_play(tree, tvb, ctx, false);
+                    handle_play(tree, pinfo, tvb, ctx, false);
                 return;
             case CONFIGURATION:
                 if (!visited && is_invalid(handle_server_configuration_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_configuration(tree, tvb, ctx, false);
+                    handle_configuration(tree, pinfo, tvb, ctx, false);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -57,26 +57,26 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_pr
         switch (ctx->client_state) {
             case PING:
                 if (tree)
-                    handle_client_slp(tree, tvb);
+                    handle_client_slp(tree, pinfo, tvb);
                 return;
             case LOGIN:
             case TRANSFER:
                 if (!visited && is_invalid(handle_client_login_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_login(tree, tvb, ctx, true);
+                    handle_login(tree, pinfo, tvb, ctx, true);
                 return;
             case PLAY:
                 if (!visited && is_invalid(handle_client_play_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_play(tree, tvb, ctx, true);
+                    handle_play(tree, pinfo, tvb, ctx, true);
                 return;
             case CONFIGURATION:
                 if (!visited && is_invalid(handle_client_configuration_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_configuration(tree, tvb, ctx, true);
+                    handle_configuration(tree, pinfo, tvb, ctx, true);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");

@@ -57,6 +57,6 @@ gint read_var_int_with_limit(tvbuff_t *tvb, gint offset, gint max_length, gint *
 
 gint read_var_long(tvbuff_t *tvb, gint offset, gint64 *result);
 
-gint read_buffer(tvbuff_t *tvb, gint offset, guint8 **result);
+gint read_buffer(tvbuff_t *tvb, gint offset, guint8 **resul, wmem_allocator_t *allocator);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

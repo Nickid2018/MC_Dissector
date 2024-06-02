@@ -9,19 +9,20 @@ struct _data_recorder {
     gchar *recording_path;
     gchar *recording;
     wmem_map_t *alias_map;
+    wmem_allocator_t *allocator;
 };
 
-data_recorder create_data_recorder() {
+data_recorder create_data_recorder(wmem_allocator_t *allocator) {
     data_recorder recorder = wmem_new(wmem_packet_scope(), data_recorder_t);
-    recorder->store_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
-    recorder->alias_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
-    recorder->recording_path = "";
+    recorder->store_map = wmem_map_new(allocator, g_str_hash, g_str_equal);
+    recorder->alias_map = wmem_map_new(allocator, g_str_hash, g_str_equal);
+    recorder->recording_path = g_strdup("");
     recorder->recording = NULL;
+    recorder->allocator = allocator;
     return recorder;
 }
 
 void destroy_data_recorder(data_recorder recorder) {
-    wmem_free(wmem_packet_scope(), recorder);
 }
 
 void record_start(data_recorder recorder, gchar *name) {
@@ -140,5 +141,5 @@ void record_add_alias(data_recorder recorder, gchar *name, gchar *alias) {
 
 void record_clear_alias(data_recorder recorder) {
     wmem_free(wmem_packet_scope(), recorder->alias_map);
-    recorder->alias_map = wmem_map_new(wmem_packet_scope(), g_str_hash, g_str_equal);
+    recorder->alias_map = wmem_map_new(recorder->allocator, g_str_hash, g_str_equal);
 }

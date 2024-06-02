@@ -50,7 +50,7 @@ FIELD_MAKE_TREE(var_long) {
 
 FIELD_MAKE_TREE(string) {
     guint8 *str;
-    gint length = read_buffer(tvb, offset, &str);
+    gint length = read_buffer(tvb, offset, &str, pinfo->pool);
     if (tree)
         proto_tree_add_string(tree, field->hf_index, tvb, offset, length, record(recorder, str));
     else
@@ -64,10 +64,10 @@ FIELD_MAKE_TREE(var_buffer) {
     if (tree) {
         if (length < BYTES_MAX_LENGTH)
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + read,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset + read, length));
+                                 tvb_memdup(pinfo->pool, tvb, offset + read, length));
         else
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + read,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset + read, BYTES_MAX_LENGTH));
+                                 tvb_memdup(pinfo->pool, tvb, offset + read, BYTES_MAX_LENGTH));
     }
     return read + length;
 }
@@ -98,16 +98,16 @@ FIELD_MAKE_TREE(rest_buffer) {
     if (tree) {
         if (remaining < BYTES_MAX_LENGTH)
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, remaining,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset, remaining));
+                                 tvb_memdup(pinfo->pool, tvb, offset, remaining));
         else
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, remaining,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+                                 tvb_memdup(pinfo->pool, tvb, offset, BYTES_MAX_LENGTH));
     }
     return remaining;
 }
 
 FIELD_MAKE_TREE(uuid) {
-    e_guid_t *uuid = wmem_new(wmem_packet_scope(), e_guid_t);
+    e_guid_t *uuid = wmem_new(pinfo->pool, e_guid_t);
     tvb_get_guid(tvb, offset, uuid, 0);
     if (tree)
         proto_tree_add_guid(tree, field->hf_index, tvb, offset, 16, record(recorder, uuid));
@@ -128,10 +128,10 @@ FIELD_MAKE_TREE(nbt) {
         if (tree) {
             if (length < BYTES_MAX_LENGTH)
                 proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                     tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+                                     tvb_memdup(pinfo->pool, tvb, offset, length));
             else
                 proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                     tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+                                     tvb_memdup(pinfo->pool, tvb, offset, BYTES_MAX_LENGTH));
         }
         return length;
     }
@@ -147,10 +147,10 @@ FIELD_MAKE_TREE(optional_nbt) {
             if (tree) {
                 if (length < BYTES_MAX_LENGTH)
                     proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                         tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+                                         tvb_memdup(pinfo->pool, tvb, offset, length));
                 else
                     proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                         tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+                                         tvb_memdup(pinfo->pool, tvb, offset, BYTES_MAX_LENGTH));
             }
             return length;
         }
@@ -168,10 +168,10 @@ FIELD_MAKE_TREE(nbt_any_type) {
             if (tree) {
                 if (length < BYTES_MAX_LENGTH)
                     proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + 1,
-                                         tvb_memdup(wmem_packet_scope(), tvb, offset, length + 1));
+                                         tvb_memdup(pinfo->pool, tvb, offset, length + 1));
                 else
                     proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length + 1,
-                                         tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+                                         tvb_memdup(pinfo->pool, tvb, offset, BYTES_MAX_LENGTH));
             }
             return length + 1;
         }
@@ -196,12 +196,12 @@ FIELD_MAKE_TREE(container) {
         if (is_anon && not_top) {
             record_pop(recorder);
             record_start(recorder, now_record);
-            sub_field->make_tree(NULL, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+            sub_field->make_tree(NULL, pinfo, tvb, extra, sub_field, offset, remaining, recorder, is_je);
             record_start(recorder, now_record);
             record_push(recorder);
         }
         record_start(recorder, sub_field->name);
-        gint sub_length = sub_field->make_tree(tree, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+        gint sub_length = sub_field->make_tree(tree, pinfo, tvb, extra, sub_field, offset, remaining, recorder, is_je);
         offset += sub_length;
         total_length += sub_length;
         remaining -= sub_length;
@@ -222,7 +222,7 @@ FIELD_MAKE_TREE(option) {
         sub_field->hf_resolved = true;
     }
     if (is_present)
-        return sub_field->make_tree(tree, tvb, extra, sub_field, offset + 1, remaining - 1, recorder, is_je) + 1;
+        return sub_field->make_tree(tree, pinfo, tvb, extra, sub_field, offset + 1, remaining - 1, recorder, is_je) + 1;
     else
         return 1;
 }
@@ -232,10 +232,10 @@ FIELD_MAKE_TREE(buffer) {
     if (tree) {
         if (length < BYTES_MAX_LENGTH)
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset, length));
+                                 tvb_memdup(pinfo->pool, tvb, offset, length));
         else
             proto_tree_add_bytes(tree, field->hf_index, tvb, offset, length,
-                                 tvb_memdup(wmem_packet_scope(), tvb, offset, BYTES_MAX_LENGTH));
+                                 tvb_memdup(pinfo->pool, tvb, offset, BYTES_MAX_LENGTH));
     }
     return length;
 }
@@ -244,7 +244,7 @@ FIELD_MAKE_TREE(mapper) {
     protocol_field sub_field = wmem_map_lookup(field->additional_info, "__subfield");
     gchar *recording = record_get_recording(recorder);
     record_start(recorder, "__mapperValue");
-    gint length = sub_field->make_tree(NULL, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+    gint length = sub_field->make_tree(NULL, pinfo, tvb, extra, sub_field, offset, remaining, recorder, is_je);
     char *path[] = {"__mapperValue", NULL};
     gchar *map = record_query(recorder, path);
     gchar *map_name = wmem_map_lookup(field->additional_info, map);
@@ -289,7 +289,8 @@ FIELD_MAKE_TREE(array) {
         else
             sub_field->name = g_strdup_printf("[%d]", i);
         sub_field->display_name = g_strdup_printf("[%d]", i);
-        gint sub_length = sub_field->make_tree(sub_tree, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+        gint sub_length = sub_field->make_tree(sub_tree, pinfo, tvb, extra, sub_field, offset, remaining, recorder,
+                                               is_je);
         offset += sub_length;
         len += sub_length;
         remaining -= sub_length;
@@ -363,8 +364,8 @@ FIELD_MAKE_TREE(top_bit_set_terminated_array) {
         else
             sub_field->name = g_strdup_printf("[%d]", ord);
         sub_field->display_name = g_strdup_printf("[%d]", ord);
-        gint sub_length = sub_field->make_tree(sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder,
-                                               is_je);
+        gint sub_length = sub_field->make_tree(sub_tree, pinfo, tvb, extra, sub_field, offset, remaining - len,
+                                               recorder, is_je);
         offset += sub_length;
         len += sub_length;
     } while ((now & 0x80) != 0);
@@ -390,7 +391,8 @@ FIELD_MAKE_TREE(switch) {
     }
     char *display_name_raw = sub_field_choose->display_name;
     sub_field_choose->display_name = field->display_name;
-    gint len = sub_field_choose->make_tree(tree, tvb, extra, sub_field_choose, offset, remaining, recorder, is_je);
+    gint len = sub_field_choose->make_tree(tree, pinfo, tvb, extra, sub_field_choose, offset, remaining, recorder,
+                                           is_je);
     sub_field_choose->display_name = display_name_raw;
     return len;
 }
@@ -420,8 +422,8 @@ FIELD_MAKE_TREE(entity_metadata_loop) {
         else
             sub_field->name = g_strdup_printf("[%d]", count);
         sub_field->display_name = g_strdup_printf("[%d]", count);
-        gint sub_length = sub_field->make_tree(sub_tree, tvb, extra, sub_field, offset, remaining - len, recorder,
-                                               is_je);
+        gint sub_length = sub_field->make_tree(sub_tree, pinfo, tvb, extra, sub_field, offset, remaining - len,
+                                               recorder, is_je);
         offset += sub_length;
         len += sub_length;
         count++;
@@ -448,7 +450,7 @@ FIELD_MAKE_TREE(basic_type) {
     }
     char *display_name_raw = sub_field->display_name;
     sub_field->display_name = field->display_name;
-    gint sub_length = sub_field->make_tree(tree, tvb, extra, sub_field, offset, remaining, recorder, is_je);
+    gint sub_length = sub_field->make_tree(tree, pinfo, tvb, extra, sub_field, offset, remaining, recorder, is_je);
     sub_field->display_name = display_name_raw;
     record_clear_alias(recorder);
     return sub_length;
@@ -928,15 +930,19 @@ protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_cli
     return wmem_map_lookup(packet_map, GUINT_TO_POINTER(packet_id));
 }
 
-bool make_tree(protocol_entry entry, proto_tree *tree, tvbuff_t *tvb, extra_data *extra, gint remaining) {
+bool make_tree(protocol_entry entry, proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra,
+               gint remaining) {
     if (entry->field != NULL) {
-        data_recorder recorder = create_data_recorder();
-        guint len = entry->field->make_tree(tree, tvb, extra, entry->field, 1, remaining - 1, recorder, entry->is_je);
+        data_recorder recorder = create_data_recorder(pinfo->pool);
+        guint len = entry->field->make_tree(tree, pinfo, tvb, extra, entry->field, 1, remaining - 1, recorder,
+                                            entry->is_je);
         destroy_data_recorder(recorder);
         if (len != remaining - 1)
-            proto_tree_add_string_format_value(tree, hf_invalid_data_je, tvb, 1, remaining - 1,
-                                               "length mismatch", "Packet length mismatch, expected %d, got %d", len,
-                                               remaining - 1);
+            proto_tree_add_string_format_value(
+                    tree, hf_invalid_data_je, tvb, 1, remaining - 1,
+                    "length mismatch", "Packet length mismatch, expected %d, got %d", len,
+                    remaining - 1
+            );
         return true;
     }
     return false;
