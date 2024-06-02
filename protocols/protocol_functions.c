@@ -11,8 +11,8 @@
 
 typedef struct {
     char *name;
-    int min_version;
-    int max_version;
+    long min_version;
+    long max_version;
 } level_event_entry;
 
 wmem_map_t *entity_hierarchy;
@@ -48,19 +48,19 @@ void init_entity_hierarchy() {
 
 wmem_map_t *init_entity_ids(guint data_version) {
     char **lines = g_strsplit(RESOURCE_ENTITY_ID, "\n", 1000);
-    int desc_counts = atoi(lines[0]);
+    int desc_counts = (int) strtol(lines[0], NULL, 10);
     char **descs = g_strsplit(lines[1], " ", desc_counts);
-    int versions = atoi(lines[2]);
-    for (int i = versions - 1; i >= 0; i++) {
+    int versions = (int) strtol(lines[2], NULL, 10);
+    for (int i = versions - 1; i >= 0; i--) {
         char **version_data = g_strsplit(lines[3 + i * 2], " ", 2);
-        int version_now = atoi(version_data[0]);
+        long version_now = strtol(version_data[0], NULL, 10);
         if (version_now <= data_version) {
-            int list_length = atoi(version_data[1]);
+            int list_length = (int) strtol(version_data[1], NULL, 10);
             g_strfreev(version_data);
             wmem_map_t *entity_id_data = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
             char **entity_id_list = g_strsplit(lines[4 + i * 2], " ", list_length);
             for (int in = 0; in < list_length; in++) {
-                int entity_desc = atoi(entity_id_list[in]);
+                long entity_desc = strtol(entity_id_list[in], NULL, 10);
                 char *entity_name = g_strdup(descs[entity_desc]);
                 char *entity_id = g_strdup_printf("%d", in);
                 wmem_map_insert(entity_id_data, entity_id, entity_name);
@@ -92,11 +92,11 @@ void init_events() {
         char **split_now = g_strsplit(now, " ", 2);
         char **versions = g_strsplit(split_now[0], "|", 3);
         char *event = versions[0];
-        int min_version = 0, max_version = 0x7fffffff;
+        long min_version = 0, max_version = 0x7fffffff;
         if (versions[1] != NULL) {
-            min_version = atoi(versions[1]);
+            min_version = strtol(versions[1], NULL, 10);
             if (versions[2] != NULL)
-                max_version = atoi(versions[2]);
+                max_version = strtol(versions[2], NULL, 10);
         }
         wmem_list_t *event_data = wmem_map_lookup(level_event, event);
         if (event_data == NULL) {
@@ -191,7 +191,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
     char *key_path[] = {"key", NULL};
     gchar *key = record_query(recorder, key_path);
     guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
-    guint key_int = atoi(key);
+    guint key_int = strtol(key, NULL, 10);
     char *type = wmem_map_lookup(entity_id_record, id);
     if (type != NULL)
         proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, type);
@@ -216,7 +216,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
                     char **split_entry = g_strsplit(entry, " ", 10);
                     bool flag = true;
                     for (int flag_index = 1; split_entry[flag_index] != NULL; flag_index++) {
-                        int flag_now = atoi(split_entry[flag_index]);
+                        long flag_now = strtol(split_entry[flag_index], NULL, 10);
                         if (flag_now > 0) {
                             if (flag_now > data_version)
                                 flag = false;
@@ -282,4 +282,4 @@ FIELD_MAKE_TREE(level_event) {
     return 0;
 }
 
-#endif //MC_DISSECTOR_FUNCTION_FEATURE
+#endif // MC_DISSECTOR_FUNCTION_FEATURE

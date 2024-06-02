@@ -51,8 +51,7 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     return INVALID_DATA;
 }
 
-void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                             gint length, mcje_protocol_context *ctx) {
+void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb) {
     gint packet_id;
     gint p;
     gint read = p = read_var_int(tvb, 0, &packet_id);
@@ -97,14 +96,13 @@ void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING) {
         proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read,
                                            "legacy_server_list_ping", "Legacy Server List Ping");
-        guint8 payload = data[p];
+        guint8 payload = tvb_get_guint8(tvb, p);
         proto_tree_add_uint(packet_tree, hf_legacy_slp_payload, tvb, p, 1, payload);
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
 }
 
-void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       gint length, mcje_protocol_context *ctx) {
+void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb) {
     gint packet_id;
     gint p;
     gint read = p = read_var_int(tvb, 0, &packet_id);
@@ -123,8 +121,7 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinf
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
-void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       gint length, mcje_protocol_context *ctx) {
+void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb) {
     gint packet_id;
     gint p;
     gint read = p = read_var_int(tvb, 0, &packet_id);
@@ -218,8 +215,7 @@ int handle_server_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     return 0;
 }
 
-void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-            gint length, mcje_protocol_context *ctx, protocol_set protocol_set, bool is_client) {
+void handle(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, protocol_set protocol_set, bool is_client) {
     gint packet_id;
     gint p;
     gint read = p = read_var_int(tvb, 0, &packet_id);
@@ -238,8 +234,6 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         return;
     }
     gchar *packet_name = get_packet_name(protocol);
-    if (packet_id == 1) // Temp fix for debugging
-        return;
     gchar *better_name = wmem_map_lookup(is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
                                          packet_name);
     if (better_name == NULL)
@@ -254,21 +248,22 @@ void handle(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, cons
         GList *list = prefs_get_string_list(pref_ignore_packets_je);
         ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
     }
+
+    gint length = (gint) tvb_reported_length(tvb);
     if (ignore)
         proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p, "Ignored by user");
-    else if (!make_tree(protocol, packet_tree, tvb, ctx->extra, data, length))
+    else if (!make_tree(protocol, packet_tree, tvb, ctx->extra, length))
         proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p,
                               "Protocol hasn't been implemented yet");
 }
 
-void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                  gint length, mcje_protocol_context *ctx, bool is_client) {
+void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;
         return;
     }
-    handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->login, is_client);
+    handle(packet_tree, tvb, ctx, ctx->protocol_set->login, is_client);
 }
 
 int handle_client_play_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx) {
@@ -299,14 +294,13 @@ int handle_server_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     return 0;
 }
 
-void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                 gint length, mcje_protocol_context *ctx, bool is_client) {
+void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;
         return;
     }
-    handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->play, is_client);
+    handle(packet_tree, tvb, ctx, ctx->protocol_set->play, is_client);
 }
 
 int handle_client_configuration_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx) {
@@ -337,12 +331,11 @@ int handle_server_configuration_switch(tvbuff_t *tvb, mcje_protocol_context *ctx
     return 0;
 }
 
-void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                          gint length, mcje_protocol_context *ctx, bool is_client) {
+void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;
         return;
     }
-    handle(packet_tree, tvb, pinfo, data, length, ctx, ctx->protocol_set->configuration, is_client);
+    handle(packet_tree, tvb, ctx, ctx->protocol_set->configuration, is_client);
 }

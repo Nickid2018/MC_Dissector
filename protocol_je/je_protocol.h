@@ -20,34 +20,28 @@
 
 int handle_server_handshake_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                             gint length, mcje_protocol_context *ctx);
+void handle_server_handshake(proto_tree *packet_tree, tvbuff_t *tvb);
 
-void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       gint length, mcje_protocol_context *ctx);
+void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb);
 
-void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                       gint length, mcje_protocol_context *ctx);
+void handle_client_slp(proto_tree *packet_tree, tvbuff_t *tvb);
 
 int handle_client_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 int handle_server_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                  gint length, mcje_protocol_context *ctx, bool is_client);
+void handle_login(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client);
 
 int handle_client_play_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx);
 
 int handle_server_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                 gint length, mcje_protocol_context *ctx, bool is_client);
+void handle_play(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client);
 
 int handle_client_configuration_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 int handle_server_configuration_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
-void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, packet_info *pinfo _U_, const guint8 *data,
-                          gint length, mcje_protocol_context *ctx, bool is_client);
+void handle_configuration(proto_tree *packet_tree, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H

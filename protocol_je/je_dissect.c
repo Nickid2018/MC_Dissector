@@ -17,40 +17,37 @@ void proto_reg_handoff_mcje() {
     dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_handle);
 }
 
-void sub_dissect_je(gint length, tvbuff_t *tvb, packet_info *pinfo,
-                    proto_tree *tree, mcje_protocol_context *ctx,
-                    bool is_server, bool visited) {
-    const guint8 *data = tvb_memdup(pinfo->pool, tvb, pinfo->desegment_offset, length);
+void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_protocol_context *ctx, bool is_server, bool visited) {
     if (is_server) {
         switch (ctx->server_state) {
             case HANDSHAKE:
                 if (!visited && is_invalid(handle_server_handshake_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_server_handshake(tree, tvb, pinfo, data, length, ctx);
+                    handle_server_handshake(tree, tvb);
                 return;
             case PING:
                 if (tree)
-                    handle_server_slp(tree, tvb, pinfo, data, length, ctx);
+                    handle_server_slp(tree, tvb);
                 return;
             case LOGIN:
             case TRANSFER:
                 if (!visited && is_invalid(handle_server_login_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_login(tree, tvb, pinfo, data, length, ctx, false);
+                    handle_login(tree, tvb, ctx, false);
                 return;
             case PLAY:
                 if (!visited && is_invalid(handle_server_play_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_play(tree, tvb, pinfo, data, length, ctx, false);
+                    handle_play(tree, tvb, ctx, false);
                 return;
             case CONFIGURATION:
                 if (!visited && is_invalid(handle_server_configuration_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_configuration(tree, tvb, pinfo, data, length, ctx, false);
+                    handle_configuration(tree, tvb, ctx, false);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -60,26 +57,26 @@ void sub_dissect_je(gint length, tvbuff_t *tvb, packet_info *pinfo,
         switch (ctx->client_state) {
             case PING:
                 if (tree)
-                    handle_client_slp(tree, tvb, pinfo, data, length, ctx);
+                    handle_client_slp(tree, tvb);
                 return;
             case LOGIN:
             case TRANSFER:
                 if (!visited && is_invalid(handle_client_login_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_login(tree, tvb, pinfo, data, length, ctx, true);
+                    handle_login(tree, tvb, ctx, true);
                 return;
             case PLAY:
                 if (!visited && is_invalid(handle_client_play_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_play(tree, tvb, pinfo, data, length, ctx, true);
+                    handle_play(tree, tvb, ctx, true);
                 return;
             case CONFIGURATION:
                 if (!visited && is_invalid(handle_client_configuration_switch(tvb, ctx)))
                     return;
                 if (tree)
-                    handle_configuration(tree, tvb, pinfo, data, length, ctx, true);
+                    handle_configuration(tree, tvb, ctx, true);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -142,14 +139,14 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
     tvbuff_t *new_tvb;
     if (ctx->compression_threshold < 0) {
-        new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
+        new_tvb = tvb_new_subset_length(tvb, read_pointer, packet_length_vari);
         if (tree) {
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je(packet_length_vari, new_tvb, pinfo, sub_mcpc_tree, ctx, is_server, pinfo->fd->visited);
+            sub_dissect_je(new_tvb, pinfo, sub_mcpc_tree, ctx, is_server, pinfo->fd->visited);
         } else
-            sub_dissect_je(packet_length_vari, new_tvb, pinfo, NULL, ctx, is_server, pinfo->fd->visited);
+            sub_dissect_je(new_tvb, pinfo, NULL, ctx, is_server, pinfo->fd->visited);
     } else {
         gint uncompressed_length;
         int var_len = read_var_int(tvb, read_pointer, &uncompressed_length);
@@ -188,11 +185,9 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
             proto_item_set_text(packet_item, "Minecraft JE Packet");
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
-            sub_dissect_je((gint) tvb_captured_length(new_tvb), new_tvb, pinfo, sub_mcpc_tree, ctx, is_server,
-                           pinfo->fd->visited);
+            sub_dissect_je(new_tvb, pinfo, sub_mcpc_tree, ctx, is_server, pinfo->fd->visited);
         } else
-            sub_dissect_je((gint) tvb_captured_length(new_tvb), new_tvb, pinfo, NULL, ctx, is_server,
-                           pinfo->fd->visited);
+            sub_dissect_je(new_tvb, pinfo, NULL, ctx, is_server,  pinfo->fd->visited);
     }
 
     return captured_length;
