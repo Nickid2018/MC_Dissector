@@ -9,7 +9,7 @@
 
 #define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
-void parse_to_string(tvbuff_t *tvb, int offset_global, guint type, gint *length, char **text) {
+void parse_to_string(tvbuff_t *tvb, packet_info *pinfo, int offset_global, guint type, gint *length, char **text) {
     switch (type) {
         case TAG_BYTE:
             *length = 1;
@@ -51,7 +51,9 @@ void parse_to_string(tvbuff_t *tvb, int offset_global, guint type, gint *length,
                 else if (type == TAG_INT_ARRAY)
                     elements[i] = g_strdup_printf("%d", tvb_get_gint32(tvb, offset_global + 4 + i * 4, ENC_BIG_ENDIAN));
                 else
-                    elements[i] = g_strdup_printf("%ld", tvb_get_gint64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN));
+                    elements[i] = g_strdup_printf(
+                            "%ld",
+                            tvb_get_gint64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN));
             }
 
             char *elements_text = g_strjoinv(", ", elements);
@@ -66,7 +68,7 @@ void parse_to_string(tvbuff_t *tvb, int offset_global, guint type, gint *length,
             *length = 2;
             gint string_length = tvb_get_guint16(tvb, offset_global, ENC_BIG_ENDIAN);
             *length += string_length;
-            *text = tvb_format_text(wmem_packet_scope(), tvb, offset_global + 2, string_length);
+            *text = tvb_format_text(pinfo->pool, tvb, offset_global + 2, string_length);
             break;
         default:
             *length = 0;
@@ -75,32 +77,34 @@ void parse_to_string(tvbuff_t *tvb, int offset_global, guint type, gint *length,
     }
 }
 
-gint add_primitive_type_hf(proto_tree *tree, tvbuff_t *tvb, int offset_global, guint type, int hfindex) {
+gint
+add_primitive_type_hf(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset_global, guint type, int hfindex) {
     gint length;
     char *text;
-    parse_to_string(tvb, offset_global, type, &length, &text);
+    parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
     proto_item *item = proto_tree_add_item(tree, hfindex, tvb, offset_global, 0, ENC_NA);
     proto_item_append_text(item, " - <%s>", text);
     proto_item_set_len(item, length);
     return length;
 }
 
-gint add_primitive_type(proto_tree *tree, tvbuff_t *tvb, gint hf_text, int offset_global, guint type, gchar *sup_name) {
+gint
+add_primitive_type(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint hf_text, int offset_global, guint type, gchar *sup_name) {
     gint length;
     char *text;
-    parse_to_string(tvb, offset_global, type, &length, &text);
+    parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
     proto_item *item = proto_tree_add_item(tree, hf_text, tvb, offset_global, 0, ENC_NA);
     proto_item_set_text(item, "%s: %s", sup_name, text);
     proto_item_set_len(item, length);
     return length;
 }
 
-gint add_list_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name);
+gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name);
 
-gint add_compound_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name);
+gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name);
 
 // NOLINTNEXTLINE
-gint add_list_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name) {
+gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name) {
     gint length = 5;
     guint sub_type = tvb_get_guint8(tvb, offset_global);
     guint sub_length = tvb_get_guint32(tvb, offset_global + 1, ENC_BIG_ENDIAN);
@@ -118,21 +122,21 @@ gint add_list_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, 
     if (is_primitive_type(sub_type)) {
         for (guint i = 0; i < sub_length; i++)
             length += add_primitive_type(
-                    subtree, tvb, hf_text,
+                    subtree, pinfo, tvb, hf_text,
                     offset_global + length, sub_type,
                     g_strdup_printf("[%d]", i)
             );
     } else if (sub_type == TAG_LIST) {
         for (guint i = 0; i < sub_length; i++)
             length += add_list_type(
-                    NULL, subtree, tvb, ett, hf_text,
+                    NULL, pinfo, subtree, tvb, ett, hf_text,
                     offset_global + length,
                     g_strdup_printf("[%d]", i)
             );
     } else if (sub_type == TAG_COMPOUND) {
         for (guint i = 0; i < sub_length; i++)
             length += add_compound_type(
-                    NULL, subtree, tvb, ett, hf_text,
+                    NULL, pinfo, subtree, tvb, ett, hf_text,
                     offset_global + length,
                     g_strdup_printf("[%d]", i)
             );
@@ -143,7 +147,7 @@ gint add_list_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, 
 }
 
 // NOLINTNEXTLINE
-gint add_compound_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name) {
+gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, gint ett, gint hf_text, int offset_global, gchar *sup_name) {
     gint length = 1;
     proto_tree *subtree;
     if (sup_name == NULL)
@@ -157,21 +161,21 @@ gint add_compound_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint e
     guint sub_type;
     while ((sub_type = tvb_get_guint8(tvb, offset_global + length - 1)) != TAG_END) {
         gint name_length = tvb_get_guint16(tvb, offset_global + length, ENC_BIG_ENDIAN);
-        gchar *name = tvb_format_text(wmem_packet_scope(), tvb, offset_global + length + 2, name_length);
+        gchar *name = tvb_format_text(pinfo->pool, tvb, offset_global + length + 2, name_length);
         length += 2 + name_length;
         if (is_primitive_type(sub_type)) {
             length += add_primitive_type(
-                    subtree, tvb, hf_text,
+                    subtree, pinfo, tvb, hf_text,
                     offset_global + length, sub_type, name
             );
         } else if (sub_type == TAG_LIST) {
             length += add_list_type(
-                    NULL, subtree, tvb, ett, hf_text,
+                    NULL, pinfo, subtree, tvb, ett, hf_text,
                     offset_global + length, name
             );
         } else if (sub_type == TAG_COMPOUND) {
             length += add_compound_type(
-                    NULL, subtree, tvb, ett, hf_text,
+                    NULL, pinfo, subtree, tvb, ett, hf_text,
                     offset_global + length, name
             );
         }
@@ -182,7 +186,8 @@ gint add_compound_type(proto_item *item, proto_tree *tree, tvbuff_t *tvb, gint e
     return length;
 }
 
-gint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, gint offset, int hfindex, bool is_je, bool need_skip) {
+gint
+do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, int hfindex, bool is_je, bool need_skip) {
     guint8 type = tvb_get_guint8(tvb, offset);
     gint origin_offset = offset;
     if (need_skip)
@@ -191,7 +196,7 @@ gint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, gint offset, int hfindex, bool
         offset += 1;
 
     if (is_primitive_type(type)) {
-        offset += add_primitive_type_hf(tree, tvb, offset, type, hfindex);
+        offset += add_primitive_type_hf(tree, pinfo, tvb, offset, type, hfindex);
     } else {
         int ett = is_je ? ett_sub_je : ett_sub_be;
         int hf_text = is_je ? get_string_je("text_je", "bytes") : hf_text_be;
@@ -200,9 +205,9 @@ gint do_nbt_tree(proto_tree *tree, tvbuff_t *tvb, gint offset, int hfindex, bool
 
         gint length = 0;
         if (type == TAG_LIST)
-            length = add_list_type(item, subtree, tvb, ett, hf_text, offset, NULL);
+            length = add_list_type(item, pinfo, subtree, tvb, ett, hf_text, offset, NULL);
         else if (type == TAG_COMPOUND)
-            length = add_compound_type(item, subtree, tvb, ett, hf_text, offset, NULL);
+            length = add_compound_type(item, pinfo, subtree, tvb, ett, hf_text, offset, NULL);
         offset += length;
 
         proto_item_set_len(item, length);

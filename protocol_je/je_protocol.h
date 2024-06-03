@@ -32,7 +32,7 @@ int handle_server_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 void handle_login(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client);
 
-int handle_client_play_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx);
+int handle_client_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 
 int handle_server_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx);
 

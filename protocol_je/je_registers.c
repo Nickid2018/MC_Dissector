@@ -17,12 +17,18 @@ void proto_register_mcje() {
 
     // Preference ------------------------------------------------------------------------------------------------------
     pref_mcje = prefs_register_protocol(proto_mcje, NULL);
-    prefs_register_string_preference(pref_mcje, "ignore_packets", "Ignore Packets",
-                                     "Ignore packets with the given names", (const char **) &pref_ignore_packets_je);
-    prefs_register_string_preference(pref_mcje, "secret_key", "Secret Key",
-                                     "Secret key for decryption", (const char **) &pref_secret_key);
-    prefs_register_bool_preference(pref_mcje, "do_nbt_decode", "NBT Decoding",
-                                   "Decode NBT data", &pref_do_nbt_decode);
+    prefs_register_string_preference(
+            pref_mcje, "ignore_packets", "Ignore Packets",
+            "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
+    );
+    prefs_register_string_preference(
+            pref_mcje, "secret_key", "Secret Key",
+            "Secret key for decryption", (const char **) &pref_secret_key
+    );
+    prefs_register_bool_preference(
+            pref_mcje, "do_nbt_decode", "NBT Decoding",
+            "Decode NBT data", &pref_do_nbt_decode
+    );
 
     register_string_je();
     init_je();

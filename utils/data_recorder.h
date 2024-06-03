@@ -11,8 +11,6 @@ typedef struct _data_recorder data_recorder_t, *data_recorder;
 
 data_recorder create_data_recorder(wmem_allocator_t *allocator);
 
-void destroy_data_recorder(data_recorder recorder);
-
 void record_start(data_recorder recorder, gchar *name);
 
 void *record(data_recorder recorder, void *data);

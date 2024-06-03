@@ -61,8 +61,10 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
     }
     proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (packet_id == PACKET_ID_HANDSHAKE) {
-        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read,
-                                           "set_protocol", "Server Handshake");
+        proto_tree_add_string_format_value(
+                packet_tree, hf_packet_name_je, tvb, 0, read,
+                "set_protocol", "Server Handshake"
+        );
 
         gint protocol_version;
         read = read_var_int(tvb, p, &protocol_version);
@@ -70,8 +72,9 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
             proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
             return;
         }
-        proto_tree_add_string_format_value(packet_tree, hf_protocol_version_je, tvb, p, read, "",
-                                           "%d (%s)", protocol_version, get_java_version_name(protocol_version));
+        proto_tree_add_string_format_value(
+                packet_tree, hf_protocol_version_je, tvb, p, read, "",
+                "%d (%s)", protocol_version, get_java_version_name(protocol_version));
         p += read;
 
         guint8 *server_address;
@@ -82,8 +85,10 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
         }
         guint16 server_port = tvb_get_guint16(tvb, p + read, ENC_BIG_ENDIAN);
         read += 2;
-        proto_tree_add_string_format_value(packet_tree, hf_server_address_je, tvb, p, read, "",
-                                           "%s:%d", server_address, server_port);
+        proto_tree_add_string_format_value(
+                packet_tree, hf_server_address_je, tvb, p, read, "",
+                "%s:%d", server_address, server_port
+        );
         p += read;
 
         gint next_state;
@@ -94,8 +99,10 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
         }
         proto_tree_add_string(packet_tree, hf_next_state_je, tvb, p, read, STATE_NAME[next_state + 1]);
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING) {
-        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read,
-                                           "legacy_server_list_ping", "Legacy Server List Ping");
+        proto_tree_add_string_format_value(
+                packet_tree, hf_packet_name_je, tvb, 0, read,
+                "legacy_server_list_ping", "Legacy Server List Ping"
+        );
         guint8 payload = tvb_get_guint8(tvb, p);
         proto_tree_add_uint(packet_tree, hf_legacy_slp_payload, tvb, p, 1, payload);
     } else
@@ -147,7 +154,7 @@ void handle_client_slp(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tv
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
-int handle_client_login_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx) {
+int handle_client_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     if (ctx->protocol_set == NULL) {
         ctx->client_state = ctx->server_state = INVALID;
         return -1;
@@ -234,13 +241,17 @@ void handle(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_pro
         return;
     }
     gchar *packet_name = get_packet_name(protocol);
-    gchar *better_name = wmem_map_lookup(is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
-                                         packet_name);
+    gchar *better_name = wmem_map_lookup(
+            is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
+            packet_name
+    );
     if (better_name == NULL)
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name);
     else
-        proto_tree_add_string_format_value(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
-                                           "%s (%s)", better_name, packet_name);
+        proto_tree_add_string_format_value(
+                packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
+                "%s (%s)", better_name, packet_name
+        );
 
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {
@@ -253,11 +264,14 @@ void handle(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_pro
     if (ignore)
         proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p, "Ignored by user");
     else if (!make_tree(protocol, packet_tree, pinfo, tvb, ctx->extra, length))
-        proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p,
-                              "Protocol hasn't been implemented yet");
+        proto_tree_add_string(
+                packet_tree, hf_ignored_packet_je, tvb, p, length - p,
+                "Protocol hasn't been implemented yet"
+        );
 }
 
-void handle_login(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
+void
+handle_login(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;
@@ -266,7 +280,7 @@ void handle_login(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mc
     handle(packet_tree, pinfo, tvb, ctx, ctx->protocol_set->login, is_client);
 }
 
-int handle_client_play_switch(tvbuff_t *tvb,  mcje_protocol_context *ctx) {
+int handle_client_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     if (ctx->protocol_set == NULL) {
         ctx->client_state = ctx->server_state = INVALID;
         return -1;
@@ -294,7 +308,8 @@ int handle_server_play_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
     return 0;
 }
 
-void handle_play(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
+void
+handle_play(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_protocol_context *ctx, bool is_client) {
     if (ctx->protocol_set == NULL) {
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = INVALID;

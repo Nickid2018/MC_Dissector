@@ -133,8 +133,10 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         mcje_tree = proto_item_add_subtree(ti, ett_mcje);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, 0, packet_length_length, packet_length_vari);
-        proto_item_append_text(ti, ", Client State: %s, Server State: %s", STATE_NAME[ctx->client_state],
-                               STATE_NAME[ctx->server_state]);
+        proto_item_append_text(
+                ti, ", Client State: %s, Server State: %s", STATE_NAME[ctx->client_state],
+                STATE_NAME[ctx->server_state]
+        );
     }
 
     tvbuff_t *new_tvb;
@@ -160,12 +162,16 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
         if ((int32_t) uncompressed_length > 0) {
             if (tree) {
-                proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
-                                    read_pointer - var_len, var_len, uncompressed_length);
+                proto_tree_add_uint(
+                        mcje_tree, hf_packet_data_length_je, tvb,
+                        read_pointer - var_len, var_len, uncompressed_length
+                );
                 if (uncompressed_length < ctx->compression_threshold) {
                     col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Badly compressed packet");
-                    col_append_fstr(pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
-                                    uncompressed_length, ctx->compression_threshold);
+                    col_append_fstr(
+                            pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
+                            uncompressed_length, ctx->compression_threshold
+                    );
                     mark_invalid(pinfo);
                     return captured_length;
                 }
@@ -176,8 +182,10 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
         } else {
             if (tree)
-                proto_tree_add_uint(mcje_tree, hf_packet_data_length_je, tvb,
-                                    read_pointer - 1, 1, packet_length_vari - 1);
+                proto_tree_add_uint(
+                        mcje_tree, hf_packet_data_length_je, tvb,
+                        read_pointer - 1, 1, packet_length_vari - 1
+                );
             new_tvb = tvb_new_subset_remaining(tvb, read_pointer);
         }
 
@@ -187,7 +195,7 @@ int dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             proto_tree *sub_mcpc_tree = proto_item_add_subtree(packet_item, ett_je_proto);
             sub_dissect_je(new_tvb, pinfo, sub_mcpc_tree, ctx, is_server, pinfo->fd->visited);
         } else
-            sub_dissect_je(new_tvb, pinfo, NULL, ctx, is_server,  pinfo->fd->visited);
+            sub_dissect_je(new_tvb, pinfo, NULL, ctx, is_server, pinfo->fd->visited);
     }
 
     return captured_length;
@@ -263,16 +271,20 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             guint8 *old = *write_to;
             *write_to = decrypt = wmem_alloc(wmem_file_scope(), length);
             memcpy(*write_to, old + *old_length - last_decrypt_available, last_decrypt_available);
-            gcry_error_t err = gcry_cipher_decrypt(cipher, *write_to + last_decrypt_available, to_decrypt,
-                                                   tvb_memdup(pinfo->pool, tvb, last_decrypt_available, to_decrypt),
-                                                   to_decrypt);
+            gcry_error_t err = gcry_cipher_decrypt(
+                    cipher, *write_to + last_decrypt_available, to_decrypt,
+                    tvb_memdup(pinfo->pool, tvb, last_decrypt_available, to_decrypt),
+                    to_decrypt
+            );
             if (err != 0) {
                 col_append_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Decryption failed");
                 mark_invalid(pinfo);
                 return (gint) tvb_captured_length(tvb);
             }
-            p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje,
-                             pinfo->curr_layer_num == 6 ? 0xFFFFFFFF : 0xFFFFFFFE, *write_to);
+            p_add_proto_data(
+                    wmem_file_scope(), pinfo, proto_mcje,
+                    pinfo->curr_layer_num == 6 ? 0xFFFFFFFF : 0xFFFFFFFE, *write_to
+            );
             *old_length = length;
         } else {
             if (pinfo->curr_layer_num == 6)
@@ -290,8 +302,10 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     reassemble_offset *reassemble_data = wmem_new(pinfo->pool, reassemble_offset);
     reassemble_data->record_total = 0;
     reassemble_data->record_latest = 0;
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, 0, get_packet_length,
-                     dissect_je_core, reassemble_data);
+    tcp_dissect_pdus(
+            tvb, pinfo, tree, TRUE, 0, get_packet_length,
+            dissect_je_core, reassemble_data
+    );
     if (!is_visited && pinfo->curr_layer_num == 6)
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0xFFFFFFFD, GUINT_TO_POINTER(pinfo->fd->subnum));
     if (!is_visited && is_encrypted) {

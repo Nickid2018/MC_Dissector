@@ -22,9 +22,6 @@ data_recorder create_data_recorder(wmem_allocator_t *allocator) {
     return recorder;
 }
 
-void destroy_data_recorder(data_recorder recorder) {
-}
-
 void record_start(data_recorder recorder, gchar *name) {
     recorder->recording = name;
 }
@@ -39,56 +36,77 @@ void *record(data_recorder recorder, void *data) {
 guint32 record_bool(data_recorder recorder, guint32 data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    data == 0 ? "false" : "true");
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            data == 0 ? "false" : "true"
+    );
     return data;
 }
 
 guint32 record_uint(data_recorder recorder, guint32 data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%u", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%u", data)
+    );
     return data;
 }
 
 guint64 record_uint64(data_recorder recorder, guint64 data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%lu", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%lu", data)
+    );
     return data;
 }
 
 gint32 record_int(data_recorder recorder, gint32 data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%d", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%d", data)
+    );
     return data;
 }
 
 gint64 record_int64(data_recorder recorder, gint64 data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%ld", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%ld", data)
+    );
     return data;
 }
 
 float record_float(data_recorder recorder, float data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%f", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%f", data)
+    );
     return data;
 }
 
 double record_double(data_recorder recorder, double data) {
     if (recorder->recording == NULL)
         return data;
-    wmem_map_insert(recorder->store_map, g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
-                    g_strdup_printf("%lf", data));
+    wmem_map_insert(
+            recorder->store_map,
+            g_strconcat(recorder->recording_path, "/", recorder->recording, NULL),
+            g_strdup_printf("%lf", data)
+    );
     return data;
 }
 
