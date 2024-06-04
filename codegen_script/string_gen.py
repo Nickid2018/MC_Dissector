@@ -54,40 +54,64 @@ mapping_display = {
 
 
 def add_default_fields():
+    hf_defines.append(f'hf_unknown_int8_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_int8_{edition}, " [int8]", "mc{edition}.unknown_int8", INT8, '
+        f'DEC)')
+    hf_defines.append(f'hf_unknown_uint8_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_uint8_{edition}, " [uint8]", "mc{edition}.unknown_uint8", UINT8, '
+        f'DEC)')
+    hf_defines.append(f'hf_unknown_int16_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_int16_{edition}, " [int16]", "mc{edition}.unknown_int16", INT16, '
+        f'DEC)')
+    hf_defines.append(f'hf_unknown_uint16_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_uint16_{edition}, " [uint16]", "mc{edition}.unknown_uint16", UINT16, '
+        f'DEC)')
     hf_defines.append(f'hf_unknown_int_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_int_{edition}, "Unresolved Integer", "mc{edition}.unknown_int", INT32, DEC)')
+        f'\t\tDEFINE_HF(hf_unknown_int_{edition}, " [int32]", "mc{edition}.unknown_int", INT32, DEC)')
     hf_defines.append(f'hf_unknown_uint_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_uint_{edition}, "Unresolved Unsigned Integer", "mc{edition}.unknown_uint", '
+        f'\t\tDEFINE_HF(hf_unknown_uint_{edition}, " [uint32]", "mc{edition}.unknown_uint", '
+        f'UINT32, DEC)')
+    hf_defines.append(f'hf_unknown_varint_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_varint_{edition}, " [var int]", "mc{edition}.unknown_varint", '
         f'UINT32, DEC)')
     hf_defines.append(f'hf_unknown_int64_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_int64_{edition}, "Unresolved Long Integer", "mc{edition}.unknown_int64", '
+        f'\t\tDEFINE_HF(hf_unknown_int64_{edition}, " [int64]", "mc{edition}.unknown_int64", '
         f'INT64, DEC)')
     hf_defines.append(f'hf_unknown_uint64_{edition}')
-    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_uint64_{edition}, "Unresolved Unsigned Long Integer", '
+    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_uint64_{edition}, " [uint64]", '
                     f'"mc{edition}.unknown_uint64", UINT64, DEC)')
+    hf_defines.append(f'hf_unknown_varlong_{edition}')
+    hf_lines.append(
+        f'\t\tDEFINE_HF(hf_unknown_varlong_{edition}, " [var long]", "mc{edition}.unknown_varlong", '
+        f'UINT32, DEC)')
     hf_defines.append(f'hf_unknown_float_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_float_{edition}, "Unresolved Float", "mc{edition}.unknown_float", FLOAT, '
+        f'\t\tDEFINE_HF(hf_unknown_float_{edition}, " [f32]", "mc{edition}.unknown_float", FLOAT, '
         f'DEC)')
     hf_defines.append(f'hf_unknown_double_{edition}')
-    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_double_{edition}, "Unresolved Double", "mc{edition}.unknown_double", '
+    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_double_{edition}, " [f64]", "mc{edition}.unknown_double", '
                     f'DOUBLE, DEC)')
     hf_defines.append(f'hf_unknown_bytes_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_bytes_{edition}, "Unresolved Bytes", "mc{edition}.unknown_bytes", BYTES, '
+        f'\t\tDEFINE_HF(hf_unknown_bytes_{edition}, " [buffer]", "mc{edition}.unknown_bytes", BYTES, '
         f'NONE)')
     hf_defines.append(f'hf_unknown_string_{edition}')
-    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_string_{edition}, "Unresolved String", "mc{edition}.unknown_string", '
+    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_string_{edition}, " [string]", "mc{edition}.unknown_string", '
                     f'STRING, NONE)')
     hf_defines.append(f'hf_unknown_boolean_{edition}')
-    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_boolean_{edition}, "Unresolved Boolean", "mc{edition}.unknown_boolean", '
+    hf_lines.append(f'\t\tDEFINE_HF(hf_unknown_boolean_{edition}, " [boolean]", "mc{edition}.unknown_boolean", '
                     f'BOOLEAN, NONE)')
     hf_defines.append(f'hf_unknown_uuid_{edition}')
     hf_lines.append(
-        f'\t\tDEFINE_HF(hf_unknown_uuid_{edition}, "Unresolved UUID", "mc{edition}.unknown_uuid", GUID, NONE)')
+        f'\t\tDEFINE_HF(hf_unknown_uuid_{edition}, " [UUID]", "mc{edition}.unknown_uuid", GUID, NONE)')
     hf_defines.append(f'hf_array_length_{edition}')
     hf_lines.append(
         f'\t\tDEFINE_HF(hf_array_length_{edition}, "Array Length", "mc{edition}.array_length", UINT32, DEC)')

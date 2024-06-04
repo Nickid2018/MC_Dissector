@@ -19,10 +19,7 @@ typedef struct {
 } extra_data;
 
 struct _protocol_field {
-    bool hf_resolved;
     gchar *name;
-    gchar *display_name;
-    int hf_index;
     wmem_map_t *additional_info;
 
     gint (*make_tree)(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra, protocol_field field,

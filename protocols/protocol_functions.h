@@ -11,10 +11,13 @@
 #define FIELD_MAKE_TREE(name) \
 gint make_tree_##name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra, protocol_field field, gint offset, gint remaining, data_recorder recorder, bool is_je)
 
-#define SINGLE_LENGTH_FIELD_MAKE(name, len, func_add, func_parse, record) \
-    FIELD_MAKE_TREE(name) {                                               \
+#define SINGLE_LENGTH_FIELD_MAKE(id_name, hf, len, func_add, func_parse, record) \
+    FIELD_MAKE_TREE(id_name) {                                            \
         if (tree)                                                         \
-            func_add(tree, field->hf_index, tvb, offset, len, record(recorder, func_parse(tvb, offset))); \
+            proto_item_prepend_text(                                      \
+                func_add(tree, hf, tvb, offset, len, record(recorder, func_parse(tvb, offset))), \
+                field->name                                               \
+            );                                                            \
         else                                                              \
             record(recorder, func_parse(tvb, offset));                    \
         return len;                                                       \

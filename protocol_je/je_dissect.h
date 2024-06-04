@@ -27,6 +27,10 @@ extern int hf_ping_time_je;
 extern int hf_server_status_je;
 extern int hf_legacy_slp_payload;
 
+extern int hf_unknown_int8_je;
+extern int hf_unknown_uint8_je;
+extern int hf_unknown_int16_je;
+extern int hf_unknown_uint16_je;
 extern int hf_unknown_int_je;
 extern int hf_unknown_uint_je;
 extern int hf_unknown_int64_je;
@@ -38,6 +42,8 @@ extern int hf_unknown_string_je;
 extern int hf_unknown_boolean_je;
 extern int hf_unknown_uuid_je;
 extern int hf_array_length_je;
+extern int hf_unknown_varint_je;
+extern int hf_unknown_varlong_je;
 
 extern int ett_mcje;
 extern int ett_je_proto;
