@@ -10,6 +10,9 @@
 #include "je_dissect.h"
 #include "je_protocol.h"
 
+extern int hf_packet_length_je;
+extern int hf_packet_data_length_je;
+
 dissector_handle_t mcje_handle;
 
 void proto_reg_handoff_mcje() {

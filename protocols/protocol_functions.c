@@ -5,9 +5,10 @@
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
 #include <stdlib.h>
-#include "strings_je.h"
 #include "resources.h"
 #include "protocol_functions.h"
+
+extern int hf_generated_je;
 
 typedef struct {
     char *name;
@@ -137,8 +138,11 @@ FIELD_MAKE_TREE(record_entity_id) {
     }
     char *str_type = wmem_map_lookup(entity_id_data, type);
     wmem_map_insert(entity_id_record, id, str_type);
-    if (tree)
-        proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, str_type);
+    if (tree) {
+        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, str_type);
+        proto_item_set_generated(item);
+        proto_item_prepend_text(item, "Entity Type");
+    }
     return 0;
 }
 
@@ -193,10 +197,14 @@ FIELD_MAKE_TREE(sync_entity_data) {
     guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
     guint key_int = strtol(key, NULL, 10);
     char *type = wmem_map_lookup(entity_id_record, id);
-    if (type != NULL)
-        proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, type);
-    else {
-        proto_tree_add_string(tree, get_string_je("entity_type_name", "string"), tvb, 0, 0, "Unknown");
+    if (type != NULL) {
+        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, type);
+        proto_item_set_generated(item);
+        proto_item_prepend_text(item, "Entity Type");
+    } else {
+        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, "Unknown");
+        proto_item_set_generated(item);
+        proto_item_prepend_text(item, "Entity Type");
         return 0;
     }
     char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
@@ -243,7 +251,9 @@ FIELD_MAKE_TREE(sync_entity_data) {
     g_strfreev(split_sync_data);
     if (found_name == NULL)
         found_name = "Unknown Sync Data!";
-    proto_tree_add_string(tree, get_string_je("sync_entity_data", "string"), tvb, 0, 0, found_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_name);
+    proto_item_set_generated(item);
+    proto_item_prepend_text(item, "Sync Data Type");
     return 0;
 }
 
@@ -255,7 +265,9 @@ FIELD_MAKE_TREE(entity_event) {
     gchar *event_name = wmem_map_lookup(entity_event, event_id);
     if (event_name == NULL)
         event_name = "Unknown";
-    proto_tree_add_string(tree, get_string_je("entity_status_name", "string"), tvb, 0, 0, event_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
+    proto_item_set_generated(item);
+    proto_item_prepend_text(item, "Entity Event Type");
     return 0;
 }
 
@@ -278,7 +290,9 @@ FIELD_MAKE_TREE(level_event) {
             entry = wmem_list_frame_next(entry);
         }
     }
-    proto_tree_add_string(tree, get_string_je("level_event_name", "string"), tvb, 0, 0, event_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
+    proto_item_set_generated(item);
+    proto_item_prepend_text(item, "Level Event Type");
     return 0;
 }
 
