@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include "protocol_schema.h"
-#include "protocol_data.h"
+#include "protocol/protocol_data.h"
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
 #include "protocol_functions.h"

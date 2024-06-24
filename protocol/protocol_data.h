@@ -7,7 +7,7 @@
 
 #include <epan/proto.h>
 #include <gcrypt.h>
-#include "protocols/protocols.h"
+#include "protocol/schema/protocols.h"
 
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)

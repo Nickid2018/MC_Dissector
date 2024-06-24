@@ -6,7 +6,7 @@
 #define MC_DISSECTOR_JE_DISSECT_H
 
 #include <epan/packet.h>
-#include "protocol_data.h"
+#include "protocol/protocol_data.h"
 
 extern dissector_handle_t mcje_handle;
 extern gchar *pref_ignore_packets_je;

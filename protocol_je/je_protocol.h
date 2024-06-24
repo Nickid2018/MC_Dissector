@@ -6,7 +6,7 @@
 #define MC_DISSECTOR_JE_PROTOCOL_H
 
 #include <epan/proto.h>
-#include "protocol_data.h"
+#include "protocol/protocol_data.h"
 
 #define PACKET_ID_HANDSHAKE 0x00
 #define PACKET_ID_LEGACY_SERVER_LIST_PING 0xFE

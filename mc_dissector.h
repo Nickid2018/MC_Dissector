@@ -16,6 +16,11 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
+#define DATA_FILE_PATH "mc_dissector"
+#define DATA_FILE_PATH_JE_DATA "mc_dissector/je"
+#define DATA_FILE_PATH_BE_DATA "mc_dissector/be"
+#define DATA_FILE_PATH_PROTOCOL_VERSIONS "mc_dissector/protocol_versions.json"
+
 #define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}},
 
 #if defined(DEBUG)
