@@ -9,9 +9,6 @@
 #include "protocol/protocol_data.h"
 
 extern dissector_handle_t mcje_handle;
-extern gchar *pref_ignore_packets_je;
-extern gchar *pref_secret_key;
-extern gboolean pref_do_nbt_decode;
 
 extern int ett_mcje;
 extern int ett_je_proto;

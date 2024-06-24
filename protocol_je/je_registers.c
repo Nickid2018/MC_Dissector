@@ -7,11 +7,6 @@
 #include "strings_je.h"
 #include "je_protocol.h"
 
-module_t *pref_mcje = NULL;
-gchar *pref_ignore_packets_je = "c:map_chunk";
-gchar *pref_secret_key = "";
-gboolean pref_do_nbt_decode = false;
-
 // ett
 int ett_mcje = -1;
 int ett_je_proto = -1;
@@ -50,23 +45,10 @@ int hf_ping_time_je = -1;
 int hf_server_status_je = -1;
 int hf_legacy_slp_payload = -1;
 
+#define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}},
+
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
-
-    // Preference ------------------------------------------------------------------------------------------------------
-    pref_mcje = prefs_register_protocol(proto_mcje, NULL);
-    prefs_register_string_preference(
-            pref_mcje, "ignore_packets", "Ignore Packets",
-            "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
-    );
-    prefs_register_string_preference(
-            pref_mcje, "secret_key", "Secret Key",
-            "Secret key for decryption", (const char **) &pref_secret_key
-    );
-    prefs_register_bool_preference(
-            pref_mcje, "do_nbt_decode", "NBT Decoding",
-            "Decode NBT data", &pref_do_nbt_decode
-    );
 
     register_string_je();
 

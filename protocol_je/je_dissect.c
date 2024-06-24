@@ -17,7 +17,7 @@ dissector_handle_t mcje_handle;
 
 void proto_reg_handoff_mcje() {
     mcje_handle = create_dissector_handle(dissect_je_conv, proto_mcje);
-    dissector_add_uint_with_preference("tcp.port", MCJE_PORT, mcje_handle);
+    dissector_add_uint_range_with_preference("tcp.port", MCJE_PORT, mcje_handle);
 }
 
 void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_protocol_context *ctx, bool is_server, bool visited) {

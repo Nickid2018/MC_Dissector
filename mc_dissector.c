@@ -17,9 +17,33 @@ WS_DLL_PUBLIC _U_ void plugin_register();
 int proto_mcje = -1;
 int proto_mcbe = -1;
 
+module_t *pref_mcje = NULL;
+gchar *pref_ignore_packets_je = "c:map_chunk";
+gchar *pref_secret_key = "";
+gboolean pref_do_nbt_decode = false;
+
+module_t *pref_mcbe = NULL;
+
 void proto_register() {
     proto_register_mcje();
     proto_register_mcbe();
+
+    // Preference ------------------------------------------------------------------------------------------------------
+    pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, NULL);
+    prefs_register_string_preference(
+            pref_mcje, "ignore_packets", "Ignore Packets",
+            "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
+    );
+    prefs_register_string_preference(
+            pref_mcje, "secret_key", "Secret Key",
+            "Secret key for decryption", (const char **) &pref_secret_key
+    );
+    prefs_register_bool_preference(
+            pref_mcje, "do_nbt_decode", "NBT Decoding",
+            "Decode NBT data", &pref_do_nbt_decode
+    );
+
+    pref_mcbe = prefs_register_protocol_subtree("Minecraft", proto_mcbe, NULL);
 }
 
 void proto_reg_handoff() {
