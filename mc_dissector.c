@@ -14,9 +14,12 @@ WS_DLL_PUBLIC_DEF _U_ const int plugin_want_minor = WIRESHARK_VERSION_MINOR;
 
 WS_DLL_PUBLIC _U_ void plugin_register();
 
+int proto_mc = -1;
 int proto_mcje = -1;
 int proto_mcbe = -1;
 
+module_t *pref_mc = NULL;
+gchar *pref_protocol_data_dir = DATA_FILE_PATH;
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
 gchar *pref_secret_key = "";
@@ -29,6 +32,12 @@ void proto_register() {
     proto_register_mcbe();
 
     // Preference ------------------------------------------------------------------------------------------------------
+    proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
+    pref_mc = prefs_register_protocol(proto_mc, NULL);
+    prefs_register_filename_preference(
+            pref_mc, "protocol_data_dir", "Protocol Data Directory",
+            "Directory for protocol data", (const char **) &pref_protocol_data_dir, false
+    );
     pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, NULL);
     prefs_register_string_preference(
             pref_mcje, "ignore_packets", "Ignore Packets",
