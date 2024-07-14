@@ -169,6 +169,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->client_cipher = NULL;
         ctx->server_last_segment_remaining = 0;
         ctx->client_last_segment_remaining = 0;
+        ctx->server_last_remains = NULL;
+        ctx->client_last_remains = NULL;
         copy_address(&ctx->server_address, &pinfo->dst);
         ctx->extra = wmem_alloc(wmem_file_scope(), sizeof(extra_data));
         ((extra_data *) ctx->extra)->data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -181,7 +183,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
         frame_data->encrypted = ctx->encrypted;
-        frame_data->decrypted_data = NULL;
+        frame_data->decrypted_data_head = NULL;
+        frame_data->decrypted_data_tail = NULL;
         frame_data->compression_threshold = ctx->compression_threshold;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0, frame_data);
     }
@@ -198,10 +201,12 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         return (gint) tvb_captured_length(tvb);
     }
 
+    tvbuff_t *use_tvb = tvb;
     if (frame_data->encrypted) {
-        guint length = tvb_captured_length_remaining(tvb, 0);
+        guint length = tvb_reported_length_remaining(tvb, 0);
         gint length_remaining = is_server ? ctx->server_last_segment_remaining : ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
+        guint8 **decrypt_data = pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gchar *secret_key_str = pref_secret_key;
@@ -220,7 +225,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             gcry_cipher_setiv(*cipher, secret_key, sizeof(secret_key));
         }
 
-        if (!frame_data->decrypted_data) {
+        if (!*decrypt_data) {
             guint8 *decrypt = wmem_alloc(pinfo->pool, length - length_remaining);
             gcry_error_t err = gcry_cipher_decrypt(
                     *cipher, decrypt,
@@ -236,53 +241,70 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             }
 
             guint8 *merged = wmem_alloc(wmem_file_scope(), length);
-            tvb_memcpy(tvb, merged, 0, length_remaining);
+            memcpy(merged, is_server ? ctx->server_last_remains : ctx->client_last_remains, length_remaining);
             memcpy(merged + length_remaining, decrypt, length - length_remaining);
-            frame_data->decrypted_data = merged;
+
+            *decrypt_data = merged;
         }
 
-        tvb = tvb_new_real_data(frame_data->decrypted_data, length, length);
+        use_tvb = tvb_new_real_data(*decrypt_data, length, length);
+        add_new_data_source(pinfo, use_tvb, "Decrypted packet");
     }
 
     gint offset = 0;
     gint packet_count = 0;
-    while (offset < tvb_reported_length(tvb)) {
-        gint available = tvb_reported_length_remaining(tvb, offset);
+    while (offset < tvb_reported_length(use_tvb)) {
+        gint available = tvb_reported_length_remaining(use_tvb, offset);
         gint len = 0;
-        gint packet_len_len = read_var_int_with_limit(tvb, offset, available, &len);
+        gint packet_len_len = read_var_int_with_limit(use_tvb, offset, available, &len);
 
         if (packet_len_len == INVALID_DATA) {
-            col_append_fstr(pinfo->cinfo, COL_INFO, "%d packet(s)", packet_count);
+            col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);
             pinfo->desegment_offset = offset;
             pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-            if (is_server)
-                ctx->server_last_segment_remaining = available;
-            else
-                ctx->client_last_segment_remaining = available;
+            if (!pinfo->fd->visited) {
+                if (is_server) {
+                    ctx->server_last_segment_remaining = available;
+                    ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                } else {
+                    ctx->client_last_segment_remaining = available;
+                    ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                }
+            }
             return offset + available;
         }
 
         if (len + packet_len_len > available) {
-            col_append_fstr(pinfo->cinfo, COL_INFO, "%d packet(s)", packet_count);
+            col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);
             pinfo->desegment_offset = offset;
             pinfo->desegment_len = len + packet_len_len - available;
-            if (is_server)
-                ctx->server_last_segment_remaining = available;
-            else
-                ctx->client_last_segment_remaining = available;
+            if (!pinfo->fd->visited) {
+                if (is_server) {
+                    ctx->server_last_segment_remaining = available;
+                    ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                } else {
+                    ctx->client_last_segment_remaining = available;
+                    ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                }
+            }
             return offset + available;
         }
 
         offset += packet_len_len;
-        dissect_je_core(tvb, pinfo, tree, offset, packet_len_len, len);
+        dissect_je_core(use_tvb, pinfo, tree, offset, packet_len_len, len);
         offset += len;
         packet_count++;
     }
 
-    if (is_server)
-        ctx->server_last_segment_remaining = 0;
-    else
-        ctx->client_last_segment_remaining = 0;
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%d packet(s)", packet_count);
+    if (!pinfo->fd->visited) {
+        if (is_server) {
+            ctx->server_last_segment_remaining = 0;
+            ctx->server_last_remains = NULL;
+        } else {
+            ctx->client_last_segment_remaining = 0;
+            ctx->client_last_remains = NULL;
+        }
+    }
+    col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);
     return (gint) tvb_captured_length(tvb);
 }

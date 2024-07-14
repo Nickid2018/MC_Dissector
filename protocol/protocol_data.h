@@ -34,6 +34,8 @@ typedef struct {
     gcry_cipher_hd_t client_cipher;
     gint server_last_segment_remaining;
     gint client_last_segment_remaining;
+    guint8 *server_last_remains;
+    guint8 *client_last_remains;
 
     void *extra;
 } mcje_protocol_context;
@@ -43,7 +45,8 @@ typedef struct {
     je_state server_state;
 
     bool encrypted;
-    guint8 *decrypted_data;
+    guint8 *decrypted_data_head;
+    guint8 *decrypted_data_tail;
     gint32 compression_threshold;
 } mcje_frame_data;
 
