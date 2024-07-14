@@ -247,7 +247,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             *decrypt_data = merged;
         }
 
-        use_tvb = tvb_new_real_data(*decrypt_data, length, length);
+        use_tvb = tvb_new_real_data(*decrypt_data, length, (gint) length);
         add_new_data_source(pinfo, use_tvb, "Decrypted packet");
     }
 
