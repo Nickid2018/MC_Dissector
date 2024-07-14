@@ -17,32 +17,35 @@ typedef enum {
 } je_state;
 
 typedef struct {
-    guint8 *server_decrypt;
-    guint8 *client_decrypt;
-    gint server_decrypt_length;
-    gint client_decrypt_length;
+    je_state client_state;
+    je_state server_state;
+
+    guint32 server_port;
+    address server_address;
+
+    guint32 protocol_version;
+    guint32 data_version;
+    protocol_je_set protocol_set;
+
+    gint32 compression_threshold;
+    bool encrypted;
 
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
+    gint server_last_segment_remaining;
+    gint client_last_segment_remaining;
 
-    gint server_last_decrypt_available;
-    gint client_last_decrypt_available;
-    gint server_required_length;
-    gint client_required_length;
-} mcje_decryption_context;
+    void *extra;
+} mcje_protocol_context;
 
 typedef struct {
     je_state client_state;
     je_state server_state;
-    guint32 server_port;
-    address server_address;
-    guint32 protocol_version;
-    guint32 data_version;
-    protocol_je_set protocol_set;
+
+    bool encrypted;
+    guint8 *decrypted_data;
     gint32 compression_threshold;
-    void *extra;
-    mcje_decryption_context *decryption_context;
-} mcje_protocol_context;
+} mcje_frame_data;
 
 typedef struct {
     gint record_total;

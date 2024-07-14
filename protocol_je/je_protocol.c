@@ -203,34 +203,8 @@ int handle_server_login_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
         return INVALID_DATA;
     if (packet_id == get_packet_id(ctx->protocol_set->login, "login_acknowledgement", false))
         ctx->server_state = CONFIGURATION;
-    if (packet_id == PACKET_ID_SERVER_ENCRYPTION_BEGIN) {
-        gchar *secret_key_str = pref_secret_key;
-        if (strlen(secret_key_str) != 32) {
-            ctx->client_state = ctx->server_state = INVALID;
-            return INVALID_DATA;
-        }
-        guint8 secret_key[16];
-        for (int i = 0; i < 16; i++) {
-            gchar hex[3] = {secret_key_str[i * 2], secret_key_str[i * 2 + 1], '\0'};
-            secret_key[i] = (guint8) strtol(hex, NULL, 16);
-        }
-        mcje_decryption_context *decryption_context = wmem_new(wmem_file_scope(), mcje_decryption_context);
-        decryption_context->client_last_decrypt_available = 0;
-        decryption_context->server_last_decrypt_available = 0;
-        decryption_context->client_decrypt_length = 0;
-        decryption_context->server_decrypt_length = 0;
-        decryption_context->client_required_length = 0;
-        decryption_context->server_required_length = 0;
-        decryption_context->client_decrypt = wmem_alloc(wmem_file_scope(), 0);
-        decryption_context->server_decrypt = wmem_alloc(wmem_file_scope(), 0);
-        gcry_cipher_open(&decryption_context->server_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-        gcry_cipher_setkey(decryption_context->server_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_setiv(decryption_context->server_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_open(&decryption_context->client_cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-        gcry_cipher_setkey(decryption_context->client_cipher, secret_key, sizeof(secret_key));
-        gcry_cipher_setiv(decryption_context->client_cipher, secret_key, sizeof(secret_key));
-        ctx->decryption_context = decryption_context;
-    }
+    if (packet_id == PACKET_ID_SERVER_ENCRYPTION_BEGIN)
+        ctx->encrypted = true;
     return 0;
 }
 
