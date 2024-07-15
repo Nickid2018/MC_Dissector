@@ -126,6 +126,9 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
     try_compile(
             result "${CMAKE_BINARY_DIR}"
             SOURCES "${PROJECT_SOURCE_DIR}/check_version.c"
+            CMAKE_FLAGS
+                "-DINCLUDE_DIRECTORIES=${WIRESHARK_DIR}"
+                "-DLINK_DIRECTORIES=${WIRESHARK_LIB_FILE_DIR}"
             LINK_LIBRARIES wireshark
             OUTPUT_VARIABLE COMPILE_OUTPUT
     )
