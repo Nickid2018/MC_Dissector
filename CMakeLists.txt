@@ -10,25 +10,26 @@ if (MC_DISSECTOR_FUNCTION_FEATURE)
     add_compile_definitions(MC_DISSECTOR_FUNCTION_FEATURE)
 endif ()
 add_compile_definitions(SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
-if(CMAKE_BUILD_TYPE MATCHES Debug)
+if (CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "Debug mode")
     add_compile_definitions(DEBUG)
 endif ()
 
 add_compile_definitions(WS_BUILD_DLL)
 
-file(GLOB SOURCES "./*.c")
-file(GLOB HEADERS "./*.h")
-file(GLOB PROTOCOL_JE_SOURCES "./protocol_je/*.c")
-file(GLOB PROTOCOL_JE_HEADERS "./protocol_je/*.h")
-file(GLOB PROTOCOL_BE_SOURCES "./protocol_be/*.c")
-file(GLOB PROTOCOL_BE_HEADERS "./protocol_be/*.h")
-file(GLOB_RECURSE PROTOCOL_SOURCES "./protocol/*.c")
-file(GLOB_RECURSE PROTOCOL_HEADERS "./protocol/*.h")
-file(GLOB UTILS_SOURCES "./utils/*.c")
-file(GLOB UTILS_HEADERS "./utils/*.h")
-file(GLOB LIBRARY_CJSON_SOURCES "./cJSON/cJSON*.c")
-file(GLOB LIBRARY_CJSON_HEADERS "./cJSON/cJSON*.h")
+file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.c")
+file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h")
+file(GLOB PROTOCOL_JE_SOURCES "${PROJECT_SOURCE_DIR}/protocol_je/*.c")
+file(GLOB PROTOCOL_JE_HEADERS "${PROJECT_SOURCE_DIR}/protocol_je/*.h")
+file(GLOB PROTOCOL_BE_SOURCES "${PROJECT_SOURCE_DIR}/protocol_be/*.c")
+file(GLOB PROTOCOL_BE_HEADERS "${PROJECT_SOURCE_DIR}/protocol_be/*.h")
+file(GLOB_RECURSE PROTOCOL_SOURCES "${PROJECT_SOURCE_DIR}/protocol/*.c")
+file(GLOB_RECURSE PROTOCOL_HEADERS "${PROJECT_SOURCE_DIR}/protocol/*.h")
+file(GLOB UTILS_SOURCES "${PROJECT_SOURCE_DIR}/utils/*.c")
+file(GLOB UTILS_HEADERS "${PROJECT_SOURCE_DIR}/utils/*.h")
+file(GLOB LIBRARY_CJSON_SOURCES "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.c")
+file(GLOB LIBRARY_CJSON_HEADERS "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.h")
+list(REMOVE_ITEM SOURCES "${PROJECT_SOURCE_DIR}/check_version.c")
 
 set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
 file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
@@ -121,5 +122,21 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
 
-set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
+try_compile(
+        result "${CMAKE_BINARY_DIR}"
+        SOURCES "${PROJECT_SOURCE_DIR}/check_version.c"
+        LINK_LIBRARIES PkgConfig::wireshark
+        LINK_LIBRARIES wireshark
+        OUTPUT_VARIABLE COMPILE_OUTPUT
+)
+string(REGEX MATCHALL ": [0-9]+" VERSION_SHORT_LIST "${COMPILE_OUTPUT}")
+foreach (VERSION_SHORT ${VERSION_SHORT_LIST})
+    string(SUBSTRING ${VERSION_SHORT} 2 -1 VERSION_SHORT)
+    list(APPEND VERSION_LIST ${VERSION_SHORT})
+endforeach ()
+list(GET VERSION_LIST 0 wireshark_VERSION_MAJOR)
+list(GET VERSION_LIST 1 wireshark_VERSION_MINOR)
+message(STATUS "WireShark version: ${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}")
 
+set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
+install(TARGETS MC_Dissector LIBRARY DESTINATION "plugins/${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}/epan" NAMELINK_SKIP)
