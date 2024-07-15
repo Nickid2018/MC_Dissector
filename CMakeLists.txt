@@ -144,6 +144,7 @@ foreach (VERSION_SHORT ${VERSION_SHORT_LIST})
 endforeach ()
 list(GET VERSION_LIST 0 wireshark_VERSION_MAJOR)
 list(GET VERSION_LIST 1 wireshark_VERSION_MINOR)
+message(STATUS "Try compile: ${COMPILE_OUTPUT}")
 message(STATUS "WireShark version: ${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}")
 
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
