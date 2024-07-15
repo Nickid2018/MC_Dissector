@@ -122,13 +122,21 @@ add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
         ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
         ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
 
-try_compile(
-        result "${CMAKE_BINARY_DIR}"
-        SOURCES "${PROJECT_SOURCE_DIR}/check_version.c"
-        LINK_LIBRARIES PkgConfig::wireshark
-        LINK_LIBRARIES wireshark
-        OUTPUT_VARIABLE COMPILE_OUTPUT
-)
+if (DEFINED ENV{WIRESHARK_LIB_DIR})
+    try_compile(
+            result "${CMAKE_BINARY_DIR}"
+            SOURCES "${PROJECT_SOURCE_DIR}/check_version.c"
+            LINK_LIBRARIES wireshark
+            OUTPUT_VARIABLE COMPILE_OUTPUT
+    )
+else ()
+    try_compile(
+            result "${CMAKE_BINARY_DIR}"
+            SOURCES "${PROJECT_SOURCE_DIR}/check_version.c"
+            LINK_LIBRARIES PkgConfig::wireshark
+            OUTPUT_VARIABLE COMPILE_OUTPUT
+    )
+endif ()
 string(REGEX MATCHALL ": [0-9]+" VERSION_SHORT_LIST "${COMPILE_OUTPUT}")
 foreach (VERSION_SHORT ${VERSION_SHORT_LIST})
     string(SUBSTRING ${VERSION_SHORT} 2 -1 VERSION_SHORT)
