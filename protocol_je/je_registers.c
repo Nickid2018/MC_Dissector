@@ -4,7 +4,6 @@
 
 #include <epan/packet.h>
 #include "mc_dissector.h"
-#include "strings_je.h"
 #include "je_protocol.h"
 
 // ett
@@ -49,8 +48,6 @@ int hf_legacy_slp_payload = -1;
 
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
-
-    register_string_je();
 
     static hf_register_info hf_je[] = {
             DEFINE_HF(hf_int8_je, " [int8]", "mcje.int8", INT8, DEC)

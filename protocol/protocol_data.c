@@ -30,7 +30,6 @@ gint read_var_int_with_limit(tvbuff_t *tvb, gint offset, gint max_length, gint *
         *result |= (read & 0x7F) << (7 * p++);
     } while ((read & 0x80) != 0);
     return p;
-
 }
 
 gint read_var_long(tvbuff_t *tvb, gint offset, gint64 *result) {

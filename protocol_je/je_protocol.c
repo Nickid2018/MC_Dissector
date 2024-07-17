@@ -7,7 +7,6 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
-#include "strings_je.h"
 
 extern int hf_invalid_data_je;
 extern int hf_ignored_packet_je;
@@ -232,24 +231,20 @@ void handle(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mcje_pro
         proto_tree_add_string(packet_tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set");
         return;
     }
+
     protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, is_client);
     proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
     if (protocol == NULL) {
         proto_tree_add_string(packet_tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
+
     gchar *packet_name = get_packet_name(protocol);
-    gchar *better_name = wmem_map_lookup(
-            is_client ? protocol_name_map_client_je : protocol_name_map_server_je,
-            packet_name
+    gchar *better_name = get_readable_packet_name(is_client, packet_name);
+    proto_tree_add_string_format_value(
+            packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
+            "%s (%s)", better_name, packet_name
     );
-    if (better_name == NULL)
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, packet_name);
-    else
-        proto_tree_add_string_format_value(
-                packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
-                "%s (%s)", better_name, packet_name
-        );
 
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {

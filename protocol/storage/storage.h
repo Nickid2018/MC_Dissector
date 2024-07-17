@@ -5,7 +5,6 @@
 #ifndef MC_DISSECTOR_STORAGE_H
 #define MC_DISSECTOR_STORAGE_H
 
-#include <glib.h>
 #include "protocol/schema/protocol_schema.h"
 
 typedef struct _protocol_je_set {
@@ -19,6 +18,8 @@ void clear_storage();
 gchar **get_mapped_java_versions(guint protocol_version);
 
 gint get_data_version(gchar *java_version);
+
+gchar *get_readable_packet_name(bool to_client, gchar *packet_name);
 
 protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings);
 

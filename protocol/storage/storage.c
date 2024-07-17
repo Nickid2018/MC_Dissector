@@ -6,10 +6,8 @@
 
 extern gchar *pref_protocol_data_dir;
 
-cJSON *cached_versions = NULL;
-cJSON *cached_protocol_data_mapping = NULL;
-
 #define JSON_CACHED(name, path) \
+cJSON* cached_##name = NULL; \
 void ensure_cached_##name() { \
     if (cached_##name == NULL) { \
         gchar *file = g_build_filename(pref_protocol_data_dir, path, NULL); \
@@ -25,12 +23,12 @@ void ensure_cached_##name() { \
 }
 
 #define DATA_CACHED_UINT(name) \
-wmem_map_t *cached_##name; \
+wmem_map_t *cached_##name = NULL; \
 void *get_cached_##name(guint version) { \
     if (cached_##name == NULL) \
         return NULL; \
     return wmem_map_lookup(cached_##name, GUINT_TO_POINTER(version)); \
-}                    \
+} \
 void set_cached_##name(guint version, void *value) { \
     if (cached_##name == NULL) \
         cached_##name = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal); \
@@ -43,7 +41,7 @@ void *get_cached_##name(gchar *java_version) { \
     if (cached_##name == NULL) \
         return NULL; \
     return wmem_map_lookup(cached_##name, java_version); \
-}                    \
+} \
 void set_cached_##name(gchar *java_version, void *value) { \
     if (cached_##name == NULL) \
         cached_##name = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal); \
@@ -66,11 +64,14 @@ JSON_CACHED(versions, "java_edition/versions.json")
 
 JSON_CACHED(protocol_data_mapping, "java_edition/protocol_mapping.json")
 
+JSON_CACHED(packet_names, "java_edition/packet_names.json")
+
 DATA_CACHED_UINT(protocol)
 
 void clear_storage() {
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(protocol_data_mapping)
+    CLEAR_CACHED_JSON(packet_names)
     CLEAR_CACHED_DATA(protocol)
 }
 
@@ -105,6 +106,17 @@ gint get_data_version(gchar *java_version) {
     return -1;
 }
 
+gchar *get_readable_packet_name(bool to_client, gchar *packet_name) {
+    ensure_cached_packet_names();
+    cJSON *found = cJSON_GetObjectItem(
+            cJSON_GetObjectItem(cached_packet_names, to_client ? "toClient" : "toServer"),
+            packet_name
+    );
+    if (found == NULL)
+        return packet_name;
+    return found->valuestring;
+}
+
 protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings) {
     ensure_cached_protocol_data_mapping();
     protocol_je_set cached = get_cached_protocol(protocol_version);
@@ -117,7 +129,8 @@ protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings se
     if (found == NULL)
         return NULL;
 
-    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/protocols", found->valuestring, "protocol.json", NULL);
+    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/protocols", found->valuestring,
+                                   "protocol.json", NULL);
     gchar *content = NULL;
     if (!g_file_get_contents(file, &content, NULL, NULL)) {
         ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
