@@ -100,8 +100,6 @@ endmacro(invoke_py)
 invoke_py("Generate Java String Data"
         "${PROJECT_SOURCE_DIR}/codegen_script/string_gen.py" "${PROJECT_SOURCE_DIR}/strings/strings_je.json"
         "${GEN_RESOURCE_DIR}/strings_je.c" "${GEN_RESOURCE_DIR}/strings_je.h" "je")
-invoke_py("Generate Protocol Data"
-        "${PROJECT_SOURCE_DIR}/codegen_script/protocol_data_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data" "${GEN_RESOURCE_DIR}")
 invoke_py("Generate Entity ID Data"
         "${PROJECT_SOURCE_DIR}/codegen_script/entity_id_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data/java"
         "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources")

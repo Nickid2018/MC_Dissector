@@ -24,11 +24,8 @@ body:
       label: Minecraft Dissector Version
       description: What version of the Minecraft dissector are you using?
       options:
-        - 1.0.0-beta.1
-        - 1.0.0-beta.2
-        - 1.0.0-beta.3
-        - 1.0.0-beta.4
-        - 1.0.0-beta.5
+        - 1.0.0
+        - 1.1.0
   - type: input
     id: os
     attributes:

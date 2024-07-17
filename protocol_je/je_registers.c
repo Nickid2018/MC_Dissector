@@ -88,6 +88,4 @@ void proto_register_mcje() {
 
     static gint *ett_je[] = {&ett_mcje, &ett_je_proto, &ett_sub_je};
     proto_register_subtree_array(ett_je, array_length(ett_je));
-
-    init_je();
 }

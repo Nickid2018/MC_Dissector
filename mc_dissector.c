@@ -2,6 +2,7 @@
 // Created by Nickid2018 on 2023/7/12.
 //
 #include <ws_version.h>
+#include <wsutil/filesystem.h>
 
 #include "mc_dissector.h"
 #include "protocol/protocol_data.h"
@@ -19,7 +20,7 @@ int proto_mcje = -1;
 int proto_mcbe = -1;
 
 module_t *pref_mc = NULL;
-gchar *pref_protocol_data_dir = DATA_FILE_PATH;
+gchar *pref_protocol_data_dir;
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
 gchar *pref_secret_key = "";
@@ -31,12 +32,14 @@ void proto_register() {
     proto_register_mcje();
     proto_register_mcbe();
 
+    pref_protocol_data_dir = get_datafile_path("minecraft-protocol");
+
     // Preference ------------------------------------------------------------------------------------------------------
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
     pref_mc = prefs_register_protocol(proto_mc, NULL);
-    prefs_register_filename_preference(
+    prefs_register_directory_preference(
             pref_mc, "protocol_data_dir", "Protocol Data Directory",
-            "Directory for protocol data", (const char **) &pref_protocol_data_dir, false
+            "Directory for protocol data", (const char **) &pref_protocol_data_dir
     );
     pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, NULL);
     prefs_register_string_preference(

@@ -7,7 +7,7 @@
 
 #include <epan/proto.h>
 #include <gcrypt.h>
-#include "protocol/schema/protocols.h"
+#include "storage/storage.h"
 
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)
@@ -49,11 +49,6 @@ typedef struct {
     guint8 *decrypted_data_tail;
     gint32 compression_threshold;
 } mcje_frame_data;
-
-typedef struct {
-    gint record_total;
-    gint record_latest;
-} reassemble_offset;
 
 extern char *STATE_NAME[];
 

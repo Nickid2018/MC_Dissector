@@ -246,7 +246,7 @@ FIELD_MAKE_TREE(container) {
     gint total_length = 0;
     for (guint i = 1; i <= length; i++) {
         protocol_field sub_field = wmem_map_lookup(field->additional_info, GUINT_TO_POINTER(i));
-        if (strcmp(sub_field->name, "[unnamed]") == 0 && not_top) {
+        if (g_strcmp0(sub_field->name, "[unnamed]") == 0 && not_top) {
             record_pop(recorder);
             record_start(recorder, now_record);
             sub_field->make_tree(NULL, pinfo, tvb, extra, sub_field, offset, remaining, recorder, is_je);
@@ -573,7 +573,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             field->additional_info = NULL;
             field->make_tree = make_tree_func;
 
-            if (settings.nbt_any_type && strcmp(type, "nbt") == 0)
+            if (settings.nbt_any_type && g_strcmp0(type, "nbt") == 0)
                 field->make_tree = make_tree_nbt_any_type;
 
             return field;
@@ -596,14 +596,14 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
     field->make_tree = NULL;
     field->name = "[unnamed]";
 
-    if (strcmp(type, "function") == 0) {
+    if (g_strcmp0(type, "function") == 0) {
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
         field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
 #else
         field->make_tree = make_tree_void;
 #endif // MC_DISSECTOR_FUNCTION_FEATURE
         return field;
-    } else if (strcmp(type, "container") == 0) { // container
+    } else if (g_strcmp0(type, "container") == 0) { // container
         field->make_tree = make_tree_container;
         int size = cJSON_GetArraySize(fields);
         wmem_map_insert(field->additional_info, 0, GINT_TO_POINTER(size));
@@ -622,7 +622,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         if (on_top)
             wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), GINT_TO_POINTER(1));
         return field;
-    } else if (strcmp(type, "option") == 0) { // option
+    } else if (g_strcmp0(type, "option") == 0) { // option
         field->make_tree = make_tree_option;
         protocol_field sub_field = parse_protocol(
                 basic_types, fields, types, is_je, false, settings
@@ -631,7 +631,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             return NULL;
         wmem_map_insert(field->additional_info, 0, sub_field);
         return field;
-    } else if (strcmp(type, "buffer") == 0) { // buffer
+    } else if (g_strcmp0(type, "buffer") == 0) { // buffer
         if (cJSON_HasObjectItem(fields, "count")) {
             field->make_tree = make_tree_buffer;
             cJSON *count = cJSON_GetObjectItem(fields, "count");
@@ -639,7 +639,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         } else
             field->make_tree = make_tree_var_buffer;
         return field;
-    } else if (strcmp(type, "mapper") == 0) { // mapper
+    } else if (g_strcmp0(type, "mapper") == 0) { // mapper
         field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(
@@ -658,7 +658,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             now = now->next;
         }
         return field;
-    } else if (strcmp(type, "array") == 0) { // array
+    } else if (g_strcmp0(type, "array") == 0) { // array
         cJSON *count = cJSON_GetObjectItem(fields, "count");
         if (count != NULL)
             wmem_map_insert(
@@ -667,7 +667,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             );
         else {
             cJSON *count_type = cJSON_GetObjectItem(fields, "countType");
-            if (count_type == NULL || strcmp(count_type->valuestring, "varint") != 0)
+            if (count_type == NULL || g_strcmp0(count_type->valuestring, "varint") != 0)
                 return NULL;
         }
 
@@ -680,7 +680,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         field->make_tree = make_tree_array;
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(1), sub_field);
         return field;
-    } else if (strcmp(type, "bitfield") == 0) {
+    } else if (g_strcmp0(type, "bitfield") == 0) {
         int size = cJSON_GetArraySize(fields);
         wmem_map_insert(field->additional_info, GINT_TO_POINTER(-1), GINT_TO_POINTER(size));
         int total_bits = 0;
@@ -696,7 +696,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         }
         field->make_tree = make_tree_bitfield;
         return field;
-    } else if (strcmp(type, "topBitSetTerminatedArray") == 0) {
+    } else if (g_strcmp0(type, "topBitSetTerminatedArray") == 0) {
         protocol_field sub_field = parse_protocol(
                 basic_types, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
         );
@@ -705,7 +705,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         wmem_map_insert(field->additional_info, 0, sub_field);
         field->make_tree = make_tree_top_bit_set_terminated_array;
         return field;
-    } else if (strcmp(type, "switch") == 0) {
+    } else if (g_strcmp0(type, "switch") == 0) {
         char *compare_data = cJSON_GetObjectItem(fields, "compareTo")->valuestring;
         char **compare_data_split = g_strsplit(strdup(compare_data), "/", 10);
         field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
@@ -735,7 +735,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         }
         field->make_tree = make_tree_switch;
         return field;
-    } else if (strcmp(type, "entityMetadataLoop") == 0) {
+    } else if (g_strcmp0(type, "entityMetadataLoop") == 0) {
         protocol_field sub_field = parse_protocol(
                 basic_types, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
         );

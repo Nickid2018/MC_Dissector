@@ -44,19 +44,19 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
             return INVALID_DATA;
         if (next_state < 1 || next_state > 3)
             return INVALID_DATA;
-        gchar *unchecked_java_version = get_java_version_name_unchecked(protocol_version);
-        ctx->data_version = get_java_data_version(unchecked_java_version);
-        if (ctx->data_version == -1)
+
+        gchar **java_versions = get_mapped_java_versions(protocol_version);
+        if (java_versions[0] == NULL)
             return INVALID_DATA;
-        guint nearest_data_version = find_nearest_java_protocol(ctx->data_version);
-        gchar *nearest_java_version = get_java_version_name_by_data_version(nearest_data_version);
+        ctx->data_version = get_data_version(java_versions[0]);
         ctx->client_state = ctx->server_state = next_state + 1;
-        ctx->protocol_set = get_protocol_je_set(nearest_java_version);
+        ctx->protocol_set = get_protocol_set_je(protocol_version, (protocol_settings) {
+                ctx->data_version >= 3567
+        });
+
         ctx->protocol_version = protocol_version;
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
         wmem_map_insert(((extra_data *) ctx->extra)->data, "protocol_version", GUINT_TO_POINTER(protocol_version));
         wmem_map_insert(((extra_data *) ctx->extra)->data, "data_version", GUINT_TO_POINTER(ctx->data_version));
-#endif // MC_DISSECTOR_FUNCTION_FEATURE
         return 0;
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING)
         return 0;
@@ -84,9 +84,20 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
             proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
             return;
         }
-        proto_tree_add_string_format_value(
-                packet_tree, hf_protocol_version_je, tvb, p, read, "",
-                "%d (%s)", protocol_version, get_java_version_name(protocol_version));
+        gchar **java_versions = get_mapped_java_versions(protocol_version);
+        if (java_versions[0] == NULL) {
+            proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, read, "Unknown Protocol Version");
+        } else {
+            gchar *java_version = java_versions[0];
+            int index = 1;
+            while (java_versions[index] != NULL)
+                java_version = g_strconcat(java_version, ", ", java_versions[index++], NULL);
+            g_strfreev(java_versions);
+            proto_tree_add_string_format_value(
+                    packet_tree, hf_protocol_version_je, tvb, p, read, "",
+                    "%d (%s)", protocol_version, java_version
+            );
+        }
         p += read;
 
         guint8 *server_address;
