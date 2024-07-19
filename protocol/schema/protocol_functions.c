@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "resources.h"
 #include "protocol_functions.h"
+#include "protocol/storage/storage.h"
 
 extern int hf_generated_je;
 
@@ -16,36 +17,9 @@ typedef struct {
     long max_version;
 } level_event_entry;
 
-wmem_map_t *entity_hierarchy;
 wmem_map_t *entity_ids;
 wmem_map_t *entity_event;
 wmem_map_t *level_event;
-
-void init_entity_hierarchy() {
-    entity_hierarchy = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    char **split = g_strsplit(RESOURCE_ENTITY_INHERIT_TREE, "\n", 1000);
-    wmem_list_t *path_array = wmem_list_new(wmem_epan_scope());
-    char *path = "";
-    for (int i = 0; split[i] != NULL; i++) {
-        char *now = split[i];
-        wmem_list_frame_t *tail = wmem_list_tail(path_array);
-        guint last_index;
-        if (tail != NULL)
-            last_index = GPOINTER_TO_UINT(wmem_list_frame_data(tail));
-        else
-            last_index = 0;
-        if (strcmp(now, "-") == 0)
-            wmem_list_remove_frame(path_array, tail);
-        else if (strcmp(now, "+") == 0)
-            wmem_list_append(path_array, GUINT_TO_POINTER(strlen(path)));
-        else {
-            path = g_strconcat(g_strndup(path, last_index), "/", now, NULL);
-            wmem_map_insert(entity_hierarchy, g_strdup(now), g_strdup(path + 1));
-        }
-    }
-    wmem_destroy_list(path_array);
-    g_strfreev(split);
-}
 
 wmem_map_t *init_entity_ids(guint data_version) {
     char **lines = g_strsplit(RESOURCE_ENTITY_ID, "\n", 1000);
@@ -116,7 +90,6 @@ void init_events() {
 }
 
 void init_protocol_functions() {
-    init_entity_hierarchy();
     init_events();
     entity_ids = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
 }
@@ -194,7 +167,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
     gchar *id = record_query(recorder, id_path);
     char *key_path[] = {"key", NULL};
     gchar *key = record_query(recorder, key_path);
-    guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
+    guint protocol_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "protocol_version"));
     guint key_int = strtol(key, NULL, 10);
     char *type = wmem_map_lookup(entity_id_record, id);
     if (type != NULL) {
@@ -207,48 +180,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
         proto_item_prepend_text(item, "Entity Type");
         return 0;
     }
-    char *hierarchy = wmem_map_lookup(entity_hierarchy, type);
-    if (hierarchy == NULL)
-        hierarchy = "";
-    char **split = g_strsplit(hierarchy, "/", 1000);
-    char **split_sync_data = g_strsplit(RESOURCE_SYNC_ENTITY_DATA, "\n", 1000);
-    char *found_name = NULL;
-    for (int now = 0; split[now] != NULL && found_name == NULL; now++) {
-        char *now_type = split[now];
-        for (int i = 0; split_sync_data[i * 2] != NULL && found_name == NULL; i++) {
-            if (strcmp(now_type, split_sync_data[i * 2]) == 0) {
-                char *sync_data = split_sync_data[i * 2 + 1];
-                char **split_sync_data_now = g_strsplit(sync_data, ",", 1000);
-                for (int j = 0; split_sync_data_now[j] != NULL; j++) {
-                    char *entry = split_sync_data_now[j];
-                    char **split_entry = g_strsplit(entry, " ", 10);
-                    bool flag = true;
-                    for (int flag_index = 1; split_entry[flag_index] != NULL; flag_index++) {
-                        long flag_now = strtol(split_entry[flag_index], NULL, 10);
-                        if (flag_now > 0) {
-                            if (flag_now > data_version)
-                                flag = false;
-                        } else {
-                            if (-flag_now < data_version)
-                                flag = false;
-                        }
-                    }
-                    if (flag) {
-                        if (key_int == 0) {
-                            found_name = g_strdup(split_entry[0]);
-                            g_strfreev(split_entry);
-                            break;
-                        } else
-                            key_int--;
-                    }
-                    g_strfreev(split_entry);
-                }
-                g_strfreev(split_sync_data_now);
-            }
-        }
-    }
-    g_strfreev(split);
-    g_strfreev(split_sync_data);
+    gchar *found_name = get_entity_sync_data_name(protocol_version, type, key_int);
     if (found_name == NULL)
         found_name = "Unknown Sync Data!";
     proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_name);

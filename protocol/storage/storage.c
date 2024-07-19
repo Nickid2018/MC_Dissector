@@ -64,15 +64,21 @@ JSON_CACHED(versions, "java_edition/versions.json")
 
 JSON_CACHED(protocol_data_mapping, "java_edition/protocol_mapping.json")
 
+JSON_CACHED(entity_sync_data_mapping, "java_edition/entity_sync_data_mapping.json")
+
 JSON_CACHED(packet_names, "java_edition/packet_names.json")
 
 DATA_CACHED_UINT(protocol)
 
+DATA_CACHED_UINT(entity_sync_data)
+
 void clear_storage() {
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(protocol_data_mapping)
+    CLEAR_CACHED_JSON(entity_sync_data_mapping)
     CLEAR_CACHED_JSON(packet_names)
     CLEAR_CACHED_DATA(protocol)
+    CLEAR_CACHED_DATA(entity_sync_data)
 }
 
 gchar **get_mapped_java_versions(guint protocol_version) {
@@ -118,18 +124,18 @@ gchar *get_readable_packet_name(bool to_client, gchar *packet_name) {
 }
 
 protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings) {
-    ensure_cached_protocol_data_mapping();
     protocol_je_set cached = get_cached_protocol(protocol_version);
     if (cached != NULL)
         return cached;
 
+    ensure_cached_protocol_data_mapping();
     gchar *find_key = g_strdup_printf("%d", protocol_version);
     cJSON *found = cJSON_GetObjectItem(cached_protocol_data_mapping, find_key);
     g_free(find_key);
     if (found == NULL)
         return NULL;
 
-    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/protocols", found->valuestring,
+    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexed_data", found->valuestring,
                                    "protocol.json", NULL);
     gchar *content = NULL;
     if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -159,4 +165,34 @@ protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings se
     cJSON_Delete(json);
     set_cached_protocol(protocol_version, result);
     return result;
+}
+
+gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index) {
+    cJSON *cached = get_cached_entity_sync_data(protocol_version);
+    if (cached == NULL) {
+        ensure_cached_entity_sync_data_mapping();
+        gchar *find_key = g_strdup_printf("%d", protocol_version);
+        cJSON *found = cJSON_GetObjectItem(cached_entity_sync_data_mapping, find_key);
+        g_free(find_key);
+        if (found == NULL)
+            return NULL;
+
+        gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexed_data", found->valuestring,
+                                       "entity_sync_data.json", NULL);
+        gchar *content = NULL;
+        if (!g_file_get_contents(file, &content, NULL, NULL)) {
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+            g_free(file);
+            return NULL;
+        }
+
+        cached = cJSON_Parse(content);
+        g_free(content);
+        set_cached_entity_sync_data(protocol_version, cached);
+    }
+
+    cJSON *data = cJSON_GetArrayItem(cJSON_GetObjectItem(cached, entity_id), (int) index);
+    if (data == NULL)
+        return NULL;
+    return data->valuestring;
 }

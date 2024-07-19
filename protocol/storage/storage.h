@@ -23,4 +23,6 @@ gchar *get_readable_packet_name(bool to_client, gchar *packet_name);
 
 protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings);
 
+gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index);
+
 #endif //MC_DISSECTOR_STORAGE_H
