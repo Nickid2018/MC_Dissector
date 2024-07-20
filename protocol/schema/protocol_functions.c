@@ -4,62 +4,10 @@
 
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
-#include <stdlib.h>
-#include "resources.h"
 #include "protocol_functions.h"
 #include "protocol/storage/storage.h"
 
 extern int hf_generated_je;
-
-typedef struct {
-    char *name;
-    long min_version;
-    long max_version;
-} level_event_entry;
-
-wmem_map_t *entity_event;
-wmem_map_t *level_event;
-
-void init_events() {
-    entity_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    level_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    char **split = g_strsplit(RESOURCE_ENTITY_EVENT, "\n", 256);
-    for (int i = 0; split[i] != NULL; i++) {
-        char *now = split[i];
-        wmem_map_insert(entity_event, g_strdup_printf("%d", i + 1), g_strdup(now));
-    }
-    g_strfreev(split);
-    split = g_strsplit(RESOURCE_LEVEL_EVENT, "\n", 1000);
-    for (int i = 0; split[i] != NULL; i++) {
-        char *now = split[i];
-        char **split_now = g_strsplit(now, " ", 2);
-        char **versions = g_strsplit(split_now[0], "|", 3);
-        char *event = versions[0];
-        long min_version = 0, max_version = 0x7fffffff;
-        if (versions[1] != NULL) {
-            min_version = strtol(versions[1], NULL, 10);
-            if (versions[2] != NULL)
-                max_version = strtol(versions[2], NULL, 10);
-        }
-        wmem_list_t *event_data = wmem_map_lookup(level_event, event);
-        if (event_data == NULL) {
-            event_data = wmem_list_new(wmem_epan_scope());
-            wmem_map_insert(level_event, g_strdup(event), event_data);
-        }
-        level_event_entry *entry = wmem_new(wmem_epan_scope(), level_event_entry);
-        entry->name = g_strdup(split_now[1]);
-        entry->min_version = min_version;
-        entry->max_version = max_version;
-        wmem_list_append(event_data, entry);
-        g_strfreev(split_now);
-        g_strfreev(versions);
-    }
-    g_strfreev(split);
-}
-
-void init_protocol_functions() {
-    init_events();
-}
 
 FIELD_MAKE_TREE(record_entity_id) {
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
@@ -158,7 +106,10 @@ FIELD_MAKE_TREE(entity_event) {
         return 0;
     char *event_id_path[] = {"entityStatus", NULL};
     gchar *event_id = record_query(recorder, event_id_path);
-    gchar *event_name = wmem_map_lookup(entity_event, event_id);
+    gchar *event_name = get_entity_event_data(
+            GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "protocol_version")),
+            event_id
+    );
     if (event_name == NULL)
         event_name = "Unknown";
     proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
@@ -172,20 +123,12 @@ FIELD_MAKE_TREE(level_event) {
         return 0;
     char *event_id_path[] = {"effectId", NULL};
     gchar *event_id = record_query(recorder, event_id_path);
-    wmem_list_t *event_data = wmem_map_lookup(level_event, event_id);
-    char *event_name = "Unknown";
-    if (event_data != NULL) {
-        guint data_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version"));
-        wmem_list_frame_t *entry = wmem_list_head(event_data);
-        while (entry != NULL) {
-            level_event_entry *entry_data = wmem_list_frame_data(entry);
-            if (entry_data->min_version <= data_version && data_version <= entry_data->max_version) {
-                event_name = entry_data->name;
-                break;
-            }
-            entry = wmem_list_frame_next(entry);
-        }
-    }
+    gchar *event_name = get_level_event_data(
+            GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "protocol_version")),
+            event_id
+    );
+    if (event_name == NULL)
+        event_name = "Unknown";
     proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Level Event Type");

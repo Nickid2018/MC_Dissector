@@ -25,8 +25,6 @@ gint make_tree_##name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra
 
 #ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
-void init_protocol_functions();
-
 FIELD_MAKE_TREE(record_entity_id);
 
 FIELD_MAKE_TREE(record_entity_id_player);

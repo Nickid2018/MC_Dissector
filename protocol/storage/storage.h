@@ -27,4 +27,8 @@ gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint
 
 gchar *get_registry_data(guint protocol_version, gchar *registry, guint index);
 
+gchar *get_level_event_data(guint protocol_version, gchar *index);
+
+gchar *get_entity_event_data(guint protocol_version, gchar *index);
+
 #endif //MC_DISSECTOR_STORAGE_H

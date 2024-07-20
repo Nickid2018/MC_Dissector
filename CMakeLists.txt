@@ -31,10 +31,6 @@ file(GLOB LIBRARY_CJSON_SOURCES "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.c")
 file(GLOB LIBRARY_CJSON_HEADERS "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.h")
 list(REMOVE_ITEM SOURCES "${PROJECT_SOURCE_DIR}/check_version.c")
 
-set(GEN_RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
-file(MAKE_DIRECTORY ${GEN_RESOURCE_DIR})
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources")
-
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
 set(WIRESHARK_BUILD_DIR $ENV{WIRESHARK_BUILD_DIR})
 set(WIRESHARK_LIB_DIR $ENV{WIRESHARK_LIB_DIR})
@@ -83,23 +79,6 @@ else ()
     pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET libgcrypt)
     link_libraries(PkgConfig::gcrypt)
 endif ()
-
-macro(invoke_py message)
-    execute_process(COMMAND python3 ${ARGN} ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
-    if (NOT GEN_RESULT EQUAL 0)
-        message(STATUS "python3 not found or run failed, trying python")
-        execute_process(COMMAND python ${ARGN} ERROR_VARIABLE GEN_ERROR OUTPUT_VARIABLE GEN_OUTPUT RESULT_VARIABLE GEN_RESULT)
-    endif ()
-    if (NOT GEN_RESULT EQUAL 0)
-        message(FATAL_ERROR "Failed to ${message}:\n${GEN_OUTPUT}\n${GEN_ERROR}")
-    else ()
-        message(STATUS "${message}:\n${GEN_OUTPUT}")
-    endif ()
-endmacro(invoke_py)
-
-invoke_py("Generate Resources"
-        "${PROJECT_SOURCE_DIR}/codegen_script/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources"
-        "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources" "${GEN_RESOURCE_DIR}")
 
 file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
 file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")

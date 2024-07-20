@@ -66,11 +66,19 @@ JSON_CACHED(protocol_data_mapping, "java_edition/protocol_mapping.json")
 
 JSON_CACHED(entity_sync_data_mapping, "java_edition/entity_sync_data_mapping.json")
 
+JSON_CACHED(level_event_data_mapping, "java_edition/level_event_mapping.json")
+
+JSON_CACHED(entity_event_data_mapping, "java_edition/entity_event_mapping.json")
+
 JSON_CACHED(packet_names, "java_edition/packet_names.json")
 
 DATA_CACHED_UINT(protocol)
 
 DATA_CACHED_UINT(entity_sync_data)
+
+DATA_CACHED_UINT(level_event)
+
+DATA_CACHED_UINT(entity_event)
 
 DATA_CACHED_STR(registry_data_mapping)
 
@@ -80,9 +88,13 @@ void clear_storage() {
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(protocol_data_mapping)
     CLEAR_CACHED_JSON(entity_sync_data_mapping)
+    CLEAR_CACHED_JSON(level_event_data_mapping)
+    CLEAR_CACHED_JSON(entity_event_data_mapping)
     CLEAR_CACHED_JSON(packet_names)
     CLEAR_CACHED_DATA(protocol)
     CLEAR_CACHED_DATA(entity_sync_data)
+    CLEAR_CACHED_DATA(level_event)
+    CLEAR_CACHED_DATA(entity_event)
     CLEAR_CACHED_DATA(registry_data_mapping)
     CLEAR_CACHED_DATA(registry_data)
 }
@@ -269,5 +281,75 @@ gchar *get_registry_data(guint protocol_version, gchar *registry, guint index) {
     cJSON *data = cJSON_GetArrayItem(cached, (int) index);
     if (data == NULL)
         return "<Unknown Registry Entry>";
+    return data->valuestring;
+}
+
+gchar *get_level_event_data(guint protocol_version, gchar *index) {
+    cJSON *cached = get_cached_level_event(protocol_version);
+    if (cached == NULL) {
+        ensure_cached_level_event_data_mapping();
+        gchar *find_key = g_strdup_printf("%d", protocol_version);
+        cJSON *found = cJSON_GetObjectItem(cached_level_event_data_mapping, find_key);
+        g_free(find_key);
+        if (found == NULL)
+            return NULL;
+
+        gchar *file = g_build_filename(
+                pref_protocol_data_dir,
+                "java_edition/indexed_data",
+                found->valuestring,
+                "level_event.json",
+                NULL
+        );
+        gchar *content = NULL;
+        if (!g_file_get_contents(file, &content, NULL, NULL)) {
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+            g_free(file);
+            return NULL;
+        }
+
+        cached = cJSON_Parse(content);
+        g_free(content);
+        set_cached_level_event(protocol_version, cached);
+    }
+
+    cJSON *data = cJSON_GetObjectItem(cached, index);
+    if (data == NULL)
+        return NULL;
+    return data->valuestring;
+}
+
+gchar *get_entity_event_data(guint protocol_version, gchar *index) {
+    cJSON *cached = get_cached_entity_event(protocol_version);
+    if (cached == NULL) {
+        ensure_cached_entity_event_data_mapping();
+        gchar *find_key = g_strdup_printf("%d", protocol_version);
+        cJSON *found = cJSON_GetObjectItem(cached_entity_event_data_mapping, find_key);
+        g_free(find_key);
+        if (found == NULL)
+            return NULL;
+
+        gchar *file = g_build_filename(
+                pref_protocol_data_dir,
+                "java_edition/indexed_data",
+                found->valuestring,
+                "entity_event.json",
+                NULL
+        );
+        gchar *content = NULL;
+        if (!g_file_get_contents(file, &content, NULL, NULL)) {
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+            g_free(file);
+            return NULL;
+        }
+
+        cached = cJSON_Parse(content);
+        g_free(content);
+        set_cached_entity_event(protocol_version, cached);
+    }
+
+    cJSON *data = cJSON_GetObjectItem(cached, index);
+    if (data == NULL)
+        return NULL;
     return data->valuestring;
 }
