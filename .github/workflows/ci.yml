@@ -29,11 +29,11 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: wireshark-4.2.5
+          ref: wireshark-4.2.6
       - name: Choco install Wireshark Deps
         run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
         with:
           vs-version: 16.4
       - name: Make build dir
