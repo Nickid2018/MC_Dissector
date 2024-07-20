@@ -17,40 +17,8 @@ typedef struct {
     long max_version;
 } level_event_entry;
 
-wmem_map_t *entity_ids;
 wmem_map_t *entity_event;
 wmem_map_t *level_event;
-
-wmem_map_t *init_entity_ids(guint data_version) {
-    char **lines = g_strsplit(RESOURCE_ENTITY_ID, "\n", 1000);
-    int desc_counts = (int) strtol(lines[0], NULL, 10);
-    char **descs = g_strsplit(lines[1], " ", desc_counts);
-    int versions = (int) strtol(lines[2], NULL, 10);
-    for (int i = versions - 1; i >= 0; i--) {
-        char **version_data = g_strsplit(lines[3 + i * 2], " ", 2);
-        long version_now = strtol(version_data[0], NULL, 10);
-        if (version_now <= data_version) {
-            int list_length = (int) strtol(version_data[1], NULL, 10);
-            g_strfreev(version_data);
-            wmem_map_t *entity_id_data = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-            char **entity_id_list = g_strsplit(lines[4 + i * 2], " ", list_length);
-            for (int in = 0; in < list_length; in++) {
-                long entity_desc = strtol(entity_id_list[in], NULL, 10);
-                char *entity_name = g_strdup(descs[entity_desc]);
-                char *entity_id = g_strdup_printf("%d", in);
-                wmem_map_insert(entity_id_data, entity_id, entity_name);
-            }
-            g_strfreev(entity_id_list);
-            g_strfreev(lines);
-            g_strfreev(descs);
-            return entity_id_data;
-        } else
-            g_strfreev(version_data);
-    }
-    g_strfreev(lines);
-    g_strfreev(descs);
-    return wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-}
 
 void init_events() {
     entity_event = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
@@ -91,7 +59,6 @@ void init_events() {
 
 void init_protocol_functions() {
     init_events();
-    entity_ids = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
 }
 
 FIELD_MAKE_TREE(record_entity_id) {
@@ -104,12 +71,9 @@ FIELD_MAKE_TREE(record_entity_id) {
     gchar *id = record_query(recorder, id_path);
     char *type_path[] = {"type", NULL};
     gchar *type = record_query(recorder, type_path);
-    wmem_map_t *entity_id_data = wmem_map_lookup(entity_ids, wmem_map_lookup(extra->data, "data_version"));
-    if (entity_id_data == NULL) {
-        entity_id_data = init_entity_ids(GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "data_version")));
-        wmem_map_insert(entity_ids, type, entity_id_data);
-    }
-    char *str_type = wmem_map_lookup(entity_id_data, type);
+    guint protocol_version = GPOINTER_TO_UINT(wmem_map_lookup(extra->data, "protocol_version"));
+    guint type_uint = strtol(type, NULL, 10);
+    char *str_type = get_registry_data(protocol_version, "entity_type", type_uint);
     wmem_map_insert(entity_id_record, id, str_type);
     if (tree) {
         proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, str_type);

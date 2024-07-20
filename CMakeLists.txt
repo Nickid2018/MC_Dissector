@@ -97,9 +97,6 @@ macro(invoke_py message)
     endif ()
 endmacro(invoke_py)
 
-invoke_py("Generate Entity ID Data"
-        "${PROJECT_SOURCE_DIR}/codegen_script/entity_id_gen.py" "${PROJECT_SOURCE_DIR}/minecraft-data/java"
-        "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources")
 invoke_py("Generate Resources"
         "${PROJECT_SOURCE_DIR}/codegen_script/resources_gen.py" "${PROJECT_SOURCE_DIR}/resources"
         "${CMAKE_CURRENT_BINARY_DIR}/preprocess_resources" "${GEN_RESOURCE_DIR}")

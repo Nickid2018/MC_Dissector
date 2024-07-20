@@ -25,4 +25,6 @@ protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings se
 
 gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index);
 
+gchar *get_registry_data(guint protocol_version, gchar *registry, guint index);
+
 #endif //MC_DISSECTOR_STORAGE_H
