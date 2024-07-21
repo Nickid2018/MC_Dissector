@@ -21,8 +21,6 @@ file(GLOB_RECURSE PROTOCOL_SOURCES "${PROJECT_SOURCE_DIR}/protocol/*.c")
 file(GLOB_RECURSE PROTOCOL_HEADERS "${PROJECT_SOURCE_DIR}/protocol/*.h")
 file(GLOB UTILS_SOURCES "${PROJECT_SOURCE_DIR}/utils/*.c")
 file(GLOB UTILS_HEADERS "${PROJECT_SOURCE_DIR}/utils/*.h")
-file(GLOB LIBRARY_CJSON_SOURCES "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.c")
-file(GLOB LIBRARY_CJSON_HEADERS "${PROJECT_SOURCE_DIR}/cJSON/cJSON*.h")
 list(REMOVE_ITEM SOURCES "${PROJECT_SOURCE_DIR}/check_version.c")
 
 set(WIRESHARK_DIR $ENV{WIRESHARK_DIR})
@@ -64,6 +62,13 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
             link_libraries(gcrypt-20)
         endif ()
     endforeach ()
+    include(FetchContent)
+    FetchContent_Declare(
+            cJSON
+            GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+            GIT_TAG v1.7.14
+    )
+    FetchContent_MakeAvailable(cJSON)
 else ()
     find_package(PkgConfig)
     pkg_check_modules(wireshark REQUIRED IMPORTED_TARGET wireshark)
@@ -72,20 +77,18 @@ else ()
     link_libraries(PkgConfig::glib)
     pkg_check_modules(gcrypt REQUIRED IMPORTED_TARGET libgcrypt)
     link_libraries(PkgConfig::gcrypt)
+    pkg_check_modules(cjson REQUIRED IMPORTED_TARGET libcjson)
+    link_libraries(PkgConfig::cjson)
 endif ()
 
-file(GLOB GEN_RESOURCE_HEADERS "${GEN_RESOURCE_DIR}/*.h")
-file(GLOB GEN_RESOURCE_SOURCES "${GEN_RESOURCE_DIR}/*.c")
-include_directories(${GEN_RESOURCE_DIR})
 include_directories(".")
-
-add_library(MC_Dissector SHARED ${SOURCES} ${HEADERS}
+add_library(MC_Dissector SHARED
+        ${SOURCES} ${HEADERS}
         ${PROTOCOL_JE_SOURCES} ${PROTOCOL_JE_HEADERS}
         ${PROTOCOL_BE_SOURCES} ${PROTOCOL_BE_HEADERS}
         ${PROTOCOL_SOURCES} ${PROTOCOL_HEADERS}
         ${UTILS_SOURCES} ${UTILS_HEADERS}
-        ${LIBRARY_CJSON_SOURCES} ${LIBRARY_CJSON_HEADERS}
-        ${GEN_RESOURCE_HEADERS} ${GEN_RESOURCE_SOURCES})
+)
 
 if (DEFINED ENV{WIRESHARK_LIB_DIR})
     try_compile(

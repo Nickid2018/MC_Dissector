@@ -6,7 +6,7 @@
 #define MC_DISSECTOR_PROTOCOL_SCHEMA_H
 
 #include <epan/proto.h>
-#include "cJSON/cJSON.h"
+#include <cJSON.h>
 #include "utils/data_recorder.h"
 
 typedef struct _protocol_set protocol_set_t, *protocol_set;
