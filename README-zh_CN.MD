@@ -67,7 +67,7 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 
 ## 解析错误
 
-如果出现了解析错误，可能有下面三种情况：
+如果出现了解析错误，可能有下面两种种情况：
 
 * Wireshark 没有抓取到所有数据。由于 Java 版使用 TCP，数据由长度字段拆分，一旦缺少某一部分，
   数据就会立刻无法解析。如果你在数据解析错误的前后发现了`TCP Previous segment not captured`，那么就是这种情况。
