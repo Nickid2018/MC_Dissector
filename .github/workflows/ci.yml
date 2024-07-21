@@ -6,7 +6,7 @@ on:
       - 'README.MD'
       - 'README-*.MD'
       - 'LICENSE'
-  pull_request:
+  pull_request:   
     branches:
       - master
   workflow_dispatch:
@@ -134,10 +134,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: encryption-helper
+      - id: process-name
+        env:
+          REF: ${{ github.ref }}
+        run: echo ::set-output name=NAME::${REF##*/}
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ github.ref }}
+          name: Release ${{ steps.process-name.outputs.NAME }}
           prerelease: ${{ contains(github.ref, 'beta') }}
           files: |
             windows/mcdissector.dll

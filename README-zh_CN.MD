@@ -2,6 +2,7 @@
 
 # Minecraft 协议解析器
 
+![AUR Version](https://img.shields.io/aur/version/wireshark-minecraft-dissector)
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Nickid2018/MC_Dissector/ci.yml)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Nickid2018/MC_Dissector)
