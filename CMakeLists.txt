@@ -117,6 +117,6 @@ message(STATUS "WireShark version: ${wireshark_VERSION_MAJOR}.${wireshark_VERSIO
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
 install(
         TARGETS MC_Dissector
-        LIBRARY DESTINATION "plugins/${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}/epan"
+        LIBRARY DESTINATION "wireshark/plugins/${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}/epan"
         NAMELINK_SKIP
 )
