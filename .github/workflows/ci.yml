@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install Deps
+      - name: Install Depsc
         run: |
           sudo add-apt-repository ppa:wireshark-dev/stable
           sudo apt-get update & sudo apt-get install cmake libwireshark-dev libcjson-dev make clang
@@ -135,39 +135,11 @@ jobs:
         with:
           name: encryption-helper
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
+          name: Release ${{ github.ref }}
           prerelease: ${{ contains(github.ref, 'beta') }}
-      - name: Upload mcdissector.dll
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./windows/mcdissector.dll
-          asset_name: mcdissector.dll
-          asset_content_type: application/octet-stream
-      - name: Upload mcdissector.so
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./linux/mcdissector.so
-          asset_name: mcdissector.so
-          asset_content_type: application/octet-stream
-      - name: Upload encryption-helper
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./encryption-helper-1.0-all.jar
-          asset_name: encryption-helper.jar
-          asset_content_type: application/octet-stream
+          files: |
+            windows/mcdissector.dll
+            linux/mcdissector.so
+            encryption-helper-1.0-all.jar
