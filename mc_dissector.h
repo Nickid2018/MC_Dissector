@@ -16,10 +16,7 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
-#define DATA_FILE_PATH "mc_dissector"
-#define DATA_FILE_PATH_JE_DATA "mc_dissector/je"
-#define DATA_FILE_PATH_BE_DATA "mc_dissector/be"
-#define DATA_FILE_PATH_PROTOCOL_VERSIONS "protocol_versions.json"
+#define PROTOCOL_DATA_VERSION "1.0"
 
 #if defined(DEBUG)
 #define WS_LOG(format, ...) ws_log("", LOG_LEVEL_CRITICAL, format, ##__VA_ARGS__)

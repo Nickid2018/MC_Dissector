@@ -3,6 +3,7 @@
 //
 
 #include "storage.h"
+#include "mc_dissector.h"
 
 extern gchar *pref_protocol_data_dir;
 
@@ -97,6 +98,7 @@ gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
 }
 
 void clear_storage() {
+    CLEAR_CACHED_JSON(settings)
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(protocol_data_mapping)
     CLEAR_CACHED_JSON(entity_sync_data_mapping)
@@ -370,4 +372,10 @@ bool get_settings_flag(gchar *name) {
     ensure_cached_settings();
     cJSON *flag = cJSON_GetObjectItem(cached_settings, name);
     return flag != NULL && flag->type == cJSON_True;
+}
+
+bool is_compatible_protocol_data() {
+    ensure_cached_settings();
+    cJSON *version = cJSON_GetObjectItem(cached_settings, "version");
+    return version != NULL && g_strcmp0(version->valuestring, PROTOCOL_DATA_VERSION) == 0;
 }

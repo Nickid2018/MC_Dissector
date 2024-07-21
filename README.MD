@@ -21,10 +21,22 @@ For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.
 
 `MCJE` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
+* Directory for protocol data: The directory for protocol data, used to parse data.
 * Ignore Packets: Prevent parsing some packets to filt unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client.The default is `c:map_chunk` which stops parsing server-to-client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
 * Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexademical strings with length of 32.
 * NBT Decoding: To decode NBT data.
 * TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
+
+## Protocol Data
+
+All protocol data is read from external directory, which is controlled by option `Directory for protocol data`.
+
+You can directly use protocol data provided by [MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data), which is divided into three main branches:
+* `master`: Contains all protocol data.
+* `only-protocol`: Contains only protocol schema data, without any other files.
+* `only-essentials`: (Recommend) Contains only essential protocol data (entity synchronization data, etc.), without any other files.
+
+You can directly use the source code archives of these branches or clone the repository to the specified protocol directory.
 
 ## Encrypted Connection
 
@@ -58,8 +70,6 @@ Parsing error exists under 3 circumstances as follow:
 
 * Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered `TCP Previous segment not captured` near the data parsing error.
 * The program has not finished adaption or process properly for this part, or has not added corresponding strings. Such errors can be reported by open issues.
-
-The overall protocol is dynamically built by protocol description file in `minecraft-data`. If you are convinced that error is caused by fault in protocol description, you can open an issue in `minecraft-data` repository.
 
 ## How To Build Projects (Windows)
 

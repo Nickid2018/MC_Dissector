@@ -13,7 +13,8 @@
 #define is_invalid(x) ((x) == INVALID_DATA)
 
 typedef enum {
-    HANDSHAKE, PLAY, PING, LOGIN, TRANSFER, CONFIGURATION, INVALID
+    HANDSHAKE, PLAY, PING, LOGIN, TRANSFER, CONFIGURATION, // Normal states
+    INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND // Special states
 } je_state;
 
 typedef struct {

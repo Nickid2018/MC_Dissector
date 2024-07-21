@@ -17,14 +17,26 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 
 ## 可调选项
 
-可以在 Wireshark 的`首选项/Protocols`里面找到`MCJE`，在这里可以调整一些选项。
+可以在 Wireshark 的`首选项/Protocols`里面找到`Minecraft`，在这里可以调整一些选项。
 
+* Directory for protocol data：放置协议数据的目录，用于解析数据。
 * Ignore Packets：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
   代表发向服务端的包，`c`代表发向客户端的包。默认为`c:map_chunk`，
   即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
 * Secret Key：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
 * NBT Decoding：是否解析 NBT 数据。
 * TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+
+## 协议数据
+
+所有协议数据都从外部目录读取，此目录由选项`Directory for protocol data`控制。
+
+可以直接使用[MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data)提供的协议数据，此仓库分为三个主要分支：
+* `master`：包含所有协议数据。
+* `only-protocol`：只包含协议格式数据，不包含任何其他文件。
+* `only-essentials`：（推荐）只包含必要的协议数据（实体同步数据等），不包含任何其他文件。
+
+直接使用这些分支的源代码压缩包或者克隆仓库到指定协议目录即可。
 
 ## 加密连接
 
@@ -61,7 +73,7 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
   数据就会立刻无法解析。如果你在数据解析错误的前后发现了`TCP Previous segment not captured`，那么就是这种情况。
 * 程序还没有做好这部分的适配或相应的处理，或没有添加对应的字符串。这类错误可以在 Issues 里面提出来。
 
-协议整体由`minecraft-data`内的协议描述文件动态构建，如果你确信是因为协议描述出现问题而导致错误，可以在`minecraft-data`
+协议整体由`MC_Protocol_Data`内的协议描述文件动态构建，如果你确信是因为协议描述出现问题而导致错误，可以在`MC_Protocol_Data`
 仓库里面提出 Issue。
 
 ## 构建项目（Windows）

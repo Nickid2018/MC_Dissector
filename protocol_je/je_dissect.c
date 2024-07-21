@@ -161,8 +161,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     if (!ctx) {
         ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
-        ctx->client_state = HANDSHAKE;
-        ctx->server_state = HANDSHAKE;
+        ctx->client_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
+        ctx->server_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
         ctx->compression_threshold = -1;
         ctx->server_port = pinfo->destport;
         ctx->server_cipher = NULL;
@@ -191,15 +191,24 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
+    if (frame_data->client_state == NOT_COMPATIBLE || frame_data->server_state == NOT_COMPATIBLE) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not compatible with the current plugin version");
+        return (gint) tvb_captured_length(tvb);
+    }
+    if (frame_data->client_state == INVALID || frame_data->server_state == INVALID) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure");
+        return (gint) tvb_captured_length(tvb);
+    }
+    if (frame_data->client_state == PROTOCOL_NOT_FOUND || frame_data->server_state == PROTOCOL_NOT_FOUND) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not found or invalid");
+        return (gint) tvb_captured_length(tvb);
+    }
+
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
 
     col_set_str(pinfo->cinfo, COL_INFO, is_server ? "[C => S] " : "[S => C] ");
     if (frame_data->encrypted)
         col_append_str(pinfo->cinfo, COL_INFO, "(Encrypted) ");
-    if (frame_data->client_state == INVALID || frame_data->server_state == INVALID) {
-        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure.");
-        return (gint) tvb_captured_length(tvb);
-    }
 
     tvbuff_t *use_tvb = tvb;
     if (frame_data->encrypted) {

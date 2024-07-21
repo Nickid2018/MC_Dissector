@@ -33,4 +33,6 @@ gchar *get_entity_event_data(guint protocol_version, gchar *index);
 
 bool get_settings_flag(gchar *name);
 
+bool is_compatible_protocol_data();
+
 #endif //MC_DISSECTOR_STORAGE_H
