@@ -3,6 +3,9 @@ on:
   push:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/**'
+      - 'README.MD'
+      - 'README-*.MD'
+      - 'LICENSE'
   pull_request:
     branches:
       - master

@@ -11,13 +11,11 @@ English | [简体中文](./README-zh_CN.MD)
 
 Built files can be found in Actions, stable version can be found in Release.
 
-For each platform there are 2 different versions with and without additional parse function (`No Function`). Additional parse function can parse entity ID and synchronize protocol data etc.
-
 After downloading:
 
-For Windows, put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/4.0/epan`) and run Wireshark.
+For Windows, put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/4.2/epan`) and run Wireshark.
 
-For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.local/lib/wireshark/plugins/4.0/epan`) and run Wireshark.
+For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.local/lib/wireshark/plugins/4.2/epan`) and run Wireshark.
 
 ## Tunable Options
 
@@ -65,7 +63,7 @@ The overall protocol is dynamically built by protocol description file in `minec
 
 ## How To Build Projects (Windows)
 
-Building this project requires Wireshark source code with configured dependencies and python for code generation.
+Building this project requires Wireshark source code with configured dependencies.
 
 1. Clone Wireshark repository to local and configure necessary dependencies.
 2. Set environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).

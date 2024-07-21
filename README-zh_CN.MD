@@ -11,11 +11,9 @@
 
 构建的文件可以在 Action 里面找到，稳定版可以在 Release 里面找到。
 
-对于每个平台都有两个版本，分别为带有额外解析函数的版本和不带有额外解析函数（`No Function`）的版本。额外解析函数可以解析实体 ID 和同步协议数据等。
+Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.2/epan`）并启动 Wireshark 即可。
 
-Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.0/epan`）并启动 Wireshark 即可。
-
-Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.0/epan`）并启动 Wireshark 即可。
+Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.2/epan`）并启动 Wireshark 即可。
 
 ## 可调选项
 
@@ -68,7 +66,7 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 
 ## 构建项目（Windows）
 
-构建此项目需要有 Wireshark 的源码并需要配置依赖，且需要 python 用于代码生成。
+构建此项目需要有 Wireshark 的源码并需要配置依赖。
 
 1. 克隆 Wireshark 仓库到本地，配置好需要的依赖。
 2. 指定环境变量`PLATFORM`为`x64`，指定环境变量`WIRESHARK_LIB_DIR`为 Wireshark 依赖库目录（运行 cmake 时会自动创建）。
