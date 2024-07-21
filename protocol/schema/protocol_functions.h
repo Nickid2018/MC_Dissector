@@ -16,14 +16,13 @@ gint make_tree_##name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra
         if (tree)                                                         \
             proto_item_prepend_text(                                      \
                 func_add(tree, hf, tvb, offset, len, record(recorder, func_parse(tvb, offset))), \
+                "%s",                                                     \
                 field->name                                               \
             );                                                            \
         else                                                              \
             record(recorder, func_parse(tvb, offset));                    \
         return len;                                                       \
     }
-
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
 
 FIELD_MAKE_TREE(record_entity_id);
 
@@ -38,7 +37,5 @@ FIELD_MAKE_TREE(sync_entity_data);
 FIELD_MAKE_TREE(entity_event);
 
 FIELD_MAKE_TREE(level_event);
-
-#endif //MC_DISSECTOR_FUNCTION_FEATURE
 
 #endif //MC_DISSECTOR_PROTOCOL_FUNCTIONS_H

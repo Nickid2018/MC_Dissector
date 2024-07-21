@@ -54,11 +54,14 @@ if (cached_##name != NULL) { \
     cached_##name = NULL; \
 }
 
-#define CLEAR_CACHED_DATA(name) \
-if (cached_##name != NULL) { \
+#define CLEAR_CACHED_DATA(name, func) \
+if (cached_##name != NULL) {          \
+    wmem_map_foreach_remove(cached_##name, func, NULL); \
     wmem_free(wmem_epan_scope(), cached_##name); \
     cached_##name = NULL; \
 }
+
+JSON_CACHED(settings, "settings.json")
 
 JSON_CACHED(versions, "java_edition/versions.json")
 
@@ -84,6 +87,15 @@ DATA_CACHED_STR(registry_data_mapping)
 
 DATA_CACHED_STR(registry_data)
 
+gboolean nop(gpointer key _U_, gpointer value _U_, gpointer user_data _U_) {
+    return true;
+}
+
+gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
+    cJSON_Delete(value);
+    return true;
+}
+
 void clear_storage() {
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(protocol_data_mapping)
@@ -91,12 +103,12 @@ void clear_storage() {
     CLEAR_CACHED_JSON(level_event_data_mapping)
     CLEAR_CACHED_JSON(entity_event_data_mapping)
     CLEAR_CACHED_JSON(packet_names)
-    CLEAR_CACHED_DATA(protocol)
-    CLEAR_CACHED_DATA(entity_sync_data)
-    CLEAR_CACHED_DATA(level_event)
-    CLEAR_CACHED_DATA(entity_event)
-    CLEAR_CACHED_DATA(registry_data_mapping)
-    CLEAR_CACHED_DATA(registry_data)
+    CLEAR_CACHED_DATA(protocol, nop)
+    CLEAR_CACHED_DATA(entity_sync_data, clean_json)
+    CLEAR_CACHED_DATA(level_event, clean_json)
+    CLEAR_CACHED_DATA(entity_event, clean_json)
+    CLEAR_CACHED_DATA(registry_data_mapping, clean_json)
+    CLEAR_CACHED_DATA(registry_data, clean_json)
 }
 
 gchar **get_mapped_java_versions(guint protocol_version) {
@@ -352,4 +364,10 @@ gchar *get_entity_event_data(guint protocol_version, gchar *index) {
     if (data == NULL)
         return NULL;
     return data->valuestring;
+}
+
+bool get_settings_flag(gchar *name) {
+    ensure_cached_settings();
+    cJSON *flag = cJSON_GetObjectItem(cached_settings, name);
+    return flag != NULL && flag->type == cJSON_True;
 }

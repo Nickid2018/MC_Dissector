@@ -3,12 +3,6 @@ project(MC_Dissector C)
 
 set(CMAKE_C_STANDARD 11)
 
-option(MC_DISSECTOR_FUNCTION_FEATURE "Enable function feature" ON)
-
-if (MC_DISSECTOR_FUNCTION_FEATURE)
-    message(STATUS "Enable function feature")
-    add_compile_definitions(MC_DISSECTOR_FUNCTION_FEATURE)
-endif ()
 add_compile_definitions(SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     message(STATUS "Debug mode")
@@ -121,4 +115,8 @@ list(GET VERSION_LIST 1 wireshark_VERSION_MINOR)
 message(STATUS "WireShark version: ${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}")
 
 set_target_properties(MC_Dissector PROPERTIES OUTPUT_NAME "mcdissector" PREFIX "")
-install(TARGETS MC_Dissector LIBRARY DESTINATION "plugins/${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}/epan" NAMELINK_SKIP)
+install(
+        TARGETS MC_Dissector
+        LIBRARY DESTINATION "plugins/${wireshark_VERSION_MAJOR}.${wireshark_VERSION_MINOR}/epan"
+        NAMELINK_SKIP
+)

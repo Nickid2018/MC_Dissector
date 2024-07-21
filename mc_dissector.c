@@ -36,7 +36,7 @@ void proto_register() {
 
     // Preference ------------------------------------------------------------------------------------------------------
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
-    pref_mc = prefs_register_protocol(proto_mc, NULL);
+    pref_mc = prefs_register_protocol(proto_mc, clear_storage);
     prefs_register_directory_preference(
             pref_mc, "protocol_data_dir", "Protocol Data Directory",
             "Directory for protocol data", (const char **) &pref_protocol_data_dir

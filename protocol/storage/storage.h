@@ -31,4 +31,6 @@ gchar *get_level_event_data(guint protocol_version, gchar *index);
 
 gchar *get_entity_event_data(guint protocol_version, gchar *index);
 
+bool get_settings_flag(gchar *name);
+
 #endif //MC_DISSECTOR_STORAGE_H

@@ -54,6 +54,7 @@ FIELD_MAKE_TREE(var_int) {
     if (tree)
         proto_item_prepend_text(
                 proto_tree_add_uint(tree, hf_varint_je, tvb, offset, length, record),
+                "%s",
                 field->name
         );
     return length;
@@ -66,6 +67,7 @@ FIELD_MAKE_TREE(var_long) {
     if (tree)
         proto_item_prepend_text(
                 proto_tree_add_uint64(tree, hf_varlong_je, tvb, offset, length, record),
+                "%s",
                 field->name
         );
     return length;
@@ -78,6 +80,7 @@ FIELD_MAKE_TREE(string) {
     if (tree)
         proto_item_prepend_text(
                 proto_tree_add_string(tree, hf_string_je, tvb, offset, length, record_str),
+                "%s",
                 field->name
         );
     return length;
@@ -95,6 +98,7 @@ FIELD_MAKE_TREE(var_buffer) {
                                 length < BYTES_MAX_LENGTH ? length : BYTES_MAX_LENGTH
                         )
                 ),
+                "%s",
                 field->name
         );
     return read + length;
@@ -132,6 +136,7 @@ FIELD_MAKE_TREE(rest_buffer) {
                                 remaining < BYTES_MAX_LENGTH ? remaining : BYTES_MAX_LENGTH
                         )
                 ),
+                "%s",
                 field->name
         );
     }
@@ -145,6 +150,7 @@ FIELD_MAKE_TREE(uuid) {
     if (tree)
         proto_item_prepend_text(
                 proto_tree_add_guid(tree, hf_uuid_je, tvb, offset, 16, uuid),
+                "%s",
                 field->name
         );
     return 16;
@@ -168,6 +174,7 @@ FIELD_MAKE_TREE(nbt) {
                                     length < BYTES_MAX_LENGTH ? length : BYTES_MAX_LENGTH
                             )
                     ),
+                    "%s",
                     field->name
             );
         return length;
@@ -190,6 +197,7 @@ FIELD_MAKE_TREE(optional_nbt) {
                                         length < BYTES_MAX_LENGTH ? length : BYTES_MAX_LENGTH
                                 )
                         ),
+                        "%s",
                         field->name
                 );
             return length;
@@ -219,6 +227,7 @@ FIELD_MAKE_TREE(nbt_any_type) {
                                         length < BYTES_MAX_LENGTH ? length : BYTES_MAX_LENGTH
                                 )
                         ),
+                        "%s",
                         field->name
                 );
             return length;
@@ -293,6 +302,7 @@ FIELD_MAKE_TREE(buffer) {
                                 length < BYTES_MAX_LENGTH ? length : BYTES_MAX_LENGTH
                         )
                 ),
+                "%s",
                 field->name
         );
     return length;
@@ -311,6 +321,7 @@ FIELD_MAKE_TREE(mapper) {
     if (tree)
         proto_item_prepend_text(
                 proto_tree_add_string(tree, hf_string_je, tvb, offset, length, map_name),
+                "%s",
                 field->name
         );
     return length;
@@ -374,6 +385,7 @@ FIELD_MAKE_TREE(bitfield) {
                                     offset * 8 + offset_bit, len,
                                     ENC_BIG_ENDIAN
                             ),
+                            "%s",
                             g_strdup_printf(" <bitmask %s>", name)
                     );
             } else {
@@ -385,6 +397,7 @@ FIELD_MAKE_TREE(bitfield) {
                                     offset * 8 + offset_bit, len,
                                     ENC_BIG_ENDIAN
                             ),
+                            "%s",
                             g_strdup_printf(" <bitmask %s>", name)
                     );
             }
@@ -399,6 +412,7 @@ FIELD_MAKE_TREE(bitfield) {
                                     offset * 8 + offset_bit, len,
                                     ENC_BIG_ENDIAN
                             ),
+                            "%s",
                             g_strdup_printf(" <bitmask %s>", name)
                     );
             } else {
@@ -410,6 +424,7 @@ FIELD_MAKE_TREE(bitfield) {
                                     offset * 8 + offset_bit, len,
                                     ENC_BIG_ENDIAN
                             ),
+                            "%s",
                             g_strdup_printf(" <bitmask %s>", name)
                     );
             }
@@ -546,7 +561,6 @@ void init_schema_data() {
     ADD_NATIVE(nbt, nbt, bytes)
     ADD_NATIVE(optionalNbt, optional_nbt, bytes)
 
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
     ADD_FUNCTION(sync_entity_data, sync_entity_data)
     ADD_FUNCTION(record_entity_id, record_entity_id)
     ADD_FUNCTION(record_entity_id_player, record_entity_id_player)
@@ -554,7 +568,6 @@ void init_schema_data() {
     ADD_FUNCTION(record_entity_id_painting, record_entity_id_painting)
     ADD_FUNCTION(entity_event, entity_event)
     ADD_FUNCTION(level_event, level_event)
-#endif // MC_DISSECTOR_FUNCTION_FEATURE
 }
 
 // NOLINTNEXTLINE

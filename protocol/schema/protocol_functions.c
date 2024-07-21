@@ -2,14 +2,14 @@
 // Created by Nickid2018 on 2023/8/27.
 //
 
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
-
 #include "protocol_functions.h"
 #include "protocol/storage/storage.h"
 
 extern int hf_generated_je;
 
 FIELD_MAKE_TREE(record_entity_id) {
+    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
+        return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -32,6 +32,8 @@ FIELD_MAKE_TREE(record_entity_id) {
 }
 
 FIELD_MAKE_TREE(record_entity_id_player) {
+    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
+        return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -44,6 +46,8 @@ FIELD_MAKE_TREE(record_entity_id_player) {
 }
 
 FIELD_MAKE_TREE(record_entity_id_experience_orb) {
+    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
+        return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -56,6 +60,8 @@ FIELD_MAKE_TREE(record_entity_id_experience_orb) {
 }
 
 FIELD_MAKE_TREE(record_entity_id_painting) {
+    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
+        return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -68,7 +74,7 @@ FIELD_MAKE_TREE(record_entity_id_painting) {
 }
 
 FIELD_MAKE_TREE(sync_entity_data) {
-    if (!tree)
+    if (!tree || !get_settings_flag("entity_sync_datas"))
         return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(extra->data, "entity_id_record");
     if (entity_id_record == NULL) {
@@ -102,7 +108,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
 }
 
 FIELD_MAKE_TREE(entity_event) {
-    if (!tree)
+    if (!tree || !get_settings_flag("events"))
         return 0;
     char *event_id_path[] = {"entityStatus", NULL};
     gchar *event_id = record_query(recorder, event_id_path);
@@ -119,7 +125,7 @@ FIELD_MAKE_TREE(entity_event) {
 }
 
 FIELD_MAKE_TREE(level_event) {
-    if (!tree)
+    if (!tree || !get_settings_flag("events"))
         return 0;
     char *event_id_path[] = {"effectId", NULL};
     gchar *event_id = record_query(recorder, event_id_path);
@@ -134,5 +140,3 @@ FIELD_MAKE_TREE(level_event) {
     proto_item_prepend_text(item, "Level Event Type");
     return 0;
 }
-
-#endif // MC_DISSECTOR_FUNCTION_FEATURE
