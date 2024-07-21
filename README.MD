@@ -2,7 +2,7 @@ English | [简体中文](./README-zh_CN.MD)
 
 # Minecraft Protocol Dissector
 
-![AUR Version](https://img.shields.io/aur/version/wireshark-minecraft-dissector)
+[![AUR Version](https://img.shields.io/aur/version/wireshark-minecraft-dissector)](https://aur.archlinux.org/packages/wireshark-minecraft-dissector/)
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Nickid2018/MC_Dissector/ci.yml)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Nickid2018/MC_Dissector)
@@ -17,6 +17,8 @@ After downloading:
 For Windows, put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/4.2/epan`) and run Wireshark.
 
 For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.local/lib/wireshark/plugins/4.2/epan`) and run Wireshark.
+
+For Arch Linux, you can use package `wireshark-minecraft-dissector` in AUR.
 
 ## Tunable Options
 

@@ -2,7 +2,7 @@
 
 # Minecraft 协议解析器
 
-![AUR Version](https://img.shields.io/aur/version/wireshark-minecraft-dissector)
+[![AUR Version](https://img.shields.io/aur/version/wireshark-minecraft-dissector)](https://aur.archlinux.org/packages/wireshark-minecraft-dissector/)
 ![GitHub](https://img.shields.io/github/license/Nickid2018/MC_Dissector)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/Nickid2018/MC_Dissector/ci.yml)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Nickid2018/MC_Dissector)
@@ -15,6 +15,8 @@
 Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.2/epan`）并启动 Wireshark 即可。
 
 Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.2/epan`）并启动 Wireshark 即可。
+
+对于 Arch Linux，可以直接使用 AUR 里面的`wireshark-minecraft-dissector`包。
 
 ## 可调选项
 
