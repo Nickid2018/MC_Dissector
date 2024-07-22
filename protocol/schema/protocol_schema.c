@@ -571,10 +571,18 @@ void init_schema_data() {
 }
 
 // NOLINTNEXTLINE
-protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types, bool is_je, bool on_top,
+protocol_field parse_protocol(wmem_map_t *basic_types, wmem_list_t *resolving_basics,
+                              cJSON *data, cJSON *types, bool is_je, bool on_top,
                               protocol_settings settings) {
-    if (data == NULL)
+    if (data == NULL) {
+        ws_log(
+                "MC-Dissector",
+                LOG_LEVEL_CRITICAL,
+                "Invalid protocol data - Data is NULL"
+        );
         return NULL;
+    }
+
     if (cJSON_IsString(data)) {
         char *type = data->valuestring;
         void *make_tree_func = wmem_map_lookup(native_make_tree_map, type);
@@ -589,16 +597,48 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
 
             return field;
         }
+
         protocol_field field = wmem_map_lookup(basic_types, type);
         if (field != NULL)
             return field;
-        field = parse_protocol(
-                basic_types, cJSON_GetObjectItem(types, data->valuestring), types, is_je, false, settings
-        );
+
+        if (wmem_list_find(resolving_basics, type) != NULL) { // recursive loop
+            field = wmem_new(wmem_epan_scope(), protocol_field_t);
+            wmem_map_insert(basic_types, type, field);
+            protocol_field processed = parse_protocol(
+                    basic_types, resolving_basics,
+                    cJSON_GetObjectItem(types, data->valuestring), types, is_je, false, settings
+            );
+            wmem_map_remove(basic_types, type);
+            if (processed == NULL) {
+                return NULL;
+            }
+            *field = *processed;
+        } else {
+            wmem_list_append(resolving_basics, type);
+            field = wmem_new(wmem_epan_scope(), protocol_field_t);
+            protocol_field processed = parse_protocol(
+                    basic_types, resolving_basics,
+                    cJSON_GetObjectItem(types, data->valuestring), types, is_je, false, settings
+            );
+            wmem_list_remove(resolving_basics, type);
+            if (processed == NULL) {
+                return NULL;
+            }
+            *field = *processed;
+        }
+
         return field;
     }
-    if (cJSON_GetArraySize(data) != 2)
+    if (cJSON_GetArraySize(data) != 2) {
+        ws_log(
+                "MC-Dissector",
+                LOG_LEVEL_CRITICAL,
+                "Invalid protocol data - Argument size not matches 2: %s",
+                cJSON_Print(data)
+        );
         return NULL;
+    }
     char *type = cJSON_GetArrayItem(data, 0)->valuestring;
     cJSON *fields = cJSON_GetArrayItem(data, 1);
 
@@ -608,11 +648,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
     field->name = "[unnamed]";
 
     if (g_strcmp0(type, "function") == 0) {
-#ifdef MC_DISSECTOR_FUNCTION_FEATURE
         field->make_tree = wmem_map_lookup(function_make_tree, fields->valuestring);
-#else
-        field->make_tree = make_tree_void;
-#endif // MC_DISSECTOR_FUNCTION_FEATURE
         return field;
     } else if (g_strcmp0(type, "container") == 0) { // container
         field->make_tree = make_tree_container;
@@ -622,7 +658,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             cJSON *field_data = cJSON_GetArrayItem(fields, i);
             cJSON *type_data = cJSON_GetObjectItem(field_data, "type");
             protocol_field sub_field = parse_protocol(
-                    basic_types, type_data, types, is_je, false, settings
+                    basic_types, resolving_basics, type_data, types, is_je, false, settings
             );
             if (sub_field == NULL)
                 return NULL;
@@ -636,7 +672,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
     } else if (g_strcmp0(type, "option") == 0) { // option
         field->make_tree = make_tree_option;
         protocol_field sub_field = parse_protocol(
-                basic_types, fields, types, is_je, false, settings
+                basic_types, resolving_basics, fields, types, is_je, false, settings
         );
         if (sub_field == NULL)
             return NULL;
@@ -654,7 +690,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         field->additional_info = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(
-                basic_types, type_data, types, is_je, false, settings
+                basic_types, resolving_basics, type_data, types, is_je, false, settings
         );
         if (sub_field == NULL)
             return NULL;
@@ -678,13 +714,20 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
             );
         else {
             cJSON *count_type = cJSON_GetObjectItem(fields, "countType");
-            if (count_type == NULL || g_strcmp0(count_type->valuestring, "varint") != 0)
+            if (count_type == NULL || g_strcmp0(count_type->valuestring, "varint") != 0) {
+                ws_log(
+                        "MC-Dissector",
+                        LOG_LEVEL_CRITICAL,
+                        "Invalid protocol data - Array count type is invalid: %s",
+                        cJSON_Print(data)
+                );
                 return NULL;
+            }
         }
 
         cJSON *type_data = cJSON_GetObjectItem(fields, "type");
         protocol_field sub_field = parse_protocol(
-                basic_types, type_data, types, is_je, false, settings
+                basic_types, resolving_basics, type_data, types, is_je, false, settings
         );
         if (sub_field == NULL)
             return NULL;
@@ -709,7 +752,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         return field;
     } else if (g_strcmp0(type, "topBitSetTerminatedArray") == 0) {
         protocol_field sub_field = parse_protocol(
-                basic_types, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
+                basic_types, resolving_basics, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
         );
         if (sub_field == NULL)
             return NULL;
@@ -724,20 +767,27 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         if (cJSON_HasObjectItem(fields, "default")) {
             cJSON *default_data = cJSON_GetObjectItem(fields, "default");
             protocol_field default_field = parse_protocol(
-                    basic_types, default_data, types, is_je, false, settings
+                    basic_types, resolving_basics, default_data, types, is_je, false, settings
             );
             if (default_field == NULL)
                 return NULL;
             wmem_map_insert(field->additional_info, strdup("default"), default_field);
         }
         cJSON *cases = cJSON_GetObjectItem(fields, "fields");
-        if (cases == NULL)
+        if (cases == NULL) {
+            ws_log(
+                    "MC-Dissector",
+                    LOG_LEVEL_CRITICAL,
+                    "Invalid protocol data - Switch cases not found: %s",
+                    cJSON_Print(data)
+            );
             return NULL;
+        }
         cJSON *now = cases->child;
         while (now != NULL) {
             char *key = now->string;
             protocol_field value = parse_protocol(
-                    basic_types, now, types, is_je, false, settings
+                    basic_types, resolving_basics, now, types, is_je, false, settings
             );
             if (value == NULL)
                 return NULL;
@@ -748,7 +798,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         return field;
     } else if (g_strcmp0(type, "entityMetadataLoop") == 0) {
         protocol_field sub_field = parse_protocol(
-                basic_types, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
+                basic_types, resolving_basics, cJSON_GetObjectItem(fields, "type"), types, is_je, false, settings
         );
         if (sub_field == NULL)
             return NULL;
@@ -761,7 +811,7 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         protocol_field_t *type_data = wmem_map_lookup(basic_types, type);
         if (type_data == NULL) {
             type_data = parse_protocol(
-                    basic_types, cJSON_GetObjectItem(types, type), types, is_je, false, settings
+                    basic_types, resolving_basics, cJSON_GetObjectItem(types, type), types, is_je, false, settings
             );
         }
         if (type_data == NULL)
@@ -780,6 +830,12 @@ protocol_field parse_protocol(wmem_map_t *basic_types, cJSON *data, cJSON *types
         return field;
     }
 
+    ws_log(
+            "MC-Dissector",
+            LOG_LEVEL_ERROR,
+            "Invalid protocol data - Unknown type: %s",
+            cJSON_Print(data)
+    );
     return NULL;
 }
 
@@ -793,6 +849,9 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
     cJSON *c4 = cJSON_GetArrayItem(c3, 1);
     cJSON *mappings = cJSON_GetObjectItem(c4, "mappings");
     cJSON *now = mappings->child;
+
+    wmem_map_t *basic_types = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+    wmem_list_t *resolving_basics = wmem_list_new(wmem_epan_scope());
     while (now != NULL) {
         char *packet_id_str = now->string;
         gchar *packet_name = strdup(now->valuestring);
@@ -810,12 +869,7 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
         cJSON *item = cJSON_GetObjectItem(data, packet_definition);
 
         if (item != NULL) {
-            wmem_list_t *path_array = wmem_list_new(wmem_epan_scope());
-            wmem_list_append(path_array, 0);
-            entry->field = parse_protocol(
-                    wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal),
-                    item, types, is_je, true, settings
-            );
+            entry->field = parse_protocol(basic_types, resolving_basics, item, types, is_je, true, settings);
         } else {
             protocol_field field = wmem_new(wmem_epan_scope(), protocol_field_t);
             field->make_tree = make_tree_void;
@@ -825,6 +879,8 @@ void make_simple_protocol(cJSON *data, cJSON *types, wmem_map_t *packet_map, wme
 
         now = now->next;
     }
+    wmem_free(wmem_epan_scope(), basic_types);
+    wmem_destroy_list(resolving_basics);
 }
 
 protocol_set create_protocol_set(cJSON *types, cJSON *data, bool is_je, protocol_settings settings) {

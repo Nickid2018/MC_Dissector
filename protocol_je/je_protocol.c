@@ -48,17 +48,20 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mcje_protocol_context *ctx) {
 
         ctx->protocol_version = protocol_version;
         wmem_map_insert(((extra_data *) ctx->extra)->data, "protocol_version", GUINT_TO_POINTER(protocol_version));
+
+        gchar **java_versions = get_mapped_java_versions(protocol_version);
+        if (java_versions[0] == NULL) {
+            ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
+            return INVALID_DATA;
+        }
+        ctx->data_version = get_data_version(java_versions[0]);
+        wmem_map_insert(((extra_data *) ctx->extra)->data, "data_version", GUINT_TO_POINTER(ctx->data_version));
+
         ctx->protocol_set = get_protocol_set_je(protocol_version, (protocol_settings) {
                 ctx->data_version >= 3567
         });
         if (ctx->protocol_set == NULL)
             ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-
-        gchar **java_versions = get_mapped_java_versions(protocol_version);
-        if (java_versions[0] == NULL)
-            return INVALID_DATA;
-        ctx->data_version = get_data_version(java_versions[0]);
-        wmem_map_insert(((extra_data *) ctx->extra)->data, "data_version", GUINT_TO_POINTER(ctx->data_version));
         return 0;
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING)
         return 0;
