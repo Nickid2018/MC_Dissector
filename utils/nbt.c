@@ -6,7 +6,7 @@
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
 
-extern int hf_string_je;
+extern int hf_string;
 
 #define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
@@ -83,7 +83,7 @@ gint add_primitive_type(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     gint length;
     char *text;
     parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
-    proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
+    proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
     proto_item_set_text(item, "%s %s", sup_name, text);
     proto_item_set_len(item, length);
     return length;
@@ -106,7 +106,7 @@ gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     if (sup_name == NULL)
         subtree = tree;
     else {
-        item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
+        item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
         subtree = proto_item_add_subtree(item, ett);
         proto_item_set_text(item, "%s", sup_name);
     }
@@ -147,7 +147,7 @@ gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     if (sup_name == NULL)
         subtree = tree;
     else {
-        item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
+        item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
         subtree = proto_item_add_subtree(item, ett);
         proto_item_set_text(item, "%s", sup_name);
     }
@@ -193,7 +193,7 @@ gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offse
         offset += add_primitive_type(tree, pinfo, tvb, offset, type, name);
     } else {
         int ett = is_je ? ett_sub_je : ett_sub_be;
-        proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset, 0, ENC_NA);
+        proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset, 0, ENC_NA);
         proto_item_set_text(item, "%s", name);
         proto_tree *subtree = proto_item_add_subtree(item, ett);
 

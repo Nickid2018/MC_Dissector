@@ -12,25 +12,29 @@ int ett_je_proto = -1;
 int ett_sub_je = -1;
 
 // hf lines
-int hf_int8_je = -1;
-int hf_uint8_je = -1;
-int hf_int16_je = -1;
-int hf_uint16_je = -1;
-int hf_int_je = -1;
-int hf_uint_je = -1;
-int hf_varint_je = -1;
-int hf_int64_je = -1;
-int hf_uint64_je = -1;
-int hf_varlong_je = -1;
-int hf_float_je = -1;
-int hf_double_je = -1;
-int hf_bytes_je = -1;
-int hf_string_je = -1;
-int hf_boolean_je = -1;
-int hf_uuid_je = -1;
+int hf_int8 = -1;
+int hf_uint8 = -1;
+int hf_hint8 = -1;
+int hf_int16 = -1;
+int hf_uint16 = -1;
+int hf_hint16 = -1;
+int hf_int32 = -1;
+int hf_uint32 = -1;
+int hf_hint32 = -1;
+int hf_varint = -1;
+int hf_int64 = -1;
+int hf_uint64 = -1;
+int hf_hint64 = -1;
+int hf_varlong = -1;
+int hf_float = -1;
+int hf_double = -1;
+int hf_bytes = -1;
+int hf_string = -1;
+int hf_boolean = -1;
+int hf_uuid = -1;
 
-int hf_generated_je = -1;
-int hf_invalid_data_je = -1;
+int hf_generated = -1;
+int hf_invalid_data = -1;
 int hf_ignored_packet_je = -1;
 int hf_packet_length_je = -1;
 int hf_packet_data_length_je = -1;
@@ -50,24 +54,28 @@ void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
 
     static hf_register_info hf_je[] = {
-            DEFINE_HF(hf_int8_je, " [int8]", "mcje.int8", INT8, DEC)
-            DEFINE_HF(hf_uint8_je, " [uint8]", "mcje.uint8", UINT8, DEC)
-            DEFINE_HF(hf_int16_je, " [int16]", "mcje.int16", INT16, DEC)
-            DEFINE_HF(hf_uint16_je, " [uint16]", "mcje.uint16", UINT16, DEC)
-            DEFINE_HF(hf_int_je, " [int32]", "mcje.int", INT32, DEC)
-            DEFINE_HF(hf_uint_je, " [uint32]", "mcje.uint", UINT32, DEC)
-            DEFINE_HF(hf_varint_je, " [var int]", "mcje.varint", UINT32, DEC)
-            DEFINE_HF(hf_int64_je, " [int64]", "mcje.int64", INT64, DEC)
-            DEFINE_HF(hf_uint64_je, " [uint64]", "mcje.uint64", UINT64, DEC)
-            DEFINE_HF(hf_varlong_je, " [var long]", "mcje.varlong", UINT32, DEC)
-            DEFINE_HF(hf_float_je, " [f32]", "mcje.float", FLOAT, DEC)
-            DEFINE_HF(hf_double_je, " [f64]", "mcje.double", DOUBLE, DEC)
-            DEFINE_HF(hf_bytes_je, " [buffer]", "mcje.bytes", BYTES, NONE)
-            DEFINE_HF(hf_string_je, " [string]", "mcje.string", STRING, NONE)
-            DEFINE_HF(hf_boolean_je, " [boolean]", "mcje.boolean", BOOLEAN, NONE)
-            DEFINE_HF(hf_uuid_je, " [UUID]", "mcje.uuid", GUID, NONE)
-            DEFINE_HF(hf_generated_je, " (generated)", "mcje.generated", STRING, NONE)
-            DEFINE_HF(hf_invalid_data_je, "Invalid Data", "mcje.invalid_data", STRING, NONE)
+            DEFINE_HF(hf_int8, "[int8]", "mc.int8", INT8, DEC)
+            DEFINE_HF(hf_uint8, "[uint8]", "mc.uint8", UINT8, DEC)
+            DEFINE_HF(hf_hint8, "[uint8]", "mc.hint8", UINT8, HEX)
+            DEFINE_HF(hf_int16, "[int16]", "mc.int16", INT16, DEC)
+            DEFINE_HF(hf_uint16, "[uint16]", "mc.uint16", UINT16, DEC)
+            DEFINE_HF(hf_hint16, "[uint16]", "mc.hint16", UINT16, HEX)
+            DEFINE_HF(hf_int32, "[int32]", "mc.int32", INT32, DEC)
+            DEFINE_HF(hf_uint32, "[uint32]", "mc.uint32", UINT32, DEC)
+            DEFINE_HF(hf_hint32, "[uint32]", "mc.hint32", UINT32, HEX)
+            DEFINE_HF(hf_varint, "[var int]", "mc.varint", UINT32, DEC)
+            DEFINE_HF(hf_int64, "[int64]", "mc.int64", INT64, DEC)
+            DEFINE_HF(hf_uint64, "[uint64]", "mc.uint64", UINT64, DEC)
+            DEFINE_HF(hf_hint64, "[uint64]", "mc.hint64", UINT64, HEX)
+            DEFINE_HF(hf_varlong, "[var long]", "mc.varlong", UINT32, DEC)
+            DEFINE_HF(hf_float, "[f32]", "mc.float", FLOAT, DEC)
+            DEFINE_HF(hf_double, "[f64]", "mc.double", DOUBLE, DEC)
+            DEFINE_HF(hf_bytes, "[buffer]", "mc.bytes", BYTES, NONE)
+            DEFINE_HF(hf_string, "[string]", "mc.string", STRING, NONE)
+            DEFINE_HF(hf_boolean, "[boolean]", "mc.boolean", BOOLEAN, NONE)
+            DEFINE_HF(hf_uuid, "[UUID]", "mc.uuid", GUID, NONE)
+            DEFINE_HF(hf_generated, "(generated)", "mc.generated", STRING, NONE)
+            DEFINE_HF(hf_invalid_data, "Invalid Data", "mc.invalid_data", STRING, NONE)
             DEFINE_HF(hf_ignored_packet_je, "Ignored Packet", "mcje.ignored_packet", STRING, NONE)
             DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC)
             DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC)

@@ -5,7 +5,7 @@
 #include "protocol_functions.h"
 #include "protocol/storage/storage.h"
 
-extern int hf_generated_je;
+extern int hf_generated;
 
 FIELD_MAKE_TREE(record_entity_id) {
     if (!get_settings_flag("registries") && !get_settings_flag("entities"))
@@ -24,7 +24,7 @@ FIELD_MAKE_TREE(record_entity_id) {
     char *str_type = get_registry_data(protocol_version, "entity_type", type_uint);
     wmem_map_insert(entity_id_record, id, str_type);
     if (tree) {
-        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, str_type);
+        proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, str_type);
         proto_item_set_generated(item);
         proto_item_prepend_text(item, "Entity Type");
     }
@@ -89,11 +89,11 @@ FIELD_MAKE_TREE(sync_entity_data) {
     guint key_int = strtol(key, NULL, 10);
     char *type = wmem_map_lookup(entity_id_record, id);
     if (type != NULL) {
-        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, type);
+        proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, type);
         proto_item_set_generated(item);
         proto_item_prepend_text(item, "Entity Type");
     } else {
-        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, "Unknown");
+        proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, "Unknown");
         proto_item_set_generated(item);
         proto_item_prepend_text(item, "Entity Type");
         return 0;
@@ -101,7 +101,7 @@ FIELD_MAKE_TREE(sync_entity_data) {
     gchar *found_name = get_entity_sync_data_name(protocol_version, type, key_int);
     if (found_name == NULL)
         found_name = "Unknown Sync Data!";
-    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, found_name);
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Sync Data Type");
     return 0;
@@ -118,7 +118,7 @@ FIELD_MAKE_TREE(entity_event) {
     );
     if (event_name == NULL)
         event_name = "Unknown";
-    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, event_name);
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Entity Event Type");
     return 0;
@@ -135,7 +135,7 @@ FIELD_MAKE_TREE(level_event) {
     );
     if (event_name == NULL)
         event_name = "Unknown";
-    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, event_name);
+    proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, event_name);
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Level Event Type");
     return 0;
