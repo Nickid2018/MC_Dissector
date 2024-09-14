@@ -38,14 +38,15 @@ jobs:
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
-          vs-version: 16.4
+          msbuild-architecture: x64
       - name: Make build dir
         run: mkdir build
         working-directory: wireshark
       - name: Configure Wireshark
         run: cmake -A x64 .. -DBUILD_wireshark=OFF
         working-directory: wireshark/build
-      - run: cmake --build . --config RelWithDebInfo --target epan
+      - name: Build Wireshark
+        run: cmake --build . --config RelWithDebInfo --target epan
         working-directory: wireshark/build
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"

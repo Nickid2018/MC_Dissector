@@ -30,7 +30,7 @@ extern int proto_mcbe;
 extern module_t *pref_mcje;
 extern gchar *pref_ignore_packets_je;
 extern gchar *pref_secret_key;
-extern gboolean pref_do_nbt_decode;
+extern bool pref_do_nbt_decode;
 
 extern module_t *pref_mcbe;
 

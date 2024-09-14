@@ -24,7 +24,7 @@ gchar *pref_protocol_data_dir;
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "c:map_chunk";
 gchar *pref_secret_key = "";
-gboolean pref_do_nbt_decode = false;
+bool pref_do_nbt_decode = false;
 
 module_t *pref_mcbe = NULL;
 
