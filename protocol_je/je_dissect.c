@@ -133,7 +133,7 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint o
                 return;
             }
 
-            new_tvb = tvb_uncompress(tvb, offset, len - var_len);
+            new_tvb = tvb_uncompress_zlib(tvb, offset, len - var_len);
             if (new_tvb == NULL)
                 return;
 

@@ -111,7 +111,7 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
             proto_tree_add_string(packet_tree, hf_server_address_je, tvb, p, -1, "Invalid Server Address");
             return;
         }
-        guint16 server_port = tvb_get_guint16(tvb, p + read, ENC_BIG_ENDIAN);
+        guint16 server_port = tvb_get_uint16(tvb, p + read, ENC_BIG_ENDIAN);
         read += 2;
         proto_tree_add_string_format_value(
                 packet_tree, hf_server_address_je, tvb, p, read, "",
@@ -131,7 +131,7 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
                 packet_tree, hf_packet_name_je, tvb, 0, read,
                 "legacy_server_list_ping", "Legacy Server List Ping"
         );
-        guint8 payload = tvb_get_guint8(tvb, p);
+        guint8 payload = tvb_get_uint8(tvb, p);
         proto_tree_add_uint(packet_tree, hf_legacy_slp_payload, tvb, p, 1, payload);
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 1, "Unknown Packet ID");
@@ -151,7 +151,7 @@ void handle_server_slp(proto_tree *packet_tree, tvbuff_t *tvb) {
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Ping Start");
     else if (packet_id == PACKET_ID_SERVER_PING) {
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Server Ping");
-        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, 8, tvb_get_gint64(tvb, p, ENC_BIG_ENDIAN));
+        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, 8, tvb_get_int64(tvb, p, ENC_BIG_ENDIAN));
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
@@ -177,7 +177,7 @@ void handle_client_slp(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tv
         proto_tree_add_string(packet_tree, hf_server_status_je, tvb, p, read, *(char **) &server_info);
     } else if (packet_id == PACKET_ID_CLIENT_PING) {
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Client Ping");
-        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, 8, tvb_get_gint64(tvb, p, ENC_BIG_ENDIAN));
+        proto_tree_add_int64(packet_tree, hf_ping_time_je, tvb, p, 8, tvb_get_int64(tvb, p, ENC_BIG_ENDIAN));
     } else
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }

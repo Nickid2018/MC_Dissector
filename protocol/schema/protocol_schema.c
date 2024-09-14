@@ -104,7 +104,7 @@ FIELD_MAKE_TREE(var_buffer) {
     return read + length;
 }
 
-SINGLE_LENGTH_FIELD_MAKE(u8, hf_uint8_je, 1, proto_tree_add_uint, tvb_get_guint8, record_uint)
+SINGLE_LENGTH_FIELD_MAKE(u8, hf_uint8_je, 1, proto_tree_add_uint, tvb_get_uint8, record_uint)
 
 SINGLE_LENGTH_FIELD_MAKE(u16, hf_uint16_je, 2, proto_tree_add_uint, tvb_get_ntohs, record_uint)
 
@@ -112,7 +112,7 @@ SINGLE_LENGTH_FIELD_MAKE(u32, hf_uint_je, 4, proto_tree_add_uint, tvb_get_ntohl,
 
 SINGLE_LENGTH_FIELD_MAKE(u64, hf_uint64_je, 8, proto_tree_add_uint64, tvb_get_ntoh64, record_uint64)
 
-SINGLE_LENGTH_FIELD_MAKE(i8, hf_int8_je, 1, proto_tree_add_int, tvb_get_gint8, record_int)
+SINGLE_LENGTH_FIELD_MAKE(i8, hf_int8_je, 1, proto_tree_add_int, tvb_get_int8, record_int)
 
 SINGLE_LENGTH_FIELD_MAKE(i16, hf_int16_je, 2, proto_tree_add_int, tvb_get_ntohis, record_int)
 
@@ -124,7 +124,7 @@ SINGLE_LENGTH_FIELD_MAKE(f32, hf_float_je, 4, proto_tree_add_float, tvb_get_ntoh
 
 SINGLE_LENGTH_FIELD_MAKE(f64, hf_double_je, 8, proto_tree_add_double, tvb_get_ntohieee_double, record_double)
 
-SINGLE_LENGTH_FIELD_MAKE(boolean, hf_boolean_je, 1, proto_tree_add_boolean, tvb_get_guint8, record_bool)
+SINGLE_LENGTH_FIELD_MAKE(boolean, hf_boolean_je, 1, proto_tree_add_boolean, tvb_get_uint8, record_bool)
 
 FIELD_MAKE_TREE(rest_buffer) {
     if (tree) {
@@ -182,7 +182,7 @@ FIELD_MAKE_TREE(nbt) {
 }
 
 FIELD_MAKE_TREE(optional_nbt) {
-    guint8 present = tvb_get_guint8(tvb, offset);
+    guint8 present = tvb_get_uint8(tvb, offset);
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
             return do_nbt_tree(tree, pinfo, tvb, offset, field->name, is_je, true);
@@ -212,7 +212,7 @@ FIELD_MAKE_TREE(optional_nbt) {
 }
 
 FIELD_MAKE_TREE(nbt_any_type) {
-    guint8 present = tvb_get_guint8(tvb, offset);
+    guint8 present = tvb_get_uint8(tvb, offset);
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
             return do_nbt_tree(tree, pinfo, tvb, offset, field->name, is_je, false);
@@ -277,7 +277,7 @@ FIELD_MAKE_TREE(container) {
 }
 
 FIELD_MAKE_TREE(option) {
-    bool is_present = tvb_get_guint8(tvb, offset) != 0;
+    bool is_present = tvb_get_uint8(tvb, offset) != 0;
     protocol_field sub_field = wmem_map_lookup(field->additional_info, 0);
     sub_field->name = field->name;
     if (is_present)
@@ -447,7 +447,7 @@ FIELD_MAKE_TREE(top_bit_set_terminated_array) {
                 is_je ? ett_sub_je : ett_sub_be, NULL, field->name
         );
     do {
-        now = tvb_get_guint8(tvb, offset++);
+        now = tvb_get_uint8(tvb, offset++);
         len++;
         guint ord = now & 0x7F;
         record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", ord), "]", NULL));
@@ -492,7 +492,7 @@ FIELD_MAKE_TREE(entity_metadata_loop) {
                 tree, tvb, offset, remaining,
                 is_je ? ett_sub_je : ett_sub_be, NULL, field->name
         );
-    while (tvb_get_guint8(tvb, offset) != end_val) {
+    while (tvb_get_uint8(tvb, offset) != end_val) {
         record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", count), "]", NULL));
         sub_field->name = g_strdup_printf("%s[%d]", field->name, count);
         gint sub_length = sub_field->make_tree(

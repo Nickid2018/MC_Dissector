@@ -18,7 +18,7 @@ jobs:
     env:
       PLATFORM: x64
       WIRESHARK_DIR: ${{ github.workspace }}/wireshark
-      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.2
+      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.4
       WIRESHARK_BUILD_DIR: ${{ github.workspace }}/wireshark/build
       WIRESHARK_LIB_FILE_DIR: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo
     steps:
@@ -32,7 +32,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: wireshark-4.2.6
+          ref: wireshark-4.4.0
       - name: Choco install Wireshark Deps
         run: choco install -y --no-progress cmake winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
       - name: Add msbuild to PATH
@@ -72,7 +72,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install Depsc
+      - name: Install Deps
         run: |
           sudo add-apt-repository ppa:wireshark-dev/stable
           sudo apt-get update & sudo apt-get install cmake libwireshark-dev libcjson-dev make clang
@@ -137,7 +137,7 @@ jobs:
       - id: process-name
         env:
           REF: ${{ github.ref }}
-        run: echo ::set-output name=NAME::${REF##*/}
+        run: echo "NAME=${REF##*/}" >> $GITHUB_OUTPUT
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
