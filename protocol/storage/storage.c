@@ -66,14 +66,6 @@ JSON_CACHED(settings, "settings.json")
 
 JSON_CACHED(versions, "java_edition/versions.json")
 
-JSON_CACHED(protocol_data_mapping, "java_edition/protocol_mapping.json")
-
-JSON_CACHED(entity_sync_data_mapping, "java_edition/entity_sync_data_mapping.json")
-
-JSON_CACHED(level_event_data_mapping, "java_edition/level_event_mapping.json")
-
-JSON_CACHED(entity_event_data_mapping, "java_edition/entity_event_mapping.json")
-
 JSON_CACHED(packet_names, "java_edition/packet_names.json")
 
 DATA_CACHED_UINT(protocol)
@@ -118,6 +110,12 @@ void ensure_init_index_mappings() {
     g_free(content);
 }
 
+gchar *get_index(uint32_t protocol_version, gchar *item) {
+    ensure_init_index_mappings();
+    wmem_map_t *version_index = wmem_map_lookup(index_mappings, (const void *) (uint64_t) protocol_version);
+    return wmem_map_lookup(version_index, item);
+}
+
 gboolean nop(gpointer key _U_, gpointer value _U_, gpointer user_data _U_) {
     return true;
 }
@@ -130,10 +128,6 @@ gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
 void clear_storage() {
     CLEAR_CACHED_JSON(settings)
     CLEAR_CACHED_JSON(versions)
-    CLEAR_CACHED_JSON(protocol_data_mapping)
-    CLEAR_CACHED_JSON(entity_sync_data_mapping)
-    CLEAR_CACHED_JSON(level_event_data_mapping)
-    CLEAR_CACHED_JSON(entity_event_data_mapping)
     CLEAR_CACHED_JSON(packet_names)
     CLEAR_CACHED_DATA(protocol, nop)
     CLEAR_CACHED_DATA(entity_sync_data, clean_json)
@@ -190,17 +184,10 @@ cJSON *get_protocol_source(uint32_t protocol_version) {
     if (cached != NULL)
         return cached;
 
-    ensure_cached_protocol_data_mapping();
-    gchar *find_key = g_strdup_printf("%d", protocol_version);
-    cJSON *found = cJSON_GetObjectItem(cached_protocol_data_mapping, find_key);
-    g_free(find_key);
-    if (found == NULL)
-        return NULL;
-
     gchar *file = g_build_filename(
             pref_protocol_data_dir,
             "java_edition/indexed_data",
-            found->valuestring,
+            get_index(protocol_version, "protocol"),
             "protocol.json",
             NULL
     );
@@ -222,15 +209,13 @@ protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings se
     if (cached != NULL)
         return cached;
 
-    ensure_cached_protocol_data_mapping();
-    gchar *find_key = g_strdup_printf("%d", protocol_version);
-    cJSON *found = cJSON_GetObjectItem(cached_protocol_data_mapping, find_key);
-    g_free(find_key);
-    if (found == NULL)
-        return NULL;
-
-    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexed_data", found->valuestring,
-                                   "protocol.json", NULL);
+    gchar *file = g_build_filename(
+            pref_protocol_data_dir,
+            "java_edition/indexed_data",
+//            found->valuestring,
+            "protocol.json",
+            NULL
+    );
     gchar *content = NULL;
     if (!g_file_get_contents(file, &content, NULL, NULL)) {
         ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
@@ -264,17 +249,10 @@ protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings se
 gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index) {
     cJSON *cached = get_cached_entity_sync_data(protocol_version);
     if (cached == NULL) {
-        ensure_cached_entity_sync_data_mapping();
-        gchar *find_key = g_strdup_printf("%d", protocol_version);
-        cJSON *found = cJSON_GetObjectItem(cached_entity_sync_data_mapping, find_key);
-        g_free(find_key);
-        if (found == NULL)
-            return NULL;
-
         gchar *file = g_build_filename(
                 pref_protocol_data_dir,
                 "java_edition/indexed_data",
-                found->valuestring,
+                get_index(protocol_version, "entity_sync_data"),
                 "entity_sync_data.json",
                 NULL
         );
@@ -285,6 +263,7 @@ gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint
             return NULL;
         }
 
+        g_free(file);
         cached = cJSON_Parse(content);
         g_free(content);
         set_cached_entity_sync_data(protocol_version, cached);
@@ -300,42 +279,11 @@ gchar *get_registry_data(guint protocol_version, gchar *registry, guint index) {
     gchar *cache_key = g_strdup_printf("%s/%d", registry, protocol_version);
     cJSON *cached = get_cached_registry_data(cache_key);
     if (cached == NULL) {
-        cJSON *mapping = get_cached_registry_data_mapping(registry);
-        if (mapping == NULL) {
-            gchar *file_name = g_strdup_printf("%s_mapping.json", registry);
-            gchar *file = g_build_filename(
-                    pref_protocol_data_dir,
-                    "java_edition/registry_mapping",
-                    file_name,
-                    NULL
-            );
-            g_free(file_name);
-            gchar *content = NULL;
-            if (!g_file_get_contents(file, &content, NULL, NULL)) {
-                ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
-                g_free(file);
-                g_free(cache_key);
-                return NULL;
-            }
-            g_free(file);
-            mapping = cJSON_Parse(content);
-            g_free(content);
-            set_cached_registry_data_mapping(registry, mapping);
-        }
-
-        gchar *find_key = g_strdup_printf("%d", protocol_version);
-        cJSON *found = cJSON_GetObjectItem(mapping, find_key);
-        g_free(find_key);
-        if (found == NULL) {
-            g_free(cache_key);
-            return NULL;
-        }
-
         gchar *file_name = g_strdup_printf("%s.json", registry);
         gchar *file = g_build_filename(
                 pref_protocol_data_dir,
                 "java_edition/indexed_data",
-                found->valuestring,
+                get_index(protocol_version, registry),
                 "registries",
                 file_name,
                 NULL
@@ -363,17 +311,10 @@ gchar *get_registry_data(guint protocol_version, gchar *registry, guint index) {
 gchar *get_level_event_data(guint protocol_version, gchar *index) {
     cJSON *cached = get_cached_level_event(protocol_version);
     if (cached == NULL) {
-        ensure_cached_level_event_data_mapping();
-        gchar *find_key = g_strdup_printf("%d", protocol_version);
-        cJSON *found = cJSON_GetObjectItem(cached_level_event_data_mapping, find_key);
-        g_free(find_key);
-        if (found == NULL)
-            return NULL;
-
         gchar *file = g_build_filename(
                 pref_protocol_data_dir,
                 "java_edition/indexed_data",
-                found->valuestring,
+                get_index(protocol_version, "level_event"),
                 "level_event.json",
                 NULL
         );
@@ -384,6 +325,7 @@ gchar *get_level_event_data(guint protocol_version, gchar *index) {
             return NULL;
         }
 
+        g_free(file);
         cached = cJSON_Parse(content);
         g_free(content);
         set_cached_level_event(protocol_version, cached);
@@ -398,17 +340,10 @@ gchar *get_level_event_data(guint protocol_version, gchar *index) {
 gchar *get_entity_event_data(guint protocol_version, gchar *index) {
     cJSON *cached = get_cached_entity_event(protocol_version);
     if (cached == NULL) {
-        ensure_cached_entity_event_data_mapping();
-        gchar *find_key = g_strdup_printf("%d", protocol_version);
-        cJSON *found = cJSON_GetObjectItem(cached_entity_event_data_mapping, find_key);
-        g_free(find_key);
-        if (found == NULL)
-            return NULL;
-
         gchar *file = g_build_filename(
                 pref_protocol_data_dir,
                 "java_edition/indexed_data",
-                found->valuestring,
+                get_index(protocol_version, "entity_event"),
                 "entity_event.json",
                 NULL
         );
@@ -419,6 +354,7 @@ gchar *get_entity_event_data(guint protocol_version, gchar *index) {
             return NULL;
         }
 
+        g_free(file);
         cached = cJSON_Parse(content);
         g_free(content);
         set_cached_entity_event(protocol_version, cached);
