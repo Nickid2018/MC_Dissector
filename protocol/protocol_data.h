@@ -38,8 +38,8 @@ typedef struct {
     guint8 *server_last_remains;
     guint8 *client_last_remains;
 
-    void *extra;
-} mcje_protocol_context;
+    wmem_map_t *global_data;
+} mc_protocol_context;
 
 typedef struct {
     je_state client_state;
@@ -49,7 +49,7 @@ typedef struct {
     guint8 *decrypted_data_head;
     guint8 *decrypted_data_tail;
     gint32 compression_threshold;
-} mcje_frame_data;
+} mc_frame_data;
 
 extern char *STATE_NAME[];
 

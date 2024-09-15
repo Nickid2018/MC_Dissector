@@ -10,9 +10,9 @@
 
 extern dissector_handle_t mcje_handle;
 
-extern int ett_mcje;
-extern int ett_je_proto;
-extern int ett_sub_je;
+extern int ett_mc;
+extern int ett_proto;
+extern int ett_sub;
 
 void proto_register_mcje();
 

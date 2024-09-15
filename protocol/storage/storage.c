@@ -88,6 +88,36 @@ DATA_CACHED_STR(registry_data_mapping)
 
 DATA_CACHED_STR(registry_data)
 
+wmem_map_t *index_mappings;
+
+void ensure_init_index_mappings() {
+    if (index_mappings) return;
+    index_mappings = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexes.csv", NULL);
+    gchar *content = NULL;
+    if (!g_file_get_contents(file, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+        g_free(file);
+        return;
+    }
+    g_free(file);
+
+    gchar **split_lines = g_strsplit(content, "\n", 10000);
+    gchar **header = g_strsplit(split_lines[0], ",", 1000);
+    gchar *now_line;
+    for (int i = 1; (now_line = split_lines[i]) != NULL; i++) {
+        gchar **now_line_split = g_strsplit(now_line, ",", 10000);
+        wmem_map_t *map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(index_mappings, g_strdup(now_line_split[0]), map);
+        gchar *now_value;
+        for (int j = 1; (now_value = now_line_split[j]) != NULL; j++)
+            wmem_map_insert(map, header[j], now_value);
+        g_strfreev(now_line_split);
+    }
+    g_strfreev(split_lines);
+    g_free(content);
+}
+
 gboolean nop(gpointer key _U_, gpointer value _U_, gpointer user_data _U_) {
     return true;
 }
@@ -153,6 +183,38 @@ gchar *get_readable_packet_name(bool to_client, gchar *packet_name) {
     if (found == NULL)
         return packet_name;
     return found->valuestring;
+}
+
+cJSON *get_protocol_source(uint32_t protocol_version) {
+    cJSON *cached = get_cached_protocol(protocol_version);
+    if (cached != NULL)
+        return cached;
+
+    ensure_cached_protocol_data_mapping();
+    gchar *find_key = g_strdup_printf("%d", protocol_version);
+    cJSON *found = cJSON_GetObjectItem(cached_protocol_data_mapping, find_key);
+    g_free(find_key);
+    if (found == NULL)
+        return NULL;
+
+    gchar *file = g_build_filename(
+            pref_protocol_data_dir,
+            "java_edition/indexed_data",
+            found->valuestring,
+            "protocol.json",
+            NULL
+    );
+    gchar *content = NULL;
+    if (!g_file_get_contents(file, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+        g_free(file);
+        return NULL;
+    }
+
+    cJSON *json = cJSON_Parse(content);
+    g_free(content);
+
+    return json;
 }
 
 protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings) {

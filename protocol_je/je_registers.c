@@ -7,9 +7,9 @@
 #include "je_protocol.h"
 
 // ett
-int ett_mcje = -1;
-int ett_je_proto = -1;
-int ett_sub_je = -1;
+int ett_mc = -1;
+int ett_proto = -1;
+int ett_sub = -1;
 
 // hf lines
 int hf_int8 = -1;
@@ -91,6 +91,6 @@ void proto_register_mcje() {
     };
     proto_register_field_array(proto_mcje, hf_je, array_length(hf_je));
 
-    static gint *ett_je[] = {&ett_mcje, &ett_je_proto, &ett_sub_je};
-    proto_register_subtree_array(ett_je, array_length(ett_je));
+    static gint *etts[] = {&ett_mc, &ett_proto, &ett_sub};
+    proto_register_subtree_array(etts, array_length(etts));
 }

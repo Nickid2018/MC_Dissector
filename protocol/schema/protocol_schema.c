@@ -162,7 +162,7 @@ FIELD_MAKE_TREE(void) {
 
 FIELD_MAKE_TREE(nbt) {
     if (pref_do_nbt_decode && is_je)
-        return do_nbt_tree(tree, pinfo, tvb, offset, field->name, is_je, true);
+        return do_nbt_tree(tree, pinfo, tvb, offset, field->name, true);
     else {
         gint length = count_nbt_length(tvb, offset);
         if (tree)
@@ -185,7 +185,7 @@ FIELD_MAKE_TREE(optional_nbt) {
     guint8 present = tvb_get_uint8(tvb, offset);
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
-            return do_nbt_tree(tree, pinfo, tvb, offset, field->name, is_je, true);
+            return do_nbt_tree(tree, pinfo, tvb, offset, field->name, true);
         else {
             gint length = count_nbt_length(tvb, offset);
             if (tree)
@@ -215,7 +215,7 @@ FIELD_MAKE_TREE(nbt_any_type) {
     guint8 present = tvb_get_uint8(tvb, offset);
     if (present != TAG_END) {
         if (pref_do_nbt_decode && is_je)
-            return do_nbt_tree(tree, pinfo, tvb, offset, field->name, is_je, false);
+            return do_nbt_tree(tree, pinfo, tvb, offset, field->name, false);
         else {
             gint length = count_nbt_length_with_type(tvb, offset + 1, present) + 1;
             if (tree)
@@ -249,7 +249,7 @@ FIELD_MAKE_TREE(container) {
     if (tree && not_top)
         tree = proto_tree_add_subtree(
                 tree, tvb, offset, remaining,
-                is_je ? ett_sub_je : ett_sub_be, NULL, field->name
+                is_je ? ett_sub : ett_sub_be, NULL, field->name
         );
     gint length = GPOINTER_TO_UINT(wmem_map_lookup(field->additional_info, 0));
     gint total_length = 0;
@@ -342,7 +342,7 @@ FIELD_MAKE_TREE(array) {
     if (tree) {
         sub_tree = proto_tree_add_subtree(
                 tree, tvb, offset, remaining,
-                is_je ? ett_sub_je : ett_sub_be, NULL,
+                is_je ? ett_sub : ett_sub_be, NULL,
                 g_strdup_printf("%s (%d entries)", field->name, data_count)
         );
     }
@@ -444,7 +444,7 @@ FIELD_MAKE_TREE(top_bit_set_terminated_array) {
     if (tree)
         sub_tree = proto_tree_add_subtree(
                 tree, tvb, offset, remaining,
-                is_je ? ett_sub_je : ett_sub_be, NULL, field->name
+                is_je ? ett_sub : ett_sub_be, NULL, field->name
         );
     do {
         now = tvb_get_uint8(tvb, offset++);
@@ -490,7 +490,7 @@ FIELD_MAKE_TREE(entity_metadata_loop) {
     if (tree)
         sub_tree = proto_tree_add_subtree(
                 tree, tvb, offset, remaining,
-                is_je ? ett_sub_je : ett_sub_be, NULL, field->name
+                is_je ? ett_sub : ett_sub_be, NULL, field->name
         );
     while (tvb_get_uint8(tvb, offset) != end_val) {
         record_start(recorder, g_strconcat(recording, "[", g_strdup_printf("%d", count), "]", NULL));
@@ -916,7 +916,7 @@ protocol_entry get_protocol_entry(protocol_set set, guint packet_id, bool is_cli
     return wmem_map_lookup(packet_map, GUINT_TO_POINTER(packet_id));
 }
 
-bool make_tree(protocol_entry entry, proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra,
+bool make_tree(protocol_entry entry, proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, wmem_map_t *extra,
                gint remaining) {
     if (entry->field != NULL) {
         data_recorder recorder = create_data_recorder(pinfo->pool);

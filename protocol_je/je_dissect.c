@@ -18,8 +18,8 @@ void proto_reg_handoff_mcje() {
     dissector_add_uint_range_with_preference("tcp.port", MCJE_PORT, mcje_handle);
 }
 
-void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_frame_data *frame_data,
-                    mcje_protocol_context *ctx, bool is_server,
+void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_frame_data *frame_data,
+                    mc_protocol_context *ctx, bool is_server,
                     bool visited) {
     if (is_server) {
         switch (frame_data->server_state) {
@@ -90,20 +90,20 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mcje_fr
 
 void mark_invalid(packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
-    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     ctx->client_state = INVALID;
     ctx->server_state = INVALID;
 }
 
 void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset, gint packet_len_len, gint len) {
     conversation_t *conv = find_or_create_conversation(pinfo);
-    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-    mcje_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
+    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
 
     proto_tree *mcje_tree;
     if (tree) {
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
-        mcje_tree = proto_item_add_subtree(ti, ett_mcje);
+        mcje_tree = proto_item_add_subtree(ti, ett_mc);
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, offset - packet_len_len, packet_len_len, len);
         proto_item_append_text(
                 ti, ", Client State: %s, Server State: %s",
@@ -149,7 +149,7 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint o
     if (tree) {
         proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
         proto_item_set_text(packet_item, "Minecraft JE Packet");
-        proto_tree *sub_mcje_tree = proto_item_add_subtree(packet_item, ett_je_proto);
+        proto_tree *sub_mcje_tree = proto_item_add_subtree(packet_item, ett_proto);
         sub_dissect_je(new_tvb, pinfo, sub_mcje_tree, frame_data, ctx, is_server, pinfo->fd->visited);
     } else {
         sub_dissect_je(new_tvb, pinfo, NULL, frame_data, ctx, is_server, pinfo->fd->visited);
@@ -158,9 +158,9 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint o
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_) {
     conversation_t *conv = find_or_create_conversation(pinfo);
-    mcje_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
+    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     if (!ctx) {
-        ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_protocol_context));
+        ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
         ctx->client_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
         ctx->server_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
         ctx->compression_threshold = -1;
@@ -172,14 +172,13 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->server_last_remains = NULL;
         ctx->client_last_remains = NULL;
         copy_address(&ctx->server_address, &pinfo->dst);
-        ctx->extra = wmem_alloc(wmem_file_scope(), sizeof(extra_data));
-        ((extra_data *) ctx->extra)->data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        ctx->global_data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
 
-    mcje_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
+    mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
     if (!frame_data) {
-        frame_data = wmem_alloc(wmem_file_scope(), sizeof(mcje_frame_data));
+        frame_data = wmem_alloc(wmem_file_scope(), sizeof(mc_frame_data));
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
         frame_data->encrypted = ctx->encrypted;

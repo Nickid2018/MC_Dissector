@@ -4,7 +4,6 @@
 
 #include "nbt.h"
 #include "protocol_je/je_dissect.h"
-#include "protocol_be/be_dissect.h"
 
 extern int hf_string;
 
@@ -180,8 +179,7 @@ gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     return length;
 }
 
-gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset,
-                 gchar *name, bool is_je, bool need_skip) {
+gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, gchar *name, bool need_skip) {
     guint8 type = tvb_get_uint8(tvb, offset);
     gint origin_offset = offset;
     if (need_skip)
@@ -192,16 +190,15 @@ gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offse
     if (is_primitive_type(type)) {
         offset += add_primitive_type(tree, pinfo, tvb, offset, type, name);
     } else {
-        int ett = is_je ? ett_sub_je : ett_sub_be;
         proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset, 0, ENC_NA);
         proto_item_set_text(item, "%s", name);
-        proto_tree *subtree = proto_item_add_subtree(item, ett);
+        proto_tree *subtree = proto_item_add_subtree(item, ett_sub);
 
         gint length = 0;
         if (type == TAG_LIST)
-            length = add_list_type(item, pinfo, subtree, tvb, ett, offset, NULL);
+            length = add_list_type(item, pinfo, subtree, tvb, ett_sub, offset, NULL);
         else if (type == TAG_COMPOUND)
-            length = add_compound_type(item, pinfo, subtree, tvb, ett, offset, NULL);
+            length = add_compound_type(item, pinfo, subtree, tvb, ett_sub, offset, NULL);
         offset += length;
 
         proto_item_set_len(item, length);

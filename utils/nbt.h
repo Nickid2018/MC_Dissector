@@ -21,7 +21,7 @@
 #define TAG_INT_ARRAY  11
 #define TAG_LONG_ARRAY 12
 
-gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, char *name, bool is_je, bool need_skip);
+gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, char *name, bool need_skip);
 
 gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type);
 

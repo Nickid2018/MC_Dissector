@@ -9,7 +9,7 @@
 #include "protocol_schema.h"
 
 #define FIELD_MAKE_TREE(name) \
-gint make_tree_##name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, extra_data *extra, protocol_field field, gint offset, gint remaining, data_recorder recorder, bool is_je)
+gint make_tree_##name(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, wmem_map_t *extra, protocol_field field, gint offset, gint remaining, data_recorder recorder, bool is_je)
 
 #define SINGLE_LENGTH_FIELD_MAKE(id_name, hf, len, func_add, func_parse, record) \
     FIELD_MAKE_TREE(id_name) {                                            \

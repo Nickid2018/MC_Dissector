@@ -9,5 +9,10 @@
 #include <cJSON.h>
 
 typedef struct protocol_dissector_struct protocol_dissector;
+typedef struct protocol_dissector_set_struct protocol_dissector_set;
+
+protocol_dissector_set *create_protocol(uint32_t protocol_version);
+
+void destroy_protocol(protocol_dissector_set *dissector_set);
 
 #endif //MC_DISSECTOR_SCHEMA_H
