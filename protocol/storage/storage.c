@@ -4,6 +4,7 @@
 
 #include "storage.h"
 #include "mc_dissector.h"
+#include "protocol/new_schema/schema.h"
 
 extern gchar *pref_protocol_data_dir;
 
@@ -76,8 +77,6 @@ DATA_CACHED_UINT(level_event)
 
 DATA_CACHED_UINT(entity_event)
 
-DATA_CACHED_STR(registry_data_mapping)
-
 DATA_CACHED_STR(registry_data)
 
 wmem_map_t *index_mappings;
@@ -116,10 +115,6 @@ gchar *get_index(uint32_t protocol_version, gchar *item) {
     return wmem_map_lookup(version_index, item);
 }
 
-gboolean nop(gpointer key _U_, gpointer value _U_, gpointer user_data _U_) {
-    return true;
-}
-
 gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
     cJSON_Delete(value);
     return true;
@@ -129,11 +124,10 @@ void clear_storage() {
     CLEAR_CACHED_JSON(settings)
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_JSON(packet_names)
-    CLEAR_CACHED_DATA(protocol, nop)
+    CLEAR_CACHED_DATA(protocol, clean_json)
     CLEAR_CACHED_DATA(entity_sync_data, clean_json)
     CLEAR_CACHED_DATA(level_event, clean_json)
     CLEAR_CACHED_DATA(entity_event, clean_json)
-    CLEAR_CACHED_DATA(registry_data_mapping, clean_json)
     CLEAR_CACHED_DATA(registry_data, clean_json)
 }
 
