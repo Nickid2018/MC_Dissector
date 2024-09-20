@@ -5,35 +5,24 @@
 #ifndef MC_DISSECTOR_STORAGE_H
 #define MC_DISSECTOR_STORAGE_H
 
-#include "protocol/schema/protocol_schema.h"
-
-typedef struct _protocol_je_set {
-    protocol_set login;
-    protocol_set play;
-    protocol_set configuration;
-} *protocol_je_set;
+#include "cJSON.h"
+#include "mc_dissector.h"
 
 void clear_storage();
 
-gchar **get_mapped_java_versions(guint protocol_version);
+gchar **get_mapped_java_versions(uint32_t protocol_version);
 
-gint get_data_version(gchar *java_version);
-
-gchar *get_readable_packet_name(bool to_client, gchar *packet_name);
+int32_t get_data_version(gchar *java_version);
 
 gchar *get_index(uint32_t protocol_version, gchar *item);
 
+gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_version);
+
 cJSON *get_protocol_source(uint32_t protocol_version);
 
-protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings);
+gchar *get_entity_sync_data_name(uint32_t protocol_version, gchar *entity_id, uint32_t index);
 
-gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index);
-
-gchar *get_registry_data(guint protocol_version, gchar *registry, guint index);
-
-gchar *get_level_event_data(guint protocol_version, gchar *index);
-
-gchar *get_entity_event_data(guint protocol_version, gchar *index);
+gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index);
 
 bool get_settings_flag(gchar *name);
 

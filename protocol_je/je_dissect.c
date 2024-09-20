@@ -35,22 +35,12 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
                 return;
             case LOGIN:
             case TRANSFER:
-                if (!visited && is_invalid(handle_server_login_switch(tvb, ctx)))
-                    return;
-                if (tree)
-                    handle_login(tree, pinfo, tvb, ctx, false);
-                return;
             case PLAY:
-                if (!visited && is_invalid(handle_server_play_switch(tvb, ctx)))
-                    return;
-                if (tree)
-                    handle_play(tree, pinfo, tvb, ctx, false);
-                return;
             case CONFIGURATION:
-                if (!visited && is_invalid(handle_server_configuration_switch(tvb, ctx)))
+                if (!visited && is_invalid(try_switch_state(tvb, ctx, false)))
                     return;
                 if (tree)
-                    handle_configuration(tree, pinfo, tvb, ctx, false);
+                    handle_protocol(tree, pinfo, tvb, ctx, false);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -64,22 +54,12 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
                 return;
             case LOGIN:
             case TRANSFER:
-                if (!visited && is_invalid(handle_client_login_switch(tvb, ctx)))
-                    return;
-                if (tree)
-                    handle_login(tree, pinfo, tvb, ctx, true);
-                return;
             case PLAY:
-                if (!visited && is_invalid(handle_client_play_switch(tvb, ctx)))
-                    return;
-                if (tree)
-                    handle_play(tree, pinfo, tvb, ctx, true);
-                return;
             case CONFIGURATION:
-                if (!visited && is_invalid(handle_client_configuration_switch(tvb, ctx)))
+                if (!visited && is_invalid(try_switch_state(tvb, ctx, true)))
                     return;
                 if (tree)
-                    handle_configuration(tree, pinfo, tvb, ctx, true);
+                    handle_protocol(tree, pinfo, tvb, ctx, true);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -91,11 +71,10 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
 void mark_invalid(packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
-    ctx->client_state = INVALID;
-    ctx->server_state = INVALID;
+    ctx->client_state = ctx->server_state = INVALID;
 }
 
-void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset, gint packet_len_len, gint len) {
+void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset, int32_t packet_len_len, int32_t len) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
@@ -113,7 +92,7 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint o
 
     tvbuff_t *new_tvb;
     if (frame_data->compression_threshold > 0) {
-        gint uncompressed_length;
+        int32_t uncompressed_length;
         int var_len = read_var_int(tvb, offset, &uncompressed_length);
         if (is_invalid(var_len)) {
             col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression VarInt");
@@ -192,15 +171,15 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
     if (frame_data->client_state == NOT_COMPATIBLE || frame_data->server_state == NOT_COMPATIBLE) {
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not compatible with the current plugin version");
-        return (gint) tvb_captured_length(tvb);
+        return (int32_t) tvb_captured_length(tvb);
     }
     if (frame_data->client_state == INVALID || frame_data->server_state == INVALID) {
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Data may be corrupted or meet a capturing failure");
-        return (gint) tvb_captured_length(tvb);
+        return (int32_t) tvb_captured_length(tvb);
     }
     if (frame_data->client_state == PROTOCOL_NOT_FOUND || frame_data->server_state == PROTOCOL_NOT_FOUND) {
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not found or invalid");
-        return (gint) tvb_captured_length(tvb);
+        return (int32_t) tvb_captured_length(tvb);
     }
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
@@ -211,22 +190,22 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
     tvbuff_t *use_tvb = tvb;
     if (frame_data->encrypted) {
-        guint length = tvb_reported_length_remaining(tvb, 0);
-        gint length_remaining = is_server ? ctx->server_last_segment_remaining : ctx->client_last_segment_remaining;
+        uint32_t length = tvb_reported_length_remaining(tvb, 0);
+        int32_t length_remaining = is_server ? ctx->server_last_segment_remaining : ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
-        guint8 **decrypt_data = pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
+        uint8_t **decrypt_data = pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gchar *secret_key_str = pref_secret_key;
             if (strlen(secret_key_str) != 32) {
                 col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Secret key is not set");
                 mark_invalid(pinfo);
-                return (gint) tvb_captured_length(tvb);
+                return (int32_t) tvb_captured_length(tvb);
             }
-            guint8 secret_key[16];
+            uint8_t secret_key[16];
             for (int i = 0; i < 16; i++) {
                 gchar hex[3] = {secret_key_str[i * 2], secret_key_str[i * 2 + 1], '\0'};
-                secret_key[i] = (guint8) strtol(hex, NULL, 16);
+                secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
             }
             gcry_cipher_open(cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
             gcry_cipher_setkey(*cipher, secret_key, sizeof(secret_key));
@@ -234,7 +213,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         }
 
         if (!*decrypt_data) {
-            guint8 *decrypt = wmem_alloc(pinfo->pool, length - length_remaining);
+            uint8_t *decrypt = wmem_alloc(pinfo->pool, length - length_remaining);
             gcry_error_t err = gcry_cipher_decrypt(
                     *cipher, decrypt,
                     length - length_remaining,
@@ -245,26 +224,26 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                 col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Decryption failed with code ");
                 col_append_fstr(pinfo->cinfo, COL_INFO, "%d", err);
                 mark_invalid(pinfo);
-                return (gint) tvb_captured_length(tvb);
+                return (int32_t) tvb_captured_length(tvb);
             }
 
-            guint8 *merged = wmem_alloc(wmem_file_scope(), length);
+            uint8_t *merged = wmem_alloc(wmem_file_scope(), length);
             memcpy(merged, is_server ? ctx->server_last_remains : ctx->client_last_remains, length_remaining);
             memcpy(merged + length_remaining, decrypt, length - length_remaining);
 
             *decrypt_data = merged;
         }
 
-        use_tvb = tvb_new_real_data(*decrypt_data, length, (gint) length);
+        use_tvb = tvb_new_real_data(*decrypt_data, length, (int32_t) length);
         add_new_data_source(pinfo, use_tvb, "Decrypted packet");
     }
 
-    gint offset = 0;
-    gint packet_count = 0;
+    int32_t offset = 0;
+    int32_t packet_count = 0;
     while (offset < tvb_reported_length(use_tvb)) {
-        gint available = tvb_reported_length_remaining(use_tvb, offset);
-        gint len = 0;
-        gint packet_len_len = read_var_int_with_limit(use_tvb, offset, available, &len);
+        int32_t available = tvb_reported_length_remaining(use_tvb, offset);
+        int32_t len = 0;
+        int32_t packet_len_len = read_var_int_with_limit(use_tvb, offset, available, &len);
 
         if (packet_len_len == INVALID_DATA) {
             col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);
@@ -314,5 +293,5 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         }
     }
     col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);
-    return (gint) tvb_captured_length(tvb);
+    return (int32_t) tvb_captured_length(tvb);
 }

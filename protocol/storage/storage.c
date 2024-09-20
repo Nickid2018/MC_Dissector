@@ -3,8 +3,7 @@
 //
 
 #include "storage.h"
-#include "mc_dissector.h"
-#include "protocol/new_schema/schema.h"
+#include "protocol/schema/schema.h"
 
 extern gchar *pref_protocol_data_dir;
 
@@ -17,6 +16,8 @@ void ensure_cached_##name() { \
         if (g_file_get_contents(file, &content, NULL, NULL)) { \
             cached_##name = cJSON_Parse(content); \
             g_free(content); \
+            if (cached_##name == NULL) \
+                ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, cJSON_GetErrorPtr()); \
         } else { \
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file); \
         } \
@@ -115,6 +116,18 @@ gchar *get_index(uint32_t protocol_version, gchar *item) {
     return wmem_map_lookup(version_index, item);
 }
 
+gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_version) {
+    gchar *index = get_index(protocol_version, item);
+    gchar *file_name = g_strdup_printf("%s.json", item);
+    gchar *path;
+    if (index == NULL)
+        path = g_build_filename(pref_protocol_data_dir, root, item, file_name, NULL);
+    else
+        path = g_build_filename(pref_protocol_data_dir, root, item, index, file_name, NULL);
+    g_free(file_name);
+    return path;
+}
+
 gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
     cJSON_Delete(value);
     return true;
@@ -131,7 +144,7 @@ void clear_storage() {
     CLEAR_CACHED_DATA(registry_data, clean_json)
 }
 
-gchar **get_mapped_java_versions(guint protocol_version) {
+gchar **get_mapped_java_versions(uint32_t protocol_version) {
     ensure_cached_versions();
     GStrvBuilder *builder = g_strv_builder_new();
     for (int i = 0; i < cJSON_GetArraySize(cached_versions); i++) {
@@ -147,7 +160,7 @@ gchar **get_mapped_java_versions(guint protocol_version) {
     return g_strv_builder_end(builder);
 }
 
-gint get_data_version(gchar *java_version) {
+int32_t get_data_version(gchar *java_version) {
     ensure_cached_versions();
     for (int i = 0; i < cJSON_GetArraySize(cached_versions); i++) {
         cJSON *item = cJSON_GetArrayItem(cached_versions, i);
@@ -160,17 +173,6 @@ gint get_data_version(gchar *java_version) {
         return data_version->valueint;
     }
     return -1;
-}
-
-gchar *get_readable_packet_name(bool to_client, gchar *packet_name) {
-    ensure_cached_packet_names();
-    cJSON *found = cJSON_GetObjectItem(
-            cJSON_GetObjectItem(cached_packet_names, to_client ? "toClient" : "toServer"),
-            packet_name
-    );
-    if (found == NULL)
-        return packet_name;
-    return found->valuestring;
 }
 
 cJSON *get_protocol_source(uint32_t protocol_version) {
@@ -194,53 +196,14 @@ cJSON *get_protocol_source(uint32_t protocol_version) {
 
     cJSON *json = cJSON_Parse(content);
     g_free(content);
+    if (json == NULL)
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, cJSON_GetErrorPtr());
+    g_free(file);
 
     return json;
 }
 
-protocol_je_set get_protocol_set_je(guint protocol_version, protocol_settings settings) {
-    protocol_je_set cached = get_cached_protocol(protocol_version);
-    if (cached != NULL)
-        return cached;
-
-    gchar *file = g_build_filename(
-            pref_protocol_data_dir,
-            "java_edition/indexed_data",
-//            found->valuestring,
-            "protocol.json",
-            NULL
-    );
-    gchar *content = NULL;
-    if (!g_file_get_contents(file, &content, NULL, NULL)) {
-        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
-        g_free(file);
-        return NULL;
-    }
-
-    cJSON *json = cJSON_Parse(content);
-    g_free(content);
-
-    cJSON *types = cJSON_GetObjectItem(json, "types");
-    cJSON *login = cJSON_GetObjectItem(json, "login");
-    cJSON *play = cJSON_GetObjectItem(json, "play");
-    cJSON *config = cJSON_GetObjectItem(json, "configuration");
-
-    protocol_je_set result = wmem_new(wmem_epan_scope(), struct _protocol_je_set);
-    protocol_set login_set = create_protocol_set(types, login, true, settings);
-    protocol_set play_set = create_protocol_set(types, play, true, settings);
-    result->login = login_set;
-    result->play = play_set;
-    if (config != NULL) {
-        protocol_set config_set = create_protocol_set(types, config, true, settings);
-        result->configuration = config_set;
-    }
-
-    cJSON_Delete(json);
-    set_cached_protocol(protocol_version, result);
-    return result;
-}
-
-gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint index) {
+gchar *get_entity_sync_data_name(uint32_t protocol_version, gchar *entity_id, uint32_t index) {
     cJSON *cached = get_cached_entity_sync_data(protocol_version);
     if (cached == NULL) {
         gchar *file = g_build_filename(
@@ -257,9 +220,9 @@ gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint
             return NULL;
         }
 
-        g_free(file);
         cached = cJSON_Parse(content);
         g_free(content);
+        g_free(file);
         set_cached_entity_sync_data(protocol_version, cached);
     }
 
@@ -269,7 +232,7 @@ gchar *get_entity_sync_data_name(guint protocol_version, gchar *entity_id, guint
     return data->valuestring;
 }
 
-gchar *get_registry_data(guint protocol_version, gchar *registry, guint index) {
+gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index) {
     gchar *cache_key = g_strdup_printf("%s/%d", registry, protocol_version);
     cJSON *cached = get_cached_registry_data(cache_key);
     if (cached == NULL) {
@@ -299,64 +262,6 @@ gchar *get_registry_data(guint protocol_version, gchar *registry, guint index) {
     cJSON *data = cJSON_GetArrayItem(cached, (int) index);
     if (data == NULL)
         return "<Unknown Registry Entry>";
-    return data->valuestring;
-}
-
-gchar *get_level_event_data(guint protocol_version, gchar *index) {
-    cJSON *cached = get_cached_level_event(protocol_version);
-    if (cached == NULL) {
-        gchar *file = g_build_filename(
-                pref_protocol_data_dir,
-                "java_edition/indexed_data",
-                get_index(protocol_version, "level_event"),
-                "level_event.json",
-                NULL
-        );
-        gchar *content = NULL;
-        if (!g_file_get_contents(file, &content, NULL, NULL)) {
-            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
-            g_free(file);
-            return NULL;
-        }
-
-        g_free(file);
-        cached = cJSON_Parse(content);
-        g_free(content);
-        set_cached_level_event(protocol_version, cached);
-    }
-
-    cJSON *data = cJSON_GetObjectItem(cached, index);
-    if (data == NULL)
-        return NULL;
-    return data->valuestring;
-}
-
-gchar *get_entity_event_data(guint protocol_version, gchar *index) {
-    cJSON *cached = get_cached_entity_event(protocol_version);
-    if (cached == NULL) {
-        gchar *file = g_build_filename(
-                pref_protocol_data_dir,
-                "java_edition/indexed_data",
-                get_index(protocol_version, "entity_event"),
-                "entity_event.json",
-                NULL
-        );
-        gchar *content = NULL;
-        if (!g_file_get_contents(file, &content, NULL, NULL)) {
-            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
-            g_free(file);
-            return NULL;
-        }
-
-        g_free(file);
-        cached = cJSON_Parse(content);
-        g_free(content);
-        set_cached_entity_event(protocol_version, cached);
-    }
-
-    cJSON *data = cJSON_GetObjectItem(cached, index);
-    if (data == NULL)
-        return NULL;
     return data->valuestring;
 }
 

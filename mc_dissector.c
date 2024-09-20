@@ -70,5 +70,4 @@ _U_ void plugin_register() {
         plugin.register_handoff = proto_reg_handoff;
         proto_register_plugin(&plugin);
     }
-    init_schema_data();
 }

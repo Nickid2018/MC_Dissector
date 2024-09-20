@@ -57,10 +57,8 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
         ctx->data_version = get_data_version(java_versions[0]);
         wmem_map_insert(ctx->global_data, "data_version", GUINT_TO_POINTER(ctx->data_version));
 
-        ctx->protocol_set = get_protocol_set_je(protocol_version, (protocol_settings) {
-                ctx->data_version >= 3567
-        });
-        if (ctx->protocol_set == NULL)
+        ctx->dissector_set = create_protocol(protocol_version);
+        if (ctx->dissector_set == NULL)
             ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return 0;
     } else if (packet_id == PACKET_ID_LEGACY_SERVER_LIST_PING)
@@ -182,175 +180,84 @@ void handle_client_slp(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tv
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
-int handle_client_login_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
+void handle_protocol(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
+    if (ctx->dissector_set == NULL) {
+        proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
-    }
-    gint packet_id;
-    gint read;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == PACKET_ID_CLIENT_SUCCESS) {
-        if (ctx->data_version >= 3567)
-            ctx->client_state = CONFIGURATION;
-        else
-            ctx->client_state = ctx->server_state = PLAY;
-    }
-    if (packet_id == PACKET_ID_CLIENT_COMPRESS) {
-        gint threshold;
-        read = read_var_int(tvb, p, &threshold);
-        if (is_invalid(read))
-            return INVALID_DATA;
-        ctx->compression_threshold = threshold;
-    }
-    return 0;
-}
-
-int handle_server_login_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
-    }
-    gint packet_id;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == get_packet_id(ctx->protocol_set->login, "login_acknowledgement", false))
-        ctx->server_state = CONFIGURATION;
-    if (packet_id == PACKET_ID_SERVER_ENCRYPTION_BEGIN)
-        ctx->encrypted = true;
-    return 0;
-}
-
-void handle(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx,
-            protocol_set protocol_set, bool is_client) {
-    gint packet_id;
-    gint p;
-    gint read = p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(read)) {
-        proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
-        return;
-    }
-    if (protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set");
         return;
     }
 
-    protocol_entry protocol = get_protocol_entry(protocol_set, packet_id, is_client);
-    proto_tree_add_uint(packet_tree, hf_packet_id_je, tvb, 0, read, packet_id);
-    if (protocol == NULL) {
-        proto_tree_add_string(packet_tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
+    uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
+    int32_t packet_id;
+    int32_t len = read_var_int(tvb, 0, &packet_id);
+    if (is_invalid(len)) {
+        proto_tree_add_string(tree, hf_packet_name_je, tvb, 0, 0, "Invalid Packet ID");
         return;
     }
 
-    gchar *packet_name = get_packet_name(protocol);
-    gchar *better_name = get_readable_packet_name(is_client, packet_name);
+    uint32_t count = (uint64_t) wmem_map_lookup(ctx->dissector_set->count_by_state, (void *) (uint64_t) now_state);
+    if (packet_id >= count) {
+        proto_tree_add_string(tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
+        return;
+    }
+
+    gchar **key = wmem_map_lookup(ctx->dissector_set->registry_keys, (void *) (uint64_t) now_state);
+    gchar **name = wmem_map_lookup(ctx->dissector_set->readable_names, (void *) (uint64_t) now_state);
+    protocol_dissector **d = wmem_map_lookup(ctx->dissector_set->dissectors_by_state, (void *) (uint64_t) now_state);
     proto_tree_add_string_format_value(
-            packet_tree, hf_packet_name_je, tvb, 0, read, packet_name,
-            "%s (%s)", better_name, packet_name
+            tree, hf_packet_name_je, tvb, 0, len, key[packet_id],
+            "%s (%s)", name[packet_id], key[packet_id]
     );
 
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {
-        gchar *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", packet_name);
+        gchar *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", key[packet_id]);
         GList *list = prefs_get_string_list(pref_ignore_packets_je);
         ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
     }
 
-    gint length = (gint) tvb_reported_length(tvb);
+    uint32_t length = tvb_reported_length(tvb);
     if (ignore)
-        proto_tree_add_string(packet_tree, hf_ignored_packet_je, tvb, p, length - p, "Ignored by user");
-    else if (!make_tree(protocol, packet_tree, pinfo, tvb, ctx->global_data, length))
-        proto_tree_add_string(
-                packet_tree, hf_ignored_packet_je, tvb, p, length - p,
-                "Protocol hasn't been implemented yet"
+        proto_tree_add_string(tree, hf_ignored_packet_je, tvb, len, (int32_t) length - len, "Ignored by user");
+    else {
+        wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
+        int32_t sub_len = d[packet_id]->dissect_protocol(
+                tree, pinfo, tvb, len, d[packet_id], "Packet Data", packet_save, NULL
         );
+        if (sub_len + len != length)
+            proto_tree_add_string_format_value(
+                    tree, hf_invalid_data, tvb, len, (int32_t) length - len,
+                    "length mismatch", "Packet length mismatch, expected %d, got %d", length - len,
+                    sub_len
+            );
+    }
 }
 
-void handle_login(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb,
-                  mc_protocol_context *ctx, bool is_client) {
-    if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return;
+int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
+    if (ctx->dissector_set == NULL) return INVALID_DATA;
+    uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
+    int32_t packet_id;
+    int32_t len = read_var_int(tvb, 0, &packet_id);
+    if (is_invalid(len)) return INVALID_DATA;
+    wmem_map_t *state_to_next = wmem_map_lookup(ctx->dissector_set->state_to_next, (void *) (uint64_t) now_state);
+    wmem_map_t *state_side = wmem_map_lookup(ctx->dissector_set->state_to_next_side, (void *) (uint64_t) now_state);
+    wmem_map_t *special_mark = wmem_map_lookup(ctx->dissector_set->special_mark, (void *) (uint64_t) now_state);
+    if (wmem_map_contains(state_to_next, (void *) (uint64_t) packet_id)) {
+        uint32_t state = (uint64_t) wmem_map_lookup(state_to_next, (void *) (uint64_t) packet_id);
+        uint32_t side = (uint64_t) wmem_map_lookup(state_side, (void *) (uint64_t) packet_id);
+        if ((side & 1) != 0) ctx->client_state = state;
+        if ((side & 2) != 0) ctx->server_state = state;
     }
-    handle(packet_tree, pinfo, tvb, ctx, ctx->protocol_set->login, is_client);
-}
+    if (wmem_map_contains(special_mark, (void *) (uint64_t) packet_id)) {
+        gchar *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
 
-int handle_client_play_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
+        if (strcmp(mark, "encrypt") == 0) ctx->encrypted = true;
+        if (strcmp(mark, "compress") == 0) {
+            int32_t threshold;
+            len = read_var_int(tvb, len, &threshold);
+            if (is_invalid(len)) return INVALID_DATA;
+            ctx->compression_threshold = threshold;
+        }
     }
-    gint packet_id;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == get_packet_id(ctx->protocol_set->play, "start_configuration", true))
-        ctx->client_state = CONFIGURATION;
     return 0;
-}
-
-int handle_server_play_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
-    }
-    gint packet_id;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == get_packet_id(ctx->protocol_set->play, "configuration_acknowledgement", false))
-        ctx->server_state = CONFIGURATION;
-    return 0;
-}
-
-void handle_play(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb,
-                 mc_protocol_context *ctx, bool is_client) {
-    if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return;
-    }
-    handle(packet_tree, pinfo, tvb, ctx, ctx->protocol_set->play, is_client);
-}
-
-int handle_client_configuration_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
-    }
-    gint packet_id;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == get_packet_id(ctx->protocol_set->configuration, "finish_configuration", true))
-        ctx->client_state = PLAY;
-    return 0;
-}
-
-int handle_server_configuration_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
-    if (ctx->protocol_set == NULL) {
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return -1;
-    }
-    gint packet_id;
-    gint p = read_var_int(tvb, 0, &packet_id);
-    if (is_invalid(p))
-        return INVALID_DATA;
-    if (packet_id == get_packet_id(ctx->protocol_set->configuration, "finish_configuration", false))
-        ctx->server_state = PLAY;
-    return 0;
-}
-
-void handle_configuration(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx,
-                          bool is_client) {
-    if (ctx->protocol_set == NULL) {
-        proto_tree_add_string(packet_tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
-        ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
-        return;
-    }
-    handle(packet_tree, pinfo, tvb, ctx, ctx->protocol_set->configuration, is_client);
 }
