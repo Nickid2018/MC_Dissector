@@ -40,7 +40,7 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
                 if (!visited && is_invalid(try_switch_state(tvb, ctx, false)))
                     return;
                 if (tree)
-                    handle_protocol(tree, pinfo, tvb, ctx, false);
+                    handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, false);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
@@ -59,7 +59,7 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
                 if (!visited && is_invalid(try_switch_state(tvb, ctx, true)))
                     return;
                 if (tree)
-                    handle_protocol(tree, pinfo, tvb, ctx, true);
+                    handle_protocol(tree, pinfo, tvb, ctx, frame_data->client_state, true);
                 return;
             default:
                 col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");

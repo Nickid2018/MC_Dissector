@@ -25,6 +25,8 @@ void handle_client_slp(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tv
 
 int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client);
 
-void handle_protocol(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client);
+void handle_protocol(
+        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H

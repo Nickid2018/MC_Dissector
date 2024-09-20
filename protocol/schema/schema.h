@@ -37,6 +37,8 @@ struct protocol_dissector_set_struct {
 
 uint32_t map_name_to_state(gchar *name);
 
+gchar *map_state_to_name(uint32_t state);
+
 protocol_dissector_set *create_protocol(uint32_t protocol_version);
 
 void destroy_protocol(protocol_dissector_set *dissector_set);

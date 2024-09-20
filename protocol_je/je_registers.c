@@ -75,7 +75,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_boolean, "[boolean]", "mc.boolean", BOOLEAN, NONE)
             DEFINE_HF(hf_uuid, "[UUID]", "mc.uuid", GUID, NONE)
             DEFINE_HF(hf_generated, "(generated)", "mc.generated", STRING, NONE)
-            DEFINE_HF(hf_invalid_data, "Invalid Data", "mc.invalid_data", STRING, NONE)
+            DEFINE_HF(hf_invalid_data, "[INVALID]", "mc.invalid_data", STRING, NONE)
             DEFINE_HF(hf_ignored_packet_je, "Ignored Packet", "mcje.ignored_packet", STRING, NONE)
             DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC)
             DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC)

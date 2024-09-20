@@ -88,13 +88,10 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
             return;
         }
         gchar **java_versions = get_mapped_java_versions(protocol_version);
-        if (java_versions[0] == NULL) {
+        if (java_versions == NULL || java_versions[0] == NULL) {
             proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, read, "Unknown Protocol Version");
         } else {
-            gchar *java_version = java_versions[0];
-            int index = 1;
-            while (java_versions[index] != NULL)
-                java_version = g_strconcat(java_version, ", ", java_versions[index++], NULL);
+            gchar *java_version = g_strjoinv(",", java_versions);
             g_strfreev(java_versions);
             proto_tree_add_string_format_value(
                     packet_tree, hf_protocol_version_je, tvb, p, read, "",
@@ -180,14 +177,16 @@ void handle_client_slp(proto_tree *packet_tree, packet_info *pinfo, tvbuff_t *tv
         proto_tree_add_string(packet_tree, hf_packet_name_je, tvb, 0, read, "Unknown Packet ID");
 }
 
-void handle_protocol(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
+void handle_protocol(
+        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+) {
     if (ctx->dissector_set == NULL) {
         proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return;
     }
 
-    uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
+    uint32_t now_state = is_client ? state : state + 16;
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
     if (is_invalid(len)) {
@@ -224,7 +223,7 @@ void handle_protocol(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_pro
         int32_t sub_len = d[packet_id]->dissect_protocol(
                 tree, pinfo, tvb, len, d[packet_id], "Packet Data", packet_save, NULL
         );
-        if (sub_len + len != length)
+        if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
                     tree, hf_invalid_data, tvb, len, (int32_t) length - len,
                     "length mismatch", "Packet length mismatch, expected %d, got %d", length - len,

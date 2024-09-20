@@ -68,46 +68,57 @@ JSON_CACHED(settings, "settings.json")
 
 JSON_CACHED(versions, "java_edition/versions.json")
 
-JSON_CACHED(packet_names, "java_edition/packet_names.json")
-
 DATA_CACHED_UINT(protocol)
 
 DATA_CACHED_UINT(entity_sync_data)
 
-DATA_CACHED_UINT(level_event)
-
-DATA_CACHED_UINT(entity_event)
-
 DATA_CACHED_STR(registry_data)
 
 wmem_map_t *index_mappings;
+wmem_map_t *protocol_mappings;
 
-void ensure_init_index_mappings() {
-    if (index_mappings) return;
-    index_mappings = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
-    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexes.csv", NULL);
+wmem_map_t *read_csv(gchar *path) {
+    wmem_map_t *csv = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
+
     gchar *content = NULL;
-    if (!g_file_get_contents(file, &content, NULL, NULL)) {
-        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
-        g_free(file);
-        return;
+    if (!g_file_get_contents(path, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", path);
+        return NULL;
     }
-    g_free(file);
 
     gchar **split_lines = g_strsplit(content, "\n", 10000);
     gchar **header = g_strsplit(split_lines[0], ",", 1000);
     gchar *now_line;
     for (int i = 1; (now_line = split_lines[i]) != NULL; i++) {
         gchar **now_line_split = g_strsplit(now_line, ",", 10000);
+        if (now_line_split == NULL) continue;
         wmem_map_t *map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-        wmem_map_insert(index_mappings, g_strdup(now_line_split[0]), map);
+        gchar *end;
+        uint64_t protocol_version = strtol(now_line_split[0], &end, 10);
+        wmem_map_insert(csv, (void *) protocol_version, map);
         gchar *now_value;
         for (int j = 1; (now_value = now_line_split[j]) != NULL; j++)
-            wmem_map_insert(map, header[j], now_value);
+            wmem_map_insert(map, header[j], g_strdup(now_value));
         g_strfreev(now_line_split);
     }
     g_strfreev(split_lines);
     g_free(content);
+
+    return csv;
+}
+
+void ensure_init_protocol_mappings() {
+    if (protocol_mappings) return;
+    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/packets.csv", NULL);
+    protocol_mappings = read_csv(file);
+    g_free(file);
+}
+
+void ensure_init_index_mappings() {
+    if (index_mappings) return;
+    gchar *file = g_build_filename(pref_protocol_data_dir, "java_edition/indexes.csv", NULL);
+    index_mappings = read_csv(file);
+    g_free(file);
 }
 
 gchar *get_index(uint32_t protocol_version, gchar *item) {
@@ -121,9 +132,9 @@ gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_versi
     gchar *file_name = g_strdup_printf("%s.json", item);
     gchar *path;
     if (index == NULL)
-        path = g_build_filename(pref_protocol_data_dir, root, item, file_name, NULL);
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", root, file_name, NULL);
     else
-        path = g_build_filename(pref_protocol_data_dir, root, item, index, file_name, NULL);
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", "indexed_data", index, root, file_name, NULL);
     g_free(file_name);
     return path;
 }
@@ -136,11 +147,8 @@ gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
 void clear_storage() {
     CLEAR_CACHED_JSON(settings)
     CLEAR_CACHED_JSON(versions)
-    CLEAR_CACHED_JSON(packet_names)
     CLEAR_CACHED_DATA(protocol, clean_json)
     CLEAR_CACHED_DATA(entity_sync_data, clean_json)
-    CLEAR_CACHED_DATA(level_event, clean_json)
-    CLEAR_CACHED_DATA(entity_event, clean_json)
     CLEAR_CACHED_DATA(registry_data, clean_json)
 }
 
@@ -199,6 +207,38 @@ cJSON *get_protocol_source(uint32_t protocol_version) {
     if (json == NULL)
         ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, cJSON_GetErrorPtr());
     g_free(file);
+
+    return json;
+}
+
+cJSON *get_packet_source(uint32_t protocol_version, gchar *packet) {
+    ensure_init_protocol_mappings();
+    wmem_map_t *version_index = wmem_map_lookup(protocol_mappings, (const void *) (uint64_t) protocol_version);
+    gchar *index = wmem_map_lookup(version_index, packet);
+    gchar *file = g_strdup_printf("%s.json", packet);
+    gchar *path;
+    if (index == NULL)
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", "packets", file, NULL);
+    else
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", "indexed_data", index, "packets", file, NULL);
+    g_free(file);
+
+    gchar *content = NULL;
+    if (!g_file_get_contents(path, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", path);
+        g_free(path);
+        return NULL;
+    }
+
+    cJSON *json = cJSON_Parse(content);
+    g_free(content);
+    if (json == NULL) {
+        const gchar *error = cJSON_GetErrorPtr();
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", path, error);
+        g_free(path);
+        return NULL;
+    }
+    g_free(path);
 
     return json;
 }

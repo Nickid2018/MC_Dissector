@@ -624,6 +624,31 @@ DISSECT_PROTOCOL(entity_metadata_loop) {
     return len + 1;
 }
 
+DISSECT_PROTOCOL(mapping) {
+    gchar *key = wmem_map_lookup(dissector->dissect_arguments, "k");
+    wmem_map_t *mapper = wmem_map_lookup(dissector->dissect_arguments, "m");
+    gchar *searched_value = wmem_map_lookup(packet_saves, key);
+    if (!searched_value) return add_invalid_data(tree, tvb, offset, name, "Context has no specific key");
+    gchar *mapped = wmem_map_lookup(mapper, searched_value);
+    if (!mapped) return add_invalid_data(tree, tvb, offset, name, "No mapped value found");
+    if (value) *value = g_strdup(mapped);
+    if (tree) add_name(proto_tree_add_string(tree, hf_string, tvb, offset, 0, mapped), name);
+    return 0;
+}
+
+DESTROY_DISSECTOR(mapping) {
+    wmem_map_t *mapper = wmem_map_remove(dissect_arguments, "m");
+    wmem_list_t *keys = wmem_map_get_keys(wmem_epan_scope(), mapper);
+    wmem_list_frame_t *frame = wmem_list_head(keys);
+    do {
+        g_free(wmem_map_remove(mapper, wmem_list_frame_data(frame)));
+    } while ((frame = wmem_list_frame_next(frame)));
+    wmem_destroy_list(keys);
+    wmem_free(wmem_epan_scope(), keys);
+    wmem_free(wmem_epan_scope(), mapper);
+    g_free(wmem_map_remove(dissect_arguments, "k"));
+}
+
 // PARSING PROTOCOL SCHEMA ---------------------------------------------------------------------------------------------
 
 protocol_dissector *make_protocol_dissector(
@@ -654,7 +679,9 @@ protocol_dissector *make_error(gchar *error_message) {
 if (strcmp(type, #name) == 0 && !composite_type) { \
     if (!put_dissectors) return make_simple(func); \
     if (wmem_map_contains(dissectors, #name)) return wmem_map_lookup(dissectors, #name); \
-    return wmem_map_insert(dissectors, #name, make_simple(func)); \
+    protocol_dissector *dissector = make_simple(func); \
+    wmem_map_insert(dissectors, #name, dissector); \
+    return dissector; \
 }
 
 protocol_dissector *make_simple(DISSECT_FUNCTION_SIG(func)) {
@@ -670,7 +697,9 @@ protocol_dissector *make_##fn(cJSON *params, wmem_map_t *dissectors, uint32_t pr
 #define COMPOSITE_PROTOCOL(name, count) \
 if (strcmp(type, #name) == 0 && args == count && composite_type) { \
     if (!put_dissectors) return make_##name(root, dissectors, protocol_version, recursive_root); \
-    return wmem_map_insert(dissectors, g_uuid_string_random(), make_##name(root, dissectors, protocol_version, recursive_root)); \
+    protocol_dissector *dissector = make_##name(root, dissectors, protocol_version, recursive_root); \
+    wmem_map_insert(dissectors, g_uuid_string_random(), dissector); \
+    return dissector; \
 }
 #define RECURSIVE_ROOT recursive_root == NULL ? this_dissector : recursive_root
 
@@ -904,13 +933,71 @@ COMPOSITE_PROTOCOL_DEFINE(registry) {
 }
 
 // NOLINTNEXTLINE
+COMPOSITE_PROTOCOL_DEFINE(mapping) {
+    cJSON *ref_node = cJSON_GetArrayItem(params, 1);
+    if (!cJSON_IsString(ref_node)) return make_error("Mapping param needs to be a string");
+    cJSON *key_node = cJSON_GetArrayItem(params, 2);
+    if (!cJSON_IsString(key_node)) return make_error("Mapping param needs to be a string");
+    gchar *ref = ref_node->valuestring;
+    gchar *key = key_node->valuestring;
+
+    if (!wmem_map_contains(dissectors, ref)) {
+        gchar *file = build_indexed_file_name("mappings", ref, protocol_version);
+
+        gchar *content = NULL;
+        if (!g_file_get_contents(file, &content, NULL, NULL)) {
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+            g_free(file);
+            return make_error("Cannot read mapping file");
+        }
+
+        cJSON *json = cJSON_Parse(content);
+        g_free(content);
+        if (json == NULL) {
+            const gchar *error = cJSON_GetErrorPtr();
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, error);
+            g_free(file);
+            return make_error(g_strdup_printf("Cannot parse mapping file: %s", error));
+        }
+        g_free(file);
+
+        if (!cJSON_IsObject(json)) {
+            cJSON_free(json);
+            return make_error("Mapping file is not an object");
+        }
+
+        wmem_map_t *mapping = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+        cJSON *now = json->child;
+        while (now != NULL) {
+            if (!cJSON_IsString(now)) {
+                wmem_free(wmem_epan_scope(), mapping);
+                return make_error("Invalid mapping");
+            }
+            wmem_map_insert(mapping, g_strdup(now->string), g_strdup(now->valuestring));
+            now = now->next;
+        }
+
+        protocol_dissector *this_dissector = wmem_alloc(wmem_epan_scope(), sizeof(protocol_dissector));
+        this_dissector->dissect_arguments = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
+        wmem_map_insert(this_dissector->dissect_arguments, "k", g_strdup(key));
+        wmem_map_insert(this_dissector->dissect_arguments, "m", mapping);
+        this_dissector->dissect_protocol = dissect_mapping;
+        this_dissector->destroy = destroy_mapping;
+        wmem_map_insert(dissectors, g_strdup(ref), this_dissector);
+        return this_dissector;
+    } else {
+        return wmem_map_lookup(dissectors, ref);
+    }
+}
+
+// NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(reference) {
     cJSON *ref_node = cJSON_GetArrayItem(params, 1);
     if (!cJSON_IsString(ref_node)) return make_error("Reference param needs to be a string");
     gchar *ref = ref_node->valuestring;
 
     if (!wmem_map_contains(dissectors, ref)) {
-        gchar *file = build_indexed_file_name("java_edition/structure", ref, protocol_version);
+        gchar *file = build_indexed_file_name("structures", ref, protocol_version);
 
         gchar *content = NULL;
         if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -930,7 +1017,8 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
         g_free(file);
 
         protocol_dissector *dissector = make_protocol_dissector(json, dissectors, protocol_version, NULL, false);
-        return wmem_map_insert(dissectors, g_strdup(ref), dissector);
+        wmem_map_insert(dissectors, g_strdup(ref), dissector);
+        return dissector;
     } else {
         return wmem_map_lookup(dissectors, ref);
     }
@@ -943,7 +1031,7 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
     gchar *ref = ref_node->valuestring;
 
     if (!wmem_map_contains(dissectors, ref)) {
-        gchar *file = build_indexed_file_name("java_edition/codec", ref, protocol_version);
+        gchar *file = build_indexed_file_name("codec", ref, protocol_version);
 
         gchar *content = NULL;
         if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -983,7 +1071,8 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
         wmem_map_insert(this_dissector->dissect_arguments, "c", (void *) (uint64_t) count);
         this_dissector->dissect_protocol = dissect_registry;
         this_dissector->destroy = destroy_registry;
-        return wmem_map_insert(dissectors, ref, this_dissector);
+        wmem_map_insert(dissectors, ref, this_dissector);
+        return this_dissector;
     } else {
         return wmem_map_lookup(dissectors, ref);
     }
@@ -1109,6 +1198,8 @@ protocol_dissector *make_protocol_dissector(
         return make_reference(root, dissectors, protocol_version, recursive_root);
     if (strcmp(type, "codec") == 0 && composite_type && args == 1)
         return make_codec(root, dissectors, protocol_version, recursive_root);
+    if (strcmp(type, "mapping") == 0 && composite_type && args == 2)
+        return make_mapping(root, dissectors, protocol_version, recursive_root);
     if (strcmp(type, "func") == 0 && composite_type)
         return make_func(root, dissectors, protocol_version, recursive_root);
 
@@ -1136,8 +1227,10 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
     protocol_dissector *void_dissector;
     if (wmem_map_contains(set->dissectors_by_name, "void"))
         void_dissector = wmem_map_lookup(set->dissectors_by_name, "void");
-    else
-        void_dissector = wmem_map_insert(set->dissectors_by_name, "void", make_void());
+    else {
+        void_dissector = make_void();
+        wmem_map_insert(set->dissectors_by_name, "void", void_dissector);
+    }
 
     for (int i = 0; i < count; i++) {
         dissectors[i] = void_dissector;
@@ -1145,17 +1238,25 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
         names[i] = "<unknown>";
         cJSON *dissector_data = cJSON_GetArrayItem(root, i);
         if (!cJSON_HasObjectItem(dissector_data, "key")) continue;
-        if (!cJSON_HasObjectItem(dissector_data, "value")) continue;
-        if (!cJSON_HasObjectItem(dissector_data, "type")) continue;
+        if (!cJSON_HasObjectItem(dissector_data, "name")) continue;
         gchar *key = cJSON_GetObjectItem(dissector_data, "key")->valuestring;
         gchar *name = cJSON_GetObjectItem(dissector_data, "name")->valuestring;
         cJSON *type = cJSON_GetObjectItem(dissector_data, "type");
-        protocol_dissector *dissector = make_protocol_dissector(
-                type, set->dissectors_by_name, set->protocol_version, NULL, true
-        );
+        protocol_dissector *dissector;
+        if (type == NULL) {
+            gchar *file_key = g_strdup_printf("%s_%s", map_state_to_name(state), key);
+            type = get_packet_source(set->protocol_version, file_key);
+            g_free(file_key);
+        }
+        if (type == NULL)
+            dissector = make_error("Cannot find packet file");
+        else
+            dissector = make_protocol_dissector(
+                    type, set->dissectors_by_name, set->protocol_version, NULL, true
+            );
         dissectors[i] = dissector;
-        keys[i] = key;
-        names[i] = name;
+        keys[i] = g_strdup(key);
+        names[i] = g_strdup(name);
         if (cJSON_HasObjectItem(dissector_data, "stateNext")) {
             cJSON *state_to_next = cJSON_GetObjectItem(dissector_data, "stateNext");
             if (!cJSON_IsString(state_to_next)) continue;
@@ -1192,7 +1293,28 @@ uint32_t map_name_to_state(gchar *name) {
     return ~0u;
 }
 
+gchar *map_state_to_name(uint32_t state) {
+    switch (state) {
+        case PLAY:
+            return "play_client";
+        case PLAY + 16:
+            return "play_server";
+        case LOGIN:
+            return "login_client";
+        case LOGIN + 16:
+            return "login_server";
+        case CONFIGURATION:
+            return "configuration_client";
+        case CONFIGURATION + 16:
+            return "configuration_server";
+        default:
+            return "<unknown>";
+    }
+}
+
 protocol_dissector_set *create_protocol(uint32_t protocol_version) {
+    cJSON *protocol_source = get_protocol_source(protocol_version);
+    if (protocol_source == NULL) return NULL;
     protocol_dissector_set *set = wmem_alloc(wmem_epan_scope(), sizeof(protocol_dissector_set));
     set->protocol_version = protocol_version;
     set->dissectors_by_name = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
@@ -1203,7 +1325,6 @@ protocol_dissector_set *create_protocol(uint32_t protocol_version) {
     set->state_to_next = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
     set->state_to_next_side = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
     set->special_mark = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
-    cJSON *protocol_source = get_protocol_source(protocol_version);
     cJSON *now = protocol_source->child;
     while (now != NULL) {
         uint32_t state = map_name_to_state(now->string);

@@ -20,6 +20,8 @@ gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_versi
 
 cJSON *get_protocol_source(uint32_t protocol_version);
 
+cJSON *get_packet_source(uint32_t protocol_version, gchar *packet);
+
 gchar *get_entity_sync_data_name(uint32_t protocol_version, gchar *entity_id, uint32_t index);
 
 gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index);
