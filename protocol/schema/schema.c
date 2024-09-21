@@ -270,7 +270,7 @@ DISSECT_PROTOCOL(nbt) {
         }
         return len;
     }
-    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset + len, name, !is_new_nbt) + len;
+    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
 
     int32_t len_nbt;
     if (is_new_nbt) len_nbt = count_nbt_length_with_type(tvb, offset + len, present);
@@ -557,13 +557,28 @@ DESTROY_DISSECTOR(global_save) {
 
 DISSECT_PROTOCOL(registry) {
     gchar *registry_name = wmem_map_lookup(dissector->dissect_arguments, "n");
-    uint32_t protocol_version = (uint64_t) wmem_map_lookup(get_global_data(pinfo), "protocol_version");
+    wmem_map_t *writable_registry = wmem_map_lookup(get_global_data(pinfo), "#writable_registry");
+    wmem_map_t *writable_registry_size = wmem_map_lookup(get_global_data(pinfo), "#writable_registry_size");
     int32_t index;
     int32_t len = read_var_int(tvb, offset, &index);
-    gchar *key = get_registry_data(protocol_version, registry_name, index);
+    gchar *key;
+    if (writable_registry != NULL && wmem_map_contains(writable_registry, registry_name)) {
+        gchar **data = wmem_map_lookup(writable_registry, registry_name);
+        uint64_t count = (uint64_t) wmem_map_lookup(writable_registry_size, registry_name);
+        if (index >= count) {
+            key = "<Unknown Registry Entry>";
+        } else {
+            key = data[index];
+        }
+    } else {
+        uint32_t protocol_version = (uint64_t) wmem_map_lookup(get_global_data(pinfo), "protocol_version");
+        key = get_registry_data(protocol_version, registry_name, index);
+    }
     if (value) *value = g_strdup(key);
     if (tree)
-        add_name(proto_tree_add_string_format(tree, hf_string, tvb, offset, len, key, "%s (%d)", key, index), name);
+        add_name(proto_tree_add_string_format_value(
+                tree, hf_string, tvb, offset, len, key, "%s (%d)", key, index), name
+        );
     return len;
 }
 
@@ -961,7 +976,7 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
     gchar *ref = ref_node->valuestring;
 
     if (!wmem_map_contains(dissectors, ref)) {
-        gchar *file = build_indexed_file_name("structures", ref, protocol_version);
+        gchar *file = build_protocol_file_name("structures", ref, protocol_version);
 
         gchar *content = NULL;
         if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -1120,7 +1135,6 @@ protocol_dissector *make_protocol_dissector(
 ) {
     bool composite_type = cJSON_IsArray(root);
     if (!composite_type && !cJSON_IsString(root)) return make_error("Invalid protocol dissector type");
-    if (composite_type && cJSON_GetArraySize(root) < 2) return make_error("Invalid composite type");
     gchar *type = composite_type ? cJSON_GetArrayItem(root, 0)->valuestring : root->valuestring;
     int args = composite_type ? cJSON_GetArraySize(root) - 1 : 0;
 

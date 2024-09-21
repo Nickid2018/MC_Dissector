@@ -7,6 +7,7 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
+#include "utils/nbt.h"
 
 extern int hf_invalid_data;
 extern int hf_ignored_packet_je;
@@ -56,6 +57,8 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
         }
         ctx->data_version = get_data_version(java_versions[0]);
         wmem_map_insert(ctx->global_data, "data_version", GUINT_TO_POINTER(ctx->data_version));
+        if (ctx->data_version >= 3567)
+            wmem_map_insert(ctx->global_data, "nbt_any_type", (void *) 1);
 
         ctx->dissector_set = create_protocol(protocol_version);
         if (ctx->dissector_set == NULL)
@@ -256,6 +259,51 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
             len = read_var_int(tvb, len, &threshold);
             if (is_invalid(len)) return INVALID_DATA;
             ctx->compression_threshold = threshold;
+        }
+        if (strcmp(mark, "registry") == 0) {
+            wmem_map_t *writable_registry = wmem_map_lookup(ctx->global_data, "#writable_registry");
+            if (writable_registry == NULL) {
+                writable_registry = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+                wmem_map_insert(ctx->global_data, "#writable_registry", writable_registry);
+            }
+            wmem_map_t *writable_registry_size = wmem_map_lookup(ctx->global_data, "#writable_registry_size");
+            if (writable_registry_size == NULL) {
+                writable_registry_size = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+                wmem_map_insert(ctx->global_data, "#writable_registry_size", writable_registry_size);
+            }
+            gchar *registry_name;
+            int32_t offset = len;
+            len = read_buffer(tvb, offset, (uint8_t **) &registry_name, wmem_file_scope());
+            if (is_invalid(len)) return INVALID_DATA;
+            registry_name = g_utf8_substring(registry_name, 10, g_utf8_strlen(registry_name, 200));
+            offset += len;
+            int32_t count;
+            len = read_var_int(tvb, offset, &count);
+            if (is_invalid(len)) return INVALID_DATA;
+            offset += len;
+            gchar **data = wmem_alloc(wmem_file_scope(), sizeof(gchar *) * count);
+            bool is_new_nbt = wmem_map_lookup(ctx->global_data, "nbt_any_type");
+            for (int i = 0; i < count; i++) {
+                gchar *name;
+                len = read_buffer(tvb, offset, (uint8_t **) &name, wmem_file_scope());
+                if (is_invalid(len)) {
+                    wmem_free(wmem_file_scope(), data);
+                    return INVALID_DATA;
+                }
+                data[i] = g_utf8_substring(name, 10, g_utf8_strlen(name, 200));
+                if (tvb_get_uint8(tvb, offset + len) == 0) {
+                    len += 1;
+                } else {
+                    if (is_new_nbt) {
+                        bool present = tvb_get_uint8(tvb, offset + len + 1);
+                        len += present ? count_nbt_length_with_type(tvb, offset + len + 2, present) + 2 : 2;
+                    } else
+                        len += count_nbt_length(tvb, offset + len + 1) + 1;
+                }
+                offset += len;
+            }
+            wmem_map_insert(writable_registry, registry_name, data);
+            wmem_map_insert(writable_registry_size, registry_name, (void *) (uint64_t) count);
         }
     }
     return 0;

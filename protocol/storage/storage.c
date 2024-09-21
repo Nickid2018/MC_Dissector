@@ -139,6 +139,20 @@ gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_versi
     return path;
 }
 
+gchar *build_protocol_file_name(gchar *root, gchar *item, uint32_t protocol_version) {
+    ensure_init_protocol_mappings();
+    wmem_map_t *version_index = wmem_map_lookup(protocol_mappings, (const void *) (uint64_t) protocol_version);
+    gchar *index = wmem_map_lookup(version_index, item);
+    gchar *file_name = g_strdup_printf("%s.json", item);
+    gchar *path;
+    if (index == NULL || strcmp(index, "-1") == 0)
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", root, file_name, NULL);
+    else
+        path = g_build_filename(pref_protocol_data_dir, "java_edition", "indexed_data", index, root, file_name, NULL);
+    g_free(file_name);
+    return path;
+}
+
 gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
     cJSON_Delete(value);
     return true;
@@ -213,15 +227,7 @@ cJSON *get_protocol_source(uint32_t protocol_version) {
 
 cJSON *get_packet_source(uint32_t protocol_version, gchar *packet) {
     ensure_init_protocol_mappings();
-    wmem_map_t *version_index = wmem_map_lookup(protocol_mappings, (const void *) (uint64_t) protocol_version);
-    gchar *index = wmem_map_lookup(version_index, packet);
-    gchar *file = g_strdup_printf("%s.json", packet);
-    gchar *path;
-    if (index == NULL)
-        path = g_build_filename(pref_protocol_data_dir, "java_edition", "packets", file, NULL);
-    else
-        path = g_build_filename(pref_protocol_data_dir, "java_edition", "indexed_data", index, "packets", file, NULL);
-    g_free(file);
+    gchar *path = build_protocol_file_name("packets", packet, protocol_version);
 
     gchar *content = NULL;
     if (!g_file_get_contents(path, &content, NULL, NULL)) {

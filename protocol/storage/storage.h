@@ -18,6 +18,8 @@ gchar *get_index(uint32_t protocol_version, gchar *item);
 
 gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_version);
 
+gchar *build_protocol_file_name(gchar *root, gchar *item, uint32_t protocol_version);
+
 cJSON *get_protocol_source(uint32_t protocol_version);
 
 cJSON *get_packet_source(uint32_t protocol_version, gchar *packet);
