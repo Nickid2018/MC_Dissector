@@ -35,6 +35,7 @@ int hf_uuid = -1;
 
 int hf_generated = -1;
 int hf_invalid_data = -1;
+int hf_parsing_error = -1;
 int hf_ignored_packet_je = -1;
 int hf_packet_length_je = -1;
 int hf_packet_data_length_je = -1;
@@ -67,7 +68,7 @@ void proto_register_mcje() {
             DEFINE_HF(hf_int64, "[int64]", "mc.int64", INT64, DEC)
             DEFINE_HF(hf_uint64, "[uint64]", "mc.uint64", UINT64, DEC)
             DEFINE_HF(hf_hint64, "[uint64]", "mc.hint64", UINT64, HEX)
-            DEFINE_HF(hf_varlong, "[var long]", "mc.varlong", UINT32, DEC)
+            DEFINE_HF(hf_varlong, "[var long]", "mc.varlong", UINT64, DEC)
             DEFINE_HF(hf_float, "[f32]", "mc.float", FLOAT, DEC)
             DEFINE_HF(hf_double, "[f64]", "mc.double", DOUBLE, DEC)
             DEFINE_HF(hf_bytes, "[buffer]", "mc.bytes", BYTES, NONE)
@@ -76,12 +77,13 @@ void proto_register_mcje() {
             DEFINE_HF(hf_uuid, "[UUID]", "mc.uuid", GUID, NONE)
             DEFINE_HF(hf_generated, "(generated)", "mc.generated", STRING, NONE)
             DEFINE_HF(hf_invalid_data, "[INVALID]", "mc.invalid_data", STRING, NONE)
-            DEFINE_HF(hf_ignored_packet_je, "Ignored Packet", "mcje.ignored_packet", STRING, NONE)
-            DEFINE_HF(hf_packet_length_je, "Packet Length", "mcje.packet_length", UINT32, DEC)
-            DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mcje.packet_data_length", UINT32, DEC)
+            DEFINE_HF(hf_parsing_error, "[PARSING ERROR]", "mc.parsing_error", STRING, NONE)
+            DEFINE_HF(hf_ignored_packet_je, "Ignored Packet", "mc.ignored_packet", STRING, NONE)
+            DEFINE_HF(hf_packet_length_je, "Packet Length", "mc.packet_length", UINT32, DEC)
+            DEFINE_HF(hf_packet_data_length_je, "Packet Data Length", "mc.packet_data_length", UINT32, DEC)
             DEFINE_HF(hf_packet_id_je, "Packet ID", "mcje.packet_id", UINT8, HEX)
             DEFINE_HF(hf_packet_name_je, "Packet Name", "mcje.packet_name", STRING, NONE)
-            DEFINE_HF(hf_unknown_packet_je, "Packet Name", "mcje.unknown_packet", STRING, NONE)
+            DEFINE_HF(hf_unknown_packet_je, "Packet Name", "mc.unknown_packet", STRING, NONE)
             DEFINE_HF(hf_protocol_version_je, "Protocol Version", "mcje.protocol_version", STRING, NONE)
             DEFINE_HF(hf_server_address_je, "Server Address", "mcje.server_address", STRING, NONE)
             DEFINE_HF(hf_next_state_je, "Next State", "mcje.next_state", STRING, NONE)
