@@ -278,7 +278,7 @@ gchar *get_entity_sync_data_name(uint32_t protocol_version, gchar *entity_id, ui
     return data->valuestring;
 }
 
-gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index) {
+void ensure_cached_registry(uint32_t protocol_version, gchar *registry) {
     gchar *cache_key = g_strdup_printf("%s/%d", registry, protocol_version);
     cJSON *cached = get_cached_registry_data(cache_key);
     if (cached == NULL) {
@@ -297,15 +297,38 @@ gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t in
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
             g_free(file);
             g_free(cache_key);
-            return NULL;
+            return;
         }
         g_free(file);
         cached = cJSON_Parse(content);
         g_free(content);
+        if (!cJSON_IsArray(cached)) {
+            cJSON_free(cached);
+            g_free(cache_key);
+            return;
+        }
+        int count = cJSON_GetArraySize(cached);
+        for (int i = 0; i < count; i++) {
+            if (!cJSON_IsString(cJSON_GetArrayItem(cached, i))) {
+                cJSON_free(cached);
+                g_free(cache_key);
+                return;
+            }
+        }
         set_cached_registry_data(cache_key, cached);
     }
+}
 
-    cJSON *data = cJSON_GetArrayItem(cached, (int) index);
+cJSON *get_registry(uint32_t protocol_version, gchar *registry) {
+    ensure_cached_registry(protocol_version, registry);
+    gchar *cache_key = g_strdup_printf("%s/%d", registry, protocol_version);
+    cJSON *data = get_cached_registry_data(cache_key);
+    g_free(cache_key);
+    return data;
+}
+
+gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index) {
+    cJSON *data = cJSON_GetArrayItem(get_registry(protocol_version, registry), (int) index);
     if (data == NULL)
         return "<Unknown Registry Entry>";
     return data->valuestring;
