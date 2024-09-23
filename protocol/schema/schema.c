@@ -428,10 +428,18 @@ DISSECT_PROTOCOL(option) {
 DISSECT_PROTOCOL(mapper) {
     protocol_dissector *sub_dissector = wmem_map_lookup(dissector->dissect_arguments, "d");
     gchar *saved_value = NULL;
-    int32_t len = sub_dissector->dissect_protocol(
-            NULL, pinfo, tvb, offset, sub_dissector, name, packet_saves, &saved_value
-    );
-    if (len == DISSECT_ERROR) return DISSECT_ERROR;
+    int32_t len;
+    if (sub_dissector != NULL) {
+        len = sub_dissector->dissect_protocol(
+                NULL, pinfo, tvb, offset, sub_dissector, name, packet_saves, &saved_value
+        );
+        if (len == DISSECT_ERROR) return DISSECT_ERROR;
+    } else {
+        gchar *search_key = wmem_map_lookup(dissector->dissect_arguments, "v");
+        saved_value = wmem_map_lookup(packet_saves, search_key);
+        if (saved_value == NULL) return add_invalid_data(tree, tvb, offset, name, "No value found, protocol has error?");
+        len = 0;
+    }
     if (!saved_value)
         return add_invalid_data(tree, tvb, offset, name, "Can't receive value from source, protocol has error?");
     wmem_map_t *mapper = wmem_map_lookup(dissector->dissect_arguments, "m");
@@ -455,6 +463,8 @@ DESTROY_DISSECTOR(mapper) {
     wmem_destroy_list(keys);
     wmem_free(wmem_epan_scope(), keys);
     wmem_free(wmem_epan_scope(), mapper);
+    if (wmem_map_contains(dissect_arguments, "v"))
+        g_free(wmem_map_remove(dissect_arguments, "v"));
 }
 
 DISSECT_PROTOCOL(switch) {
@@ -805,7 +815,8 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
     if (!cJSON_IsObject(object)) return make_error("Mapper param needs to be a object");
     cJSON *type = cJSON_GetObjectItem(object, "type");
-    if (type == NULL) return make_error("Lack of type for mapper object");
+    cJSON *var = cJSON_GetObjectItem(object, "var");
+    if (type == NULL && var == NULL) return make_error("Lack of type and var for mapper object");
     cJSON *mappings = cJSON_GetObjectItem(object, "mappings");
     cJSON *source = cJSON_GetObjectItem(object, "source");
     if (mappings == NULL && source == NULL) return make_error("Lack of mappings and source for mapper object");
@@ -859,10 +870,14 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
     }
     protocol_dissector *this_dissector = wmem_alloc(wmem_epan_scope(), sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
-    protocol_dissector *sub_dissector = make_protocol_dissector(
-            type, dissectors, protocol_version, RECURSIVE_ROOT, true
-    );
-    wmem_map_insert(this_dissector->dissect_arguments, "d", sub_dissector);
+    if (type != NULL) {
+        protocol_dissector *sub_dissector = make_protocol_dissector(
+                type, dissectors, protocol_version, RECURSIVE_ROOT, true
+        );
+        wmem_map_insert(this_dissector->dissect_arguments, "d", sub_dissector);
+    } else {
+        wmem_map_insert(this_dissector->dissect_arguments, "v", g_strdup(var->valuestring));
+    }
     wmem_map_insert(this_dissector->dissect_arguments, "m", map);
     this_dissector->dissect_protocol = dissect_mapper;
     this_dissector->destroy = destroy_mapper;
