@@ -22,7 +22,7 @@ int proto_mcbe = -1;
 module_t *pref_mc = NULL;
 gchar *pref_protocol_data_dir;
 module_t *pref_mcje = NULL;
-gchar *pref_ignore_packets_je = "c:map_chunk";
+gchar *pref_ignore_packets_je = "";
 gchar *pref_secret_key = "";
 bool pref_do_nbt_decode = false;
 

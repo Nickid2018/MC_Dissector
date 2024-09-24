@@ -72,7 +72,7 @@ void parse_to_string(tvbuff_t *tvb, packet_info *pinfo, int offset_global, guint
             break;
         default:
             *length = 0;
-            *text = g_strdup_printf("Unknown type '%x'", type);
+            *text = g_strdup_printf("<NBT Error> Unknown type '%x'", type);
             break;
     }
 }

@@ -620,6 +620,15 @@ DISSECT_PROTOCOL(codec) {
     gchar *key = wmem_map_lookup(packet_saves, search_key);
     if (key == NULL) return add_invalid_data(tree, tvb, offset, name, "No value found, protocol has error?");
     protocol_dissector *sub = wmem_map_lookup(map, key);
+    if (sub == NULL) {
+        int64_t length = g_utf8_strlen(key, 400);
+        int64_t split_pos = length - 1;
+        for (; split_pos >= 0; split_pos--)
+            if (key[split_pos] == '/' || key[split_pos] == ':')
+                break;
+        key = g_utf8_substring(key, split_pos + 1, length);
+        sub = wmem_map_lookup(map, key);
+    }
     if (sub == NULL) return add_invalid_data(tree, tvb, offset, name, "No codec found");
     return sub->dissect_protocol(tree, pinfo, tvb, offset, sub, name, packet_saves, value);
 }
@@ -634,7 +643,10 @@ DISSECT_PROTOCOL(top_bit_set_terminated_array) {
     int32_t len = 0;
     protocol_dissector *sub_dissector = wmem_map_lookup(dissector->dissect_arguments, "d");
     if (tree) tree = proto_tree_add_subtree(tree, tvb, offset, 0, ett_mc, NULL, name);
-    while (((now = tvb_get_uint8(tvb, offset + len)) & 0x80) != 0) {
+    bool do_loop = true;
+    while (do_loop) {
+        now = tvb_get_uint8(tvb, offset + len);
+        do_loop = (now & 0x80) != 0;
         uint32_t ord = now & 0x7F;
         int32_t sub_len = sub_dissector->dissect_protocol(
                 tree, pinfo, tvb, offset + len, sub_dissector, g_strdup_printf("%s[%d]", name, ord), packet_saves, NULL
@@ -642,8 +654,8 @@ DISSECT_PROTOCOL(top_bit_set_terminated_array) {
         if (sub_len == DISSECT_ERROR) return DISSECT_ERROR;
         len += sub_len;
     }
-    if (tree) proto_item_set_len(tree, len + 1);
-    return len + 1;
+    if (tree) proto_item_set_len(tree, len);
+    return len;
 }
 
 DISSECT_PROTOCOL(entity_metadata_loop) {
