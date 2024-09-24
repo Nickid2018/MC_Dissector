@@ -275,7 +275,12 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
             int32_t offset = len;
             len = read_buffer(tvb, offset, (uint8_t **) &registry_name, wmem_file_scope());
             if (is_invalid(len)) return INVALID_DATA;
-            registry_name = g_utf8_substring(registry_name, 10, g_utf8_strlen(registry_name, 200));
+            int64_t length = g_utf8_strlen(registry_name, 400);
+            int64_t split_pos = length - 1;
+            for (; split_pos >= 0; split_pos--)
+                if (registry_name[split_pos] == '/' || registry_name[split_pos] == ':')
+                    break;
+            registry_name = g_utf8_substring(registry_name, split_pos + 1, length);
             offset += len;
             int32_t count;
             len = read_var_int(tvb, offset, &count);
@@ -290,7 +295,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
                     wmem_free(wmem_file_scope(), data);
                     return INVALID_DATA;
                 }
-                data[i] = g_utf8_substring(name, 10, g_utf8_strlen(name, 200));
+                data[i] = g_utf8_substring(name, 10, g_utf8_strlen(name, 400));
                 if (tvb_get_uint8(tvb, offset + len) == 0) {
                     len += 1;
                 } else {

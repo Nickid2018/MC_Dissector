@@ -76,11 +76,11 @@ DISSECT_PROTOCOL(sync_entity_data) {
     if (type != NULL) {
         proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, type);
         proto_item_set_generated(item);
-        proto_item_prepend_text(item, "Entity Type");
+        proto_item_prepend_text(item, "Entity Type ");
     } else {
         proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, "Unknown");
         proto_item_set_generated(item);
-        proto_item_prepend_text(item, "Entity Type");
+        proto_item_prepend_text(item, "Entity Type ");
         return 0;
     }
     gchar *sync_id = wmem_map_lookup(packet_saves, "sync_id");
@@ -92,6 +92,6 @@ DISSECT_PROTOCOL(sync_entity_data) {
         found_name = "Unknown Sync Data!";
     proto_item *item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, found_name);
     proto_item_set_generated(item);
-    proto_item_prepend_text(item, "Sync Data Type");
+    proto_item_prepend_text(item, "Sync Data Type ");
     return 0;
 }

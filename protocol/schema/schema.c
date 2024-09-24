@@ -1243,6 +1243,8 @@ protocol_dissector *make_protocol_dissector(
     COMPOSITE_PROTOCOL(registry, 1)
     COMPOSITE_PROTOCOL(registry, 2)
     COMPOSITE_PROTOCOL(fix_buffer, 1)
+    COMPOSITE_PROTOCOL(entity_metadata_loop, 1)
+    COMPOSITE_PROTOCOL(top_bit_set_terminated_array, 1)
 
     if (strcmp(type, "reference") == 0 && composite_type && args == 1)
         return make_reference(root, dissectors, protocol_version, recursive_root);
