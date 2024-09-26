@@ -10,13 +10,16 @@ English | [简体中文](./README-zh_CN.MD)
 
 ## How To Use?
 
-Built files can be found in Actions, stable version can be found in Release.
+Built files can be found in Actions, a stable version can be found in Release.
 
 After downloading:
 
-For Windows, put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/4.2/epan`) and run Wireshark.
+For Windows,
+put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/<Wireshark Version>/epan`) and run Wireshark.
 
-For Linux, put file `mcdissector.so` into dissector directory of Wireshark (`~/.local/lib/wireshark/plugins/4.2/epan`) and run Wireshark.
+For Linux,
+put file `mcdissector.so` into dissector directory of Wireshark
+(`~/.local/lib/wireshark/plugins/<Wireshark Version>/epan`) and run Wireshark.
 
 For Arch Linux, you can use package `wireshark-minecraft-dissector` in AUR.
 
@@ -25,8 +28,8 @@ For Arch Linux, you can use package `wireshark-minecraft-dissector` in AUR.
 `Minecraft` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
 * Directory for protocol data: The directory for protocol data, used to parse data.
-* Ignore Packets: Prevent parsing some packets to filt unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to client.The default is `c:map_chunk` which stops parsing server-to-client chunk data packets, since to parse such packets will spend extra long time and produce excess data fields.
-* Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexademical strings with length of 32.
+* Ignore Packets: Prevent parsing some packets to filter unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to the client. The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
+* Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexadecimal strings with a length of 32.
 * NBT Decoding: To decode NBT data.
 * TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
 
@@ -34,33 +37,36 @@ For Arch Linux, you can use package `wireshark-minecraft-dissector` in AUR.
 
 All protocol data is read from external directory, which is controlled by option `Directory for protocol data`.
 
-You can directly use protocol data provided by [MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data), which is divided into three main branches:
-* `master`: Contains all protocol data.
-* `only-protocol`: Contains only protocol schema data, without any other files.
-* `only-essentials`: (Recommend) Contains only essential protocol data (entity synchronization data, etc.), without any other files.
-
-You can directly use the source code archives of these branches or clone the repository to the specified protocol directory.
+You can directly use protocol data provided by [MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data).
+You can use the source code archives of the repository or clone the repository to the specified protocol directory.
 
 ## Encrypted Connection
 
-If you enter Minecraft servers in legitimated game client, encrypted connection will be built between server and client base on `AES/CFB8/NoPadding` algorithm.
-This step will execute before compression during login. All data in the connection will be encrypted, including data length fields used to spilt data.
+If you enter Minecraft servers in a legitimated game client,
+encrypted connection will be built between server and client base on `AES/CFB8/NoPadding` algorithm.
+This step will execute before compression during login.
+All data in the connection will be encrypted, including data length fields used to spilt data.
 
-To listen data in encrypted connection, we need to know what the key is with the help of `encryption-helper` in the project.
-By using the feature that the generation of symmetric encrypted keys was executed by client, it forced client to use a specified key, instead create a random one.
+To get data in encrypted connection,
+we need to know what the key is with the help of `encryption-helper` in the project.
+By using the feature that client executed the generation of symmetric encrypted keys,
+it forced the client to use a specified key,
+instead create a random one.
 
-`encryption-helper` is a Java Agent injects executive code dynamically when running Minecraft. It needs JVM parameters as follow to attach to a Minecraft client:
+`encryption-helper` is a Java Agent injects executive code dynamically when running Minecraft. It needs JVM parameters as follows to attach to a Minecraft client:
 
 ```shell
 -javaagent:<jarfile path>=<key>
 ```
 
-The key is a hexademical string only contains 0-F with length of 32. If the input format is incorrect, it will crash immediately and throw an error when starting client.
+The key is a hexadecimal string only contains 0-F with length of 32.
+If the input format is incorrect, it will crash immediately and throw an error when starting the client.
 
-Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated injectable clients, since the injection points it locates only contain features could not be obfuscated as follow:
+Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated injectable clients,
+since the injection points it locates only contain features could not be obfuscated as follows:
 
 * Method return value is `javax.crypto.SecretKey`.
-* Method has no parameter.
+* The Method has no parameter.
 * The type of the first local variable of the method is `javax.crypto.KeyGenerator`.
 
 Very few mods modify logics here, so it's safe for the program to modify. It should not conflict with mods.
@@ -69,9 +75,9 @@ Only a single circumstance will disable the program: Mods have modified encrypti
 
 ## Parsing Errors
 
-Parsing error exists under 2 circumstances as follow:
+Parsing error exists under 2 circumstances as follows:
 
-* Wireshark failed to capture all data. Since Java edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered `TCP Previous segment not captured` near the data parsing error.
+* Wireshark failed to capture all data. Since the Java Edition uses TCP, data is spilt by length field, and once missing any segment, data will be unparsable immediately. You can confirm this circumstance if you have discovered `TCP Previous segment not captured` near the data parsing error.
 * The program has not finished adaption or process properly for this part, or has not added corresponding strings. Such errors can be reported by open issues.
 
 All protocol data is generated by `MC_Protocol_Data`, so if you have any questions about the data, you can open an issue in the repository.
@@ -81,22 +87,22 @@ All protocol data is generated by `MC_Protocol_Data`, so if you have any questio
 Building this project requires Wireshark source code with configured dependencies.
 
 1. Clone Wireshark repository to local and configure necessary dependencies.
-2. Set environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency library of Wireshark (automatically created at running cmake).
-3. Create `build` in same directory of Wireshark source codes, and run `cmake -A x64 .. -DBUILD_wireshark=OFF` in "build".
-4. Still in "build", run `cmake --build . --config RelWithDebInfo --target epan`.
-5. Set environment variable `WIRESHARK_DIR` (directory of Wireshark source code), `WIRESHARK_BUILD_DIR` (path of directory of "build") and `WIRESHARK_LIB_FILE_DIR` (path of directory of RelWithDebInfo generated by building the project).
+2. Set environment variable `PLATFORM` as `x64`, and `WIRESHARK_LIB_DIR` as directory of dependency libraries for Wireshark (automatically created at running cmake).
+3. Create `build` in same directory of Wireshark source codes, and run `cmake -A x64 .. -DBUILD_wireshark=OFF` in `build`.
+4. Still in `build`, run `cmake --build . --config RelWithDebInfo --target epan`.
+5. Set environment variable `WIRESHARK_DIR` (directory of Wireshark source code), `WIRESHARK_BUILD_DIR` (path of directory `build`) and `WIRESHARK_LIB_FILE_DIR` (path of directory `RelWithDebInfo` generated by building the project).
 6. Run `cmake -S . -G Ninja -B build` in project root directory.
 7. Run `cmake --build build --target MC_Dissector` in project root directory.
 8. Built file can be discovered in "build" directory.
 
 ## How To Build Projects (Linux)
 
-It is much easier to build on Linux, read ci.yml for details. (Too lazy to write here)
+It is much easier to build on Linux, read ci.yml for details. (Too lazy to write here.)
 
 ## Current Plans
 
 - [x] Almost complete! (Crash free, at least!）
 - [x] Linux support by @xtexChooser
 - [x] Support encryption. (It should be OK!)
-- [ ] Version compatibility.
+- [x] Version compatibility.
 - [ ] Support bedrock edition.

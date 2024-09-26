@@ -12,9 +12,9 @@
 
 构建的文件可以在 Action 里面找到，稳定版可以在 Release 里面找到。
 
-Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/4.2/epan`）并启动 Wireshark 即可。
+Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/<Wireshark版本>/epan`）并启动 Wireshark 即可。
 
-Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/4.2/epan`）并启动 Wireshark 即可。
+Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/<Wireshark版本>/epan`）并启动 Wireshark 即可。
 
 对于 Arch Linux，可以直接使用 AUR 里面的`wireshark-minecraft-dissector`包。
 
@@ -24,8 +24,7 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 
 * Directory for protocol data：放置协议数据的目录，用于解析数据。
 * Ignore Packets：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
-  代表发向服务端的包，`c`代表发向客户端的包。默认为`c:map_chunk`，
-  即停止解析服务端发向客户端的区块数据包，这种类型的包会使解析器消耗很长时间，并且会产生过量的数据字段，所以默认禁用。
+  代表发向服务端的包，`c`代表发向客户端的包。默认为空。推荐设置为`c:level_chunk,c:level_chunk_with_light`。
 * Secret Key：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
 * NBT Decoding：是否解析 NBT 数据。
 * TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
@@ -34,12 +33,7 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 
 所有协议数据都从外部目录读取，此目录由选项`Directory for protocol data`控制。
 
-可以直接使用[MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data)提供的协议数据，此仓库分为三个主要分支：
-* `master`：包含所有协议数据。
-* `only-protocol`：只包含协议格式数据，不包含任何其他文件。
-* `only-essentials`：（推荐）只包含必要的协议数据（实体同步数据等），不包含任何其他文件。
-
-直接使用这些分支的源代码压缩包或者克隆仓库到指定协议目录即可。
+可以直接使用[MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data)提供的协议数据，直接使用源代码压缩包或者克隆仓库到指定协议目录即可。
 
 ## 加密连接
 
@@ -102,5 +96,5 @@ Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~
 - [x] 写的差不多了！（至少不炸了！）
 - [x] linux 支持 by @xtexChooser
 - [x] 支持加密。（应该没问题了！）
-- [ ] 版本兼容性。
+- [x] 版本兼容性。（尽量支持到最新版）
 - [ ] 支持基岩版。
