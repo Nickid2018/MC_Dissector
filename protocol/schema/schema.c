@@ -394,7 +394,9 @@ DISSECT_PROTOCOL(array) {
     }
 
     if (tree)
-        tree = proto_tree_add_subtree_format(tree, tvb, offset, 0, ett_mc, NULL, "%s (%d entries)", name, parsed_count);
+        tree = proto_tree_add_subtree_format(
+                tree, tvb, offset, 0, ett_mc, NULL, "%s (%ld entries)", name, parsed_count
+        );
     for (int i = 0; i < parsed_count; i++) {
         gchar *name_format = g_strdup_printf("%s[%d]", name, i);
         int32_t len = sub_dissector->dissect_protocol(
@@ -437,7 +439,8 @@ DISSECT_PROTOCOL(mapper) {
     } else {
         gchar *search_key = wmem_map_lookup(dissector->dissect_arguments, "v");
         saved_value = wmem_map_lookup(packet_saves, search_key);
-        if (saved_value == NULL) return add_invalid_data(tree, tvb, offset, name, "No value found, protocol has error?");
+        if (saved_value == NULL)
+            return add_invalid_data(tree, tvb, offset, name, "No value found, protocol has error?");
         len = 0;
     }
     if (!saved_value)
