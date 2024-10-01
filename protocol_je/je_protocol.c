@@ -50,7 +50,7 @@ int handle_server_handshake_switch(tvbuff_t *tvb, mc_protocol_context *ctx) {
         ctx->protocol_version = protocol_version;
         wmem_map_insert(ctx->global_data, "protocol_version", GUINT_TO_POINTER(protocol_version));
 
-        gchar **java_versions = get_mapped_java_versions(protocol_version);
+        char **java_versions = get_mapped_java_versions(protocol_version);
         if (java_versions[0] == NULL) {
             ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
             return INVALID_DATA;
@@ -90,11 +90,11 @@ void handle_server_handshake(proto_tree *packet_tree, packet_info *pinfo, tvbuff
             proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, -1, "Invalid Protocol Version");
             return;
         }
-        gchar **java_versions = get_mapped_java_versions(protocol_version);
+        char **java_versions = get_mapped_java_versions(protocol_version);
         if (java_versions == NULL || java_versions[0] == NULL) {
             proto_tree_add_string(packet_tree, hf_protocol_version_je, tvb, p, read, "Unknown Protocol Version");
         } else {
-            gchar *java_version = g_strjoinv(",", java_versions);
+            char *java_version = g_strjoinv(",", java_versions);
             g_strfreev(java_versions);
             proto_tree_add_string_format_value(
                     packet_tree, hf_protocol_version_je, tvb, p, read, "",
@@ -197,14 +197,15 @@ void handle_protocol(
         return;
     }
 
+    proto_tree_add_uint(tree, hf_packet_id_je, tvb, 0, len, packet_id);
     uint32_t count = (uint64_t) wmem_map_lookup(ctx->dissector_set->count_by_state, (void *) (uint64_t) now_state);
     if (packet_id >= count) {
         proto_tree_add_string(tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
 
-    gchar **key = wmem_map_lookup(ctx->dissector_set->registry_keys, (void *) (uint64_t) now_state);
-    gchar **name = wmem_map_lookup(ctx->dissector_set->readable_names, (void *) (uint64_t) now_state);
+    char **key = wmem_map_lookup(ctx->dissector_set->registry_keys, (void *) (uint64_t) now_state);
+    char **name = wmem_map_lookup(ctx->dissector_set->readable_names, (void *) (uint64_t) now_state);
     protocol_dissector **d = wmem_map_lookup(ctx->dissector_set->dissectors_by_state, (void *) (uint64_t) now_state);
     proto_tree_add_string_format_value(
             tree, hf_packet_name_je, tvb, 0, len, key[packet_id],
@@ -213,19 +214,22 @@ void handle_protocol(
 
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {
-        gchar *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", key[packet_id]);
+        char *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", key[packet_id]);
         GList *list = prefs_get_string_list(pref_ignore_packets_je);
         ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
+        g_free(search_name);
     }
 
     uint32_t length = tvb_reported_length(tvb);
     if (ignore)
         proto_tree_add_string(tree, hf_ignored_packet_je, tvb, len, (int32_t) length - len, "Ignored by user");
     else {
-        wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
+        wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
+        wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
         int32_t sub_len = d[packet_id]->dissect_protocol(
-                tree, pinfo, tvb, len, d[packet_id], "Packet Data", packet_save, NULL
+                tree, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
         );
+        wmem_destroy_allocator(temp_alloc);
         if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
                     tree, hf_invalid_data, tvb, len, (int32_t) length - len,
@@ -251,7 +255,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
         if ((side & 2) != 0) ctx->server_state = state;
     }
     if (wmem_map_contains(special_mark, (void *) (uint64_t) packet_id)) {
-        gchar *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
+        char *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
 
         if (strcmp(mark, "encrypt") == 0) ctx->encrypted = true;
         if (strcmp(mark, "compress") == 0) {
@@ -271,7 +275,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
                 writable_registry_size = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
                 wmem_map_insert(ctx->global_data, "#writable_registry_size", writable_registry_size);
             }
-            gchar *registry_name;
+            char *registry_name;
             int32_t offset = len;
             len = read_buffer(tvb, offset, (uint8_t **) &registry_name, wmem_file_scope());
             if (is_invalid(len)) return INVALID_DATA;
@@ -286,10 +290,10 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
             len = read_var_int(tvb, offset, &count);
             if (is_invalid(len)) return INVALID_DATA;
             offset += len;
-            gchar **data = wmem_alloc(wmem_file_scope(), sizeof(gchar *) * count);
+            char **data = wmem_alloc(wmem_file_scope(), sizeof(char *) * count);
             bool is_new_nbt = wmem_map_lookup(ctx->global_data, "nbt_any_type");
             for (int i = 0; i < count; i++) {
-                gchar *name;
+                char *name;
                 len = read_buffer(tvb, offset, (uint8_t **) &name, wmem_file_scope());
                 if (is_invalid(len)) {
                     wmem_free(wmem_file_scope(), data);

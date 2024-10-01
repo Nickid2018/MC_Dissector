@@ -11,14 +11,12 @@
 typedef struct protocol_dissector_struct protocol_dissector;
 typedef struct protocol_dissector_set_struct protocol_dissector_set;
 
-#define DISSECT_FUNCTION_SIG(name) int32_t (*name)(proto_tree *,packet_info *,tvbuff_t *,int,protocol_dissector *,gchar *,wmem_map_t *,gchar **)
+#define DISSECT_FUNCTION_SIG(name) int32_t (*name)(proto_tree *,packet_info *,tvbuff_t *,int,wmem_allocator_t *,protocol_dissector *,char *,wmem_map_t *,gchar **)
 
 struct protocol_dissector_struct {
     wmem_map_t *dissect_arguments;
 
     DISSECT_FUNCTION_SIG(dissect_protocol);
-
-    void (*destroy)(wmem_map_t *dissect_arguments);
 };
 
 struct protocol_dissector_set_struct {
@@ -31,13 +29,15 @@ struct protocol_dissector_set_struct {
     wmem_map_t *count_by_state;
     wmem_map_t *registry_keys;
     wmem_map_t *readable_names;
+
+    wmem_allocator_t *allocator;
 };
 
 #define DISSECT_ERROR (1 << 31)
 
-uint32_t map_name_to_state(gchar *name);
+uint32_t map_name_to_state(char *name);
 
-gchar *map_state_to_name(uint32_t state);
+char *map_state_to_name(uint32_t state);
 
 protocol_dissector_set *create_protocol(uint32_t protocol_version);
 

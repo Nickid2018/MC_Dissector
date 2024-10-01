@@ -9,8 +9,8 @@
 
 #define DISSECT_PROTOCOL(fn) \
 int32_t dissect_##fn(           \
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset, \
-    protocol_dissector *dissector, gchar *name, wmem_map_t *packet_saves, gchar **value \
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int offset, wmem_allocator_t *packet_alloc, \
+    protocol_dissector *dissector, char *name, wmem_map_t *packet_saves, char **value \
 )
 
 DISSECT_PROTOCOL(record_entity_id);

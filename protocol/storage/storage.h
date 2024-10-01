@@ -10,27 +10,27 @@
 
 void clear_storage();
 
-gchar **get_mapped_java_versions(uint32_t protocol_version);
+char **get_mapped_java_versions(uint32_t protocol_version);
 
-int32_t get_data_version(gchar *java_version);
+int32_t get_data_version(char *java_version);
 
-gchar *get_index(uint32_t protocol_version, gchar *item);
+char *get_index(uint32_t protocol_version, char *item);
 
-gchar *build_indexed_file_name(gchar *root, gchar *item, uint32_t protocol_version);
+char *build_indexed_file_name(char *root, char *item, uint32_t protocol_version);
 
-gchar *build_protocol_file_name(gchar *root, gchar *item, uint32_t protocol_version);
+char *build_protocol_file_name(char *root, char *item, uint32_t protocol_version);
 
 cJSON *get_protocol_source(uint32_t protocol_version);
 
-cJSON *get_packet_source(uint32_t protocol_version, gchar *packet);
+cJSON *get_packet_source(uint32_t protocol_version, char *packet);
 
-gchar *get_entity_sync_data_name(uint32_t protocol_version, gchar *entity_id, uint32_t index);
+char *get_entity_sync_data_name(uint32_t protocol_version, char *entity_id, uint32_t index);
 
-cJSON *get_registry(uint32_t protocol_version, gchar *registry);
+cJSON *get_registry(uint32_t protocol_version, char *registry);
 
-gchar *get_registry_data(uint32_t protocol_version, gchar *registry, uint32_t index);
+char *get_registry_data(uint32_t protocol_version, char *registry, uint32_t index);
 
-bool get_settings_flag(gchar *name);
+bool get_settings_flag(char *name);
 
 bool is_compatible_protocol_data();
 

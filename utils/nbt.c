@@ -9,56 +9,67 @@ extern int hf_string;
 
 #define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
-void parse_to_string(tvbuff_t *tvb, packet_info *pinfo, int offset_global, guint type, gint *length, char **text) {
+void parse_to_string(
+        tvbuff_t *tvb, packet_info *pinfo, int32_t offset_global, uint32_t type, int32_t *length, char **text
+) {
     switch (type) {
         case TAG_BYTE:
             *length = 1;
-            *text = g_strdup_printf("<b>: %d", tvb_get_int8(tvb, offset_global));
+            *text = wmem_strdup_printf(pinfo->pool, "<b>: %d", tvb_get_int8(tvb, offset_global));
             break;
         case TAG_SHORT:
             *length = 2;
-            *text = g_strdup_printf("<s>: %d", tvb_get_int16(tvb, offset_global, ENC_BIG_ENDIAN));
+            *text = wmem_strdup_printf(pinfo->pool, "<s>: %d", tvb_get_int16(tvb, offset_global, ENC_BIG_ENDIAN));
             break;
         case TAG_INT:
             *length = 4;
-            *text = g_strdup_printf("<i>: %d", tvb_get_int32(tvb, offset_global, ENC_BIG_ENDIAN));
+            *text = wmem_strdup_printf(pinfo->pool, "<i>: %d", tvb_get_int32(tvb, offset_global, ENC_BIG_ENDIAN));
             break;
         case TAG_LONG:
             *length = 8;
-            *text = g_strdup_printf("<l>: %ld", tvb_get_int64(tvb, offset_global, ENC_BIG_ENDIAN));
+            *text = wmem_strdup_printf(pinfo->pool, "<l>: %ld", tvb_get_int64(tvb, offset_global, ENC_BIG_ENDIAN));
             break;
         case TAG_FLOAT:
             *length = 4;
-            *text = g_strdup_printf("<f>: %f", tvb_get_ntohieee_float(tvb, offset_global));
+            *text = wmem_strdup_printf(pinfo->pool, "<f>: %f", tvb_get_ntohieee_float(tvb, offset_global));
             break;
         case TAG_DOUBLE:
             *length = 8;
-            *text = g_strdup_printf("<d>: %lf", tvb_get_ntohieee_double(tvb, offset_global));
+            *text = wmem_strdup_printf(pinfo->pool, "<d>: %lf", tvb_get_ntohieee_double(tvb, offset_global));
             break;
         case TAG_BYTE_ARRAY:
         case TAG_INT_ARRAY:
         case TAG_LONG_ARRAY:
             *length = 4;
-            gint array_length = tvb_get_int32(tvb, offset_global, ENC_BIG_ENDIAN);
-            gint element_length = type == TAG_BYTE_ARRAY ? 1 : (type == TAG_INT_ARRAY ? 4 : 8);
+            int32_t array_length = tvb_get_int32(tvb, offset_global, ENC_BIG_ENDIAN);
+            int32_t element_length = type == TAG_BYTE_ARRAY ? 1 : (type == TAG_INT_ARRAY ? 4 : 8);
             *length += array_length * element_length;
 
-            gint record_length = array_length > 20 ? 20 : array_length;
-            char **elements = g_new0(char *, record_length);
+            int32_t record_length = array_length > 20 ? 20 : array_length;
+            GStrvBuilder *builder = g_strv_builder_new();
             for (int i = 0; i < record_length; i++) {
                 if (type == TAG_BYTE_ARRAY)
-                    elements[i] = g_strdup_printf("%d", tvb_get_int8(tvb, offset_global + 4 + i));
+                    g_strv_builder_add(builder, g_strdup_printf(
+                            "%d",
+                            tvb_get_int8(tvb, offset_global + 4 + i)
+                    ));
                 else if (type == TAG_INT_ARRAY)
-                    elements[i] = g_strdup_printf("%d", tvb_get_int32(tvb, offset_global + 4 + i * 4, ENC_BIG_ENDIAN));
+                    g_strv_builder_add(builder, g_strdup_printf(
+                            "%d",
+                            tvb_get_int32(tvb, offset_global + 4 + i * 4, ENC_BIG_ENDIAN)
+                    ));
                 else
-                    elements[i] = g_strdup_printf(
+                    g_strv_builder_add(builder, g_strdup_printf(
                             "%ld",
-                            tvb_get_int64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN));
+                            tvb_get_int64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN)
+                    ));
             }
             char *el_type = type == TAG_BYTE_ARRAY ? "<ba>" : (type == TAG_INT_ARRAY ? "<ia>" : "<la>");
-            char *elements_text = g_strjoinv(", ", elements);
-            g_strfreev(elements);
-            *text = g_strdup_printf(
+            char **built = g_strv_builder_end(builder);
+            char *elements_text = g_strjoinv(", ", g_strv_builder_end(builder));
+            g_strfreev(built);
+            *text = wmem_strdup_printf(
+                    pinfo->pool,
                     record_length == array_length ? "%s: [%d] (%s)" : "%s: [%d] (%s, ...)",
                     el_type, array_length, elements_text
             );
@@ -66,20 +77,23 @@ void parse_to_string(tvbuff_t *tvb, packet_info *pinfo, int offset_global, guint
             break;
         case TAG_STRING:
             *length = 2;
-            gint string_length = tvb_get_uint16(tvb, offset_global, ENC_BIG_ENDIAN);
+            int32_t string_length = tvb_get_uint16(tvb, offset_global, ENC_BIG_ENDIAN);
             *length += string_length;
-            *text = g_strdup_printf("<str>: %s", tvb_format_text(pinfo->pool, tvb, offset_global + 2, string_length));
+            *text = wmem_strdup_printf(
+                    pinfo->pool, "<str>: %s",
+                    tvb_format_text(pinfo->pool, tvb, offset_global + 2, string_length)
+            );
             break;
         default:
             *length = 0;
-            *text = g_strdup_printf("<NBT Error> Unknown type '%x'", type);
+            *text = wmem_strdup_printf(pinfo->pool, "<NBT Error> Unknown type '%x'", type);
             break;
     }
 }
 
-gint add_primitive_type(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
-                        int offset_global, guint type, gchar *sup_name) {
-    gint length;
+int32_t add_primitive_type(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
+                           int offset_global, uint32_t type, char *sup_name) {
+    int32_t length;
     char *text;
     parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
     proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
@@ -88,18 +102,18 @@ gint add_primitive_type(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     return length;
 }
 
-gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
-                   tvbuff_t *tvb, gint ett, int offset_global, gchar *sup_name);
+int32_t add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
+                      tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name);
 
-gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
-                       tvbuff_t *tvb, gint ett, int offset_global, gchar *sup_name);
+int32_t add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
+                          tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name);
 
 // NOLINTNEXTLINE
-gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
-                   tvbuff_t *tvb, gint ett, int offset_global, gchar *sup_name) {
-    gint length = 5;
-    guint sub_type = tvb_get_uint8(tvb, offset_global);
-    guint sub_length = tvb_get_uint32(tvb, offset_global + 1, ENC_BIG_ENDIAN);
+int32_t add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
+                      tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name) {
+    int32_t length = 5;
+    uint32_t sub_type = tvb_get_uint8(tvb, offset_global);
+    uint32_t sub_length = tvb_get_uint32(tvb, offset_global + 1, ENC_BIG_ENDIAN);
 
     proto_tree *subtree;
     if (sup_name == NULL)
@@ -112,25 +126,25 @@ gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     proto_item_append_text(item, " (%d entries)", sub_length);
 
     if (is_primitive_type(sub_type)) {
-        for (guint i = 0; i < sub_length; i++)
+        for (uint32_t i = 0; i < sub_length; i++)
             length += add_primitive_type(
                     subtree, pinfo, tvb,
                     offset_global + length, sub_type,
-                    g_strdup_printf("%s[%d]", sup_name, i)
+                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_LIST) {
-        for (guint i = 0; i < sub_length; i++)
+        for (uint32_t i = 0; i < sub_length; i++)
             length += add_list_type(
                     NULL, pinfo, subtree, tvb, ett,
                     offset_global + length,
-                    g_strdup_printf("%s[%d]", sup_name, i)
+                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_COMPOUND) {
-        for (guint i = 0; i < sub_length; i++)
+        for (uint32_t i = 0; i < sub_length; i++)
             length += add_compound_type(
                     NULL, pinfo, subtree, tvb, ett,
                     offset_global + length,
-                    g_strdup_printf("%s[%d]", sup_name, i)
+                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     }
 
@@ -139,9 +153,9 @@ gint add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
 }
 
 // NOLINTNEXTLINE
-gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
-                       tvbuff_t *tvb, gint ett, int offset_global, gchar *sup_name) {
-    gint length = 1;
+int32_t add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
+                          tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name) {
+    int32_t length = 1;
     proto_tree *subtree;
     if (sup_name == NULL)
         subtree = tree;
@@ -151,10 +165,10 @@ gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
         proto_item_set_text(item, "%s", sup_name);
     }
 
-    guint sub_type;
+    uint32_t sub_type;
     while ((sub_type = tvb_get_uint8(tvb, offset_global + length - 1)) != TAG_END) {
-        gint name_length = tvb_get_uint16(tvb, offset_global + length, ENC_BIG_ENDIAN);
-        gchar *name = tvb_format_text(pinfo->pool, tvb, offset_global + length + 2, name_length);
+        int32_t name_length = tvb_get_uint16(tvb, offset_global + length, ENC_BIG_ENDIAN);
+        char *name = tvb_format_text(pinfo->pool, tvb, offset_global + length + 2, name_length);
         length += 2 + name_length;
         if (is_primitive_type(sub_type)) {
             length += add_primitive_type(
@@ -179,9 +193,9 @@ gint add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     return length;
 }
 
-gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, gchar *name, bool need_skip) {
-    guint8 type = tvb_get_uint8(tvb, offset);
-    gint origin_offset = offset;
+int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip) {
+    uint32_t type = tvb_get_uint8(tvb, offset);
+    int32_t origin_offset = offset;
     if (need_skip)
         offset += 3 + tvb_get_uint16(tvb, offset + 1, ENC_BIG_ENDIAN);
     else
@@ -194,7 +208,7 @@ gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offse
         proto_item_set_text(item, "%s", name);
         proto_tree *subtree = proto_item_add_subtree(item, ett_sub);
 
-        gint length = 0;
+        int32_t length = 0;
         if (type == TAG_LIST)
             length = add_list_type(item, pinfo, subtree, tvb, ett_sub, offset, NULL);
         else if (type == TAG_COMPOUND)
@@ -207,7 +221,7 @@ gint do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, gint offse
 }
 
 // NOLINTNEXTLINE
-gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type) {
+int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type) {
     if (type == TAG_END)
         return 0;
     if (type == TAG_BYTE)
@@ -223,20 +237,20 @@ gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type) {
     if (type == TAG_STRING)
         return 2 + tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
     if (type == TAG_LIST) {
-        guint sub_type = tvb_get_uint8(tvb, offset);
+        uint32_t sub_type = tvb_get_uint8(tvb, offset);
         if (sub_type == TAG_END)
             return 5;
-        guint length = tvb_get_uint32(tvb, offset + 1, ENC_BIG_ENDIAN);
-        gint sub_length = 0;
-        for (guint i = 0; i < length; i++)
+        uint32_t length = tvb_get_uint32(tvb, offset + 1, ENC_BIG_ENDIAN);
+        int32_t sub_length = 0;
+        for (uint32_t i = 0; i < length; i++)
             sub_length += count_nbt_length_with_type(tvb, offset + 5 + sub_length, sub_type);
         return 5 + sub_length;
     }
     if (type == TAG_COMPOUND) {
-        gint sub_length = 0;
-        guint sub_type;
+        int32_t sub_length = 0;
+        uint32_t sub_type;
         while ((sub_type = tvb_get_uint8(tvb, offset + sub_length)) != TAG_END) {
-            gint name_length = tvb_get_uint16(tvb, offset + sub_length + 1, ENC_BIG_ENDIAN);
+            int32_t name_length = tvb_get_uint16(tvb, offset + sub_length + 1, ENC_BIG_ENDIAN);
             sub_length += 3 + name_length;
             sub_length += count_nbt_length_with_type(tvb, offset + sub_length, sub_type);
         }
@@ -249,8 +263,8 @@ gint count_nbt_length_with_type(tvbuff_t *tvb, gint offset, guint type) {
     return 0;
 }
 
-gint count_nbt_length(tvbuff_t *tvb, gint offset) {
-    guint8 type = tvb_get_uint8(tvb, offset);
-    gint skip = tvb_get_uint16(tvb, offset + 1, ENC_BIG_ENDIAN);
+int32_t count_nbt_length(tvbuff_t *tvb, int32_t offset) {
+    uint8_t type = tvb_get_uint8(tvb, offset);
+    int32_t skip = tvb_get_uint16(tvb, offset + 1, ENC_BIG_ENDIAN);
     return count_nbt_length_with_type(tvb, offset + 3 + skip, type) + 3 + skip;
 }
