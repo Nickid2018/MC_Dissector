@@ -16,7 +16,7 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
-#define PROTOCOL_DATA_VERSION "2.0"
+#define PROTOCOL_DATA_VERSION "2.1"
 
 #if defined(DEBUG)
 #define WS_LOG(format, ...) ws_log("", LOG_LEVEL_CRITICAL, format, ##__VA_ARGS__)

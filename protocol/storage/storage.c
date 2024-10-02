@@ -3,7 +3,6 @@
 //
 
 #include "storage.h"
-#include "protocol/schema/schema.h"
 
 extern char *pref_protocol_data_dir;
 
@@ -27,12 +26,12 @@ void ensure_cached_##name() { \
 
 #define DATA_CACHED_UINT(name) \
 wmem_map_t *cached_##name = NULL; \
-void *get_cached_##name(guint version) { \
+void *get_cached_##name(uint32_t version) { \
     if (cached_##name == NULL) \
         return NULL; \
     return wmem_map_lookup(cached_##name, GUINT_TO_POINTER(version)); \
 } \
-void set_cached_##name(guint version, void *value) { \
+void set_cached_##name(uint32_t version, void *value) { \
     if (cached_##name == NULL) \
         cached_##name = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal); \
     wmem_map_insert(cached_##name, GUINT_TO_POINTER(version), value); \
@@ -68,12 +67,15 @@ JSON_CACHED(settings, "settings.json")
 
 JSON_CACHED(versions, "java_edition/versions.json")
 
+DATA_CACHED_UINT(protocol)
+
 DATA_CACHED_UINT(entity_sync_data)
 
 DATA_CACHED_STR(registry_data)
 
-wmem_map_t *index_mappings;
-wmem_map_t *protocol_mappings;
+wmem_map_t *index_mappings = NULL;
+wmem_map_t *protocol_mappings = NULL;
+protocol_dissector_set *initial_set = NULL;
 
 wmem_map_t *read_csv(char *path) {
     wmem_map_t *csv = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
@@ -156,11 +158,21 @@ gboolean clean_json(gpointer key _U_, gpointer value, gpointer user_data _U_) {
     return true;
 }
 
+gboolean clean_protocol(gpointer key _U_, gpointer value, gpointer user_data _U_) {
+    destroy_protocol(value);
+    return true;
+}
+
 void clear_storage() {
     CLEAR_CACHED_JSON(settings)
     CLEAR_CACHED_JSON(versions)
     CLEAR_CACHED_DATA(entity_sync_data, clean_json)
     CLEAR_CACHED_DATA(registry_data, clean_json)
+    CLEAR_CACHED_DATA(protocol, clean_protocol)
+    if (initial_set != NULL) {
+        destroy_protocol(initial_set);
+        initial_set = NULL;
+    }
 }
 
 char **get_mapped_java_versions(uint32_t protocol_version) {
@@ -337,4 +349,33 @@ bool is_compatible_protocol_data() {
     ensure_cached_settings();
     cJSON *version = cJSON_GetObjectItem(cached_settings, "version");
     return version != NULL && g_strcmp0(version->valuestring, PROTOCOL_DATA_VERSION) == 0;
+}
+
+protocol_dissector_set *get_initial_protocol() {
+    if (initial_set != NULL) return initial_set;
+    char *file = g_build_filename(pref_protocol_data_dir, "java_edition", "initial.json", NULL);
+
+    char *content = NULL;
+    if (!g_file_get_contents(file, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
+        g_free(file);
+        return NULL;
+    }
+
+    cJSON *json = cJSON_Parse(content);
+    g_free(content);
+    if (json == NULL)
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, cJSON_GetErrorPtr());
+    g_free(file);
+
+    initial_set = create_protocol_with_json(json, ~0u);
+    return initial_set;
+}
+
+protocol_dissector_set *get_protocol_set(uint32_t protocol_version) {
+    protocol_dissector_set *cached = get_cached_protocol(protocol_version);
+    if (cached != NULL) return cached;
+    cached = create_protocol(protocol_version);
+    set_cached_protocol(protocol_version, cached);
+    return cached;
 }

@@ -7,6 +7,7 @@
 
 #include "cJSON.h"
 #include "mc_dissector.h"
+#include "protocol/schema/schema.h"
 
 void clear_storage();
 
@@ -29,6 +30,10 @@ char *get_entity_sync_data_name(uint32_t protocol_version, char *entity_id, uint
 cJSON *get_registry(uint32_t protocol_version, char *registry);
 
 char *get_registry_data(uint32_t protocol_version, char *registry, uint32_t index);
+
+protocol_dissector_set *get_initial_protocol();
+
+protocol_dissector_set *get_protocol_set(uint32_t protocol_version);
 
 bool get_settings_flag(char *name);
 

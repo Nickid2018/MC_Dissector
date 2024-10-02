@@ -31,6 +31,8 @@ struct protocol_dissector_set_struct {
     wmem_map_t *readable_names;
 
     wmem_allocator_t *allocator;
+
+    bool valid;
 };
 
 #define DISSECT_ERROR (1 << 31)
@@ -38,6 +40,8 @@ struct protocol_dissector_set_struct {
 uint32_t map_name_to_state(char *name);
 
 char *map_state_to_name(uint32_t state);
+
+protocol_dissector_set *create_protocol_with_json(cJSON *protocol_source, uint32_t protocol_version);
 
 protocol_dissector_set *create_protocol(uint32_t protocol_version);
 

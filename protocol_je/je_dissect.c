@@ -8,8 +8,8 @@
 #include "je_dissect.h"
 #include "je_protocol.h"
 
-extern int hf_packet_length_je;
-extern int hf_packet_data_length_je;
+extern int hf_packet_length;
+extern int hf_packet_data_length;
 
 dissector_handle_t mcje_handle;
 
@@ -21,50 +21,26 @@ void proto_reg_handoff_mcje() {
 void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_frame_data *frame_data,
                     mc_protocol_context *ctx, bool is_server,
                     bool visited) {
-    if (is_server) {
-        switch (frame_data->server_state) {
-            case HANDSHAKE:
-                if (!visited && is_invalid(handle_server_handshake_switch(tvb, ctx)))
-                    return;
-                if (tree)
-                    handle_server_handshake(tree, pinfo, tvb);
+    switch (is_server ? frame_data->server_state : frame_data->client_state) {
+        case HANDSHAKE:
+        case STATUS:
+            if (!visited && is_invalid(try_switch_initial(tvb, pinfo, ctx, !is_server)))
                 return;
-            case PING:
-                if (tree)
-                    handle_server_slp(tree, tvb);
+            if (tree)
+                handle_initial(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+            return;
+        case LOGIN:
+        case TRANSFER:
+        case PLAY:
+        case CONFIGURATION:
+            if (!visited && is_invalid(try_switch_state(tvb, ctx, !is_server)))
                 return;
-            case LOGIN:
-            case TRANSFER:
-            case PLAY:
-            case CONFIGURATION:
-                if (!visited && is_invalid(try_switch_state(tvb, ctx, false)))
-                    return;
-                if (tree)
-                    handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, false);
-                return;
-            default:
-                col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
-                return;
-        }
-    } else {
-        switch (frame_data->client_state) {
-            case PING:
-                if (tree)
-                    handle_client_slp(tree, pinfo, tvb);
-                return;
-            case LOGIN:
-            case TRANSFER:
-            case PLAY:
-            case CONFIGURATION:
-                if (!visited && is_invalid(try_switch_state(tvb, ctx, true)))
-                    return;
-                if (tree)
-                    handle_protocol(tree, pinfo, tvb, ctx, frame_data->client_state, true);
-                return;
-            default:
-                col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
-                return;
-        }
+            if (tree)
+                handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+            return;
+        default:
+            col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
+            return;
     }
 }
 
@@ -74,7 +50,8 @@ void mark_invalid(packet_info *pinfo) {
     ctx->client_state = ctx->server_state = INVALID;
 }
 
-void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset, int32_t packet_len_len, int32_t len) {
+void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset, int32_t packet_len_len,
+                     int32_t len) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
@@ -83,7 +60,7 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_
     if (tree) {
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
         mcje_tree = proto_item_add_subtree(ti, ett_mc);
-        proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, offset - packet_len_len, packet_len_len, len);
+        proto_tree_add_uint(mcje_tree, hf_packet_length, tvb, offset - packet_len_len, packet_len_len, len);
         proto_item_append_text(
                 ti, ", Client State: %s, Server State: %s",
                 STATE_NAME[frame_data->client_state], STATE_NAME[frame_data->server_state]
@@ -170,7 +147,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
     if (frame_data->client_state == NOT_COMPATIBLE || frame_data->server_state == NOT_COMPATIBLE) {
-        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not compatible with the current plugin version");
+        col_set_str(pinfo->cinfo, COL_INFO,
+                    "[Invalid] Protocol data is not compatible with the current plugin version");
         return (int32_t) tvb_captured_length(tvb);
     }
     if (frame_data->client_state == INVALID || frame_data->server_state == INVALID) {
@@ -193,7 +171,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         uint32_t length = tvb_reported_length_remaining(tvb, 0);
         int32_t length_remaining = is_server ? ctx->server_last_segment_remaining : ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
-        uint8_t **decrypt_data = pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
+        uint8_t **decrypt_data =
+                pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gchar *secret_key_str = pref_secret_key;

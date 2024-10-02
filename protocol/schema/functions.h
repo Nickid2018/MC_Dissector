@@ -23,4 +23,6 @@ DISSECT_PROTOCOL(record_entity_id_painting);
 
 DISSECT_PROTOCOL(sync_entity_data);
 
+DISSECT_PROTOCOL(display_protocol_version);
+
 #endif //MC_DISSECTOR_FUNCTIONS_H

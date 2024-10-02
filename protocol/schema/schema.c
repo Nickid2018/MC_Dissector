@@ -38,7 +38,7 @@ extern char *pref_protocol_data_dir;
 
 void destroy_protocol(protocol_dissector_set *dissector_set) {
     wmem_destroy_allocator(dissector_set->allocator);
-    wmem_free(wmem_epan_scope(), dissector_set);
+    dissector_set->valid = false;
 }
 
 // PROTOCOL SUB-DISSECTORS ---------------------------------------------------------------------------------------------
@@ -1056,6 +1056,7 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
     FUNC_PROTOCOL(record_entity_id_player, dissect_record_entity_id_player)
     FUNC_PROTOCOL(record_entity_id_experience_orb, dissect_record_entity_id_experience_orb)
     FUNC_PROTOCOL(record_entity_id_painting, dissect_record_entity_id_painting)
+    FUNC_PROTOCOL(display_protocol_version, dissect_display_protocol_version)
 
     if (this_dissector->dissect_protocol == NULL) {
         wmem_free(allocator, this_dissector);
@@ -1257,6 +1258,11 @@ uint32_t map_name_to_state(char *name) {
     if (strcmp(name, "configuration") == 0) return CONFIGURATION;
     if (strcmp(name, "configuration_client") == 0) return CONFIGURATION;
     if (strcmp(name, "configuration_server") == 0) return 16 + CONFIGURATION;
+    if (strcmp(name, "handshaking") == 0) return 16 + HANDSHAKE;
+    if (strcmp(name, "handshaking_server") == 0) return 16 + HANDSHAKE;
+    if (strcmp(name, "status") == 0) return STATUS;
+    if (strcmp(name, "status_client") == 0) return STATUS;
+    if (strcmp(name, "status_server") == 0) return 16 + STATUS;
     return ~0u;
 }
 
@@ -1279,8 +1285,7 @@ char *map_state_to_name(uint32_t state) {
     }
 }
 
-protocol_dissector_set *create_protocol(uint32_t protocol_version) {
-    cJSON *protocol_source = get_protocol_source(protocol_version);
+protocol_dissector_set *create_protocol_with_json(cJSON *protocol_source, uint32_t protocol_version) {
     if (protocol_source == NULL) return NULL;
     protocol_dissector_set *set = wmem_alloc(wmem_epan_scope(), sizeof(protocol_dissector_set));
     set->protocol_version = protocol_version;
@@ -1293,6 +1298,7 @@ protocol_dissector_set *create_protocol(uint32_t protocol_version) {
     set->state_to_next = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
     set->state_to_next_side = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
     set->special_mark = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
+    set->valid = true;
     cJSON *now = protocol_source->child;
     while (now != NULL) {
         uint32_t state = map_name_to_state(now->string);
@@ -1300,4 +1306,8 @@ protocol_dissector_set *create_protocol(uint32_t protocol_version) {
         now = now->next;
     }
     return set;
+}
+
+protocol_dissector_set *create_protocol(uint32_t protocol_version) {
+    return create_protocol_with_json(get_protocol_source(protocol_version), protocol_version);
 }

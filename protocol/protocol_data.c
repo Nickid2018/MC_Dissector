@@ -5,7 +5,7 @@
 #include <epan/conversation.h>
 #include "protocol_data.h"
 
-char *STATE_NAME[] = {"Handshake", "Play", "Server List Ping", "Login", "Transfer", "Configuration", "Invalid"};
+char *STATE_NAME[] = {"Handshake", "Play", "Status", "Login", "Transfer", "Configuration", "Invalid"};
 
 int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
     uint8_t read;
@@ -59,4 +59,10 @@ wmem_map_t *get_global_data(packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     return ctx->global_data;
+}
+
+uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
+    if (state == TRANSFER)
+        state = LOGIN;
+    return is_client ? state : 16 + state;
 }
