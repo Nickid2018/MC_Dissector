@@ -235,25 +235,20 @@ DISSECT_PROTOCOL(uuid) {
 DISSECT_PROTOCOL(nbt) {
     bool is_new_nbt = wmem_map_lookup(get_global_data(pinfo), "nbt_any_type");
 
-    int len = 0;
-    int present = 1;
-    if (is_new_nbt) {
-        present = tvb_get_uint8(tvb, offset);
-        len = 1;
-    }
-
+    int present  = tvb_get_uint8(tvb, offset);
     if (!present) {
         if (tree) {
             proto_item *text = proto_tree_add_boolean(tree, hf_boolean, tvb, offset, 1, false);
             proto_item_set_text(text, "%s [optional nbt]: Not present", name);
         }
-        return len;
+        return 1;
     }
     if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
 
+    int32_t len = is_new_nbt ? 1 : 0;
     int32_t len_nbt;
-    if (is_new_nbt) len_nbt = count_nbt_length_with_type(tvb, offset + len, present);
-    else len_nbt = count_nbt_length(tvb, offset + len);
+    if (is_new_nbt) len_nbt = count_nbt_length_with_type(tvb, offset + 1, present);
+    else len_nbt = count_nbt_length(tvb, offset);
     if (tree)
         add_name(proto_tree_add_bytes(
                 tree, hf_bytes, tvb, offset + len, len_nbt,
@@ -261,26 +256,6 @@ DISSECT_PROTOCOL(nbt) {
         ), name);
 
     return len + len_nbt;
-}
-
-DISSECT_PROTOCOL(optional_nbt) {
-    if (tvb_get_uint8(tvb, offset) == TAG_END) {
-        if (tree) {
-            proto_item *text = proto_tree_add_boolean(tree, hf_boolean, tvb, offset, 1, false);
-            proto_item_set_text(text, "%s [optional nbt]: Not present", name);
-        }
-        return 1;
-    }
-
-    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset, name, true);
-    int32_t len_nbt = count_nbt_length(tvb, offset);
-    if (tree)
-        add_name(proto_tree_add_bytes(
-                tree, hf_bytes, tvb, offset, len_nbt,
-                tvb_memdup(pinfo->pool, tvb, offset, len_nbt > 200 ? 200 : len_nbt)
-        ), name);
-
-    return len_nbt;
 }
 
 // COMPOSITE SUB-DISSECTORS --------------------------------------------------------------------------------------------
@@ -1148,7 +1123,6 @@ protocol_dissector *make_protocol_dissector(
     SIMPLE_PROTOCOL(rest_buffer, dissect_rest_buffer)
     SIMPLE_PROTOCOL(uuid, dissect_uuid)
     SIMPLE_PROTOCOL(nbt, dissect_nbt)
-    SIMPLE_PROTOCOL(optional_nbt, dissect_optional_nbt)
 
     if (strcmp(type, "recursive") == 0 && !composite_type && recursive_root) return recursive_root;
 
