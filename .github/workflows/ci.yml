@@ -76,7 +76,7 @@ jobs:
       - name: Install Deps
         run: |
           sudo add-apt-repository ppa:wireshark-dev/stable
-          sudo apt-get update & sudo apt-get install cmake libwireshark-dev libglib2.0-dev libcjson-dev make clang
+          sudo apt-get update & sudo apt-get install cmake libwireshark-dev libglib2.0-dev libgcrypt20 libcjson-dev make clang
       - name: Configure dissector (Debug)
         if: "!startsWith(github.ref, 'refs/tags/') || contains(github.ref, 'beta')"
         run: cmake -S . -B build
