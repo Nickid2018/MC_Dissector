@@ -273,14 +273,14 @@ DISSECT_PROTOCOL(optional_nbt) {
     }
 
     if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset + 1, name, true) + 1;
-    int32_t len_nbt = count_nbt_length(tvb, offset + 1);
+    int32_t len_nbt = count_nbt_length(tvb, offset);
     if (tree)
         add_name(proto_tree_add_bytes(
-                tree, hf_bytes, tvb, offset + 1, len_nbt,
-                tvb_memdup(pinfo->pool, tvb, offset + 1, len_nbt > 200 ? 200 : len_nbt)
+                tree, hf_bytes, tvb, offset, len_nbt,
+                tvb_memdup(pinfo->pool, tvb, offset, len_nbt > 200 ? 200 : len_nbt)
         ), name);
 
-    return 1 + len_nbt;
+    return len_nbt;
 }
 
 // COMPOSITE SUB-DISSECTORS --------------------------------------------------------------------------------------------
