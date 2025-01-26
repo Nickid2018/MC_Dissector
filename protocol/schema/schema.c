@@ -272,7 +272,7 @@ DISSECT_PROTOCOL(optional_nbt) {
         return 1;
     }
 
-    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset + 1, name, true) + 1;
+    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset, name, true);
     int32_t len_nbt = count_nbt_length(tvb, offset);
     if (tree)
         add_name(proto_tree_add_bytes(
