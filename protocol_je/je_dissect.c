@@ -4,12 +4,14 @@
 
 #include <epan/conversation.h>
 #include <epan/proto_data.h>
+#include <epan/exceptions.h>
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
 
 extern int hf_packet_length;
 extern int hf_packet_data_length;
+extern int hf_invalid_data;
 
 dissector_handle_t mcje_handle;
 
@@ -35,12 +37,33 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
         case CONFIGURATION:
             if (!visited && is_invalid(try_switch_state(tvb, ctx, !is_server)))
                 return;
-            if (tree)
-                handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+            if (tree) {
+                TRY {
+                        handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+                    }
+                    CATCH_BOUNDS_ERRORS {
+                        proto_tree_add_string_format_value(
+                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            "Packet dissecting error: Bound Error (%s)", GET_MESSAGE
+                        );
+                    }
+                    CATCH_BOUNDS_AND_DISSECTOR_ERRORS {
+                        proto_tree_add_string_format_value(
+                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            "Packet dissecting error: Dissector Error (%s)", GET_MESSAGE
+                        );
+                    }
+                    CATCH_ALL {
+                        proto_tree_add_string_format_value(
+                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            "Packet dissecting error: Other Error (%s)", GET_MESSAGE
+                        );
+                    }
+                ENDTRY;
+            }
             return;
         default:
             col_add_str(pinfo->cinfo, COL_INFO, "[Invalid State]");
-            return;
     }
 }
 
@@ -50,7 +73,8 @@ void mark_invalid(packet_info *pinfo) {
     ctx->client_state = ctx->server_state = INVALID;
 }
 
-void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset, int32_t packet_len_len,
+void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset,
+                     int32_t packet_len_len,
                      int32_t len) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
@@ -62,8 +86,8 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_
         mcje_tree = proto_item_add_subtree(ti, ett_mc);
         proto_tree_add_uint(mcje_tree, hf_packet_length, tvb, offset - packet_len_len, packet_len_len, len);
         proto_item_append_text(
-                ti, ", Client State: %s, Server State: %s",
-                STATE_NAME[frame_data->client_state], STATE_NAME[frame_data->server_state]
+            ti, ", Client State: %s, Server State: %s",
+            STATE_NAME[frame_data->client_state], STATE_NAME[frame_data->server_state]
         );
     }
 
@@ -82,8 +106,8 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_
             if (uncompressed_length < frame_data->compression_threshold) {
                 col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Badly compressed packet");
                 col_append_fstr(
-                        pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
-                        uncompressed_length, frame_data->compression_threshold
+                    pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
+                    uncompressed_length, frame_data->compression_threshold
                 );
                 mark_invalid(pinfo);
                 return;
@@ -169,10 +193,14 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     tvbuff_t *use_tvb = tvb;
     if (frame_data->encrypted) {
         uint32_t length = tvb_reported_length_remaining(tvb, 0);
-        int32_t length_remaining = is_server ? ctx->server_last_segment_remaining : ctx->client_last_segment_remaining;
+        int32_t length_remaining = is_server
+                                       ? ctx->server_last_segment_remaining
+                                       : ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
         uint8_t **decrypt_data =
-                pinfo->curr_proto_layer_num == 1 ? &frame_data->decrypted_data_head : &frame_data->decrypted_data_tail;
+                pinfo->curr_proto_layer_num == 1
+                    ? &frame_data->decrypted_data_head
+                    : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gchar *secret_key_str = pref_secret_key;
@@ -194,10 +222,10 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         if (!*decrypt_data) {
             uint8_t *decrypt = wmem_alloc(pinfo->pool, length - length_remaining);
             gcry_error_t err = gcry_cipher_decrypt(
-                    *cipher, decrypt,
-                    length - length_remaining,
-                    tvb_memdup(pinfo->pool, tvb, length_remaining, length - length_remaining),
-                    length - length_remaining
+                *cipher, decrypt,
+                length - length_remaining,
+                tvb_memdup(pinfo->pool, tvb, length_remaining, length - length_remaining),
+                length - length_remaining
             );
             if (err) {
                 col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Decryption failed with code ");
