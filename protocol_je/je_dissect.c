@@ -35,7 +35,7 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
         case TRANSFER:
         case PLAY:
         case CONFIGURATION:
-            if (!visited && is_invalid(try_switch_state(tvb, ctx, !is_server)))
+            if (!visited && is_invalid(try_switch_state(tvb, ctx, frame_data, !is_server)))
                 return;
             if (tree) {
                 TRY {
@@ -74,8 +74,7 @@ void mark_invalid(packet_info *pinfo) {
 }
 
 void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset,
-                     int32_t packet_len_len,
-                     int32_t len) {
+                     int32_t packet_len_len, int32_t len, int32_t packet_count) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
@@ -92,7 +91,7 @@ void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_
     }
 
     tvbuff_t *new_tvb;
-    if (frame_data->compression_threshold > 0) {
+    if (frame_data->compression_threshold > 0 && !(packet_count == 0 && frame_data->first_compression_packet)) {
         int32_t uncompressed_length;
         int var_len = read_var_int(tvb, offset, &uncompressed_length);
         if (is_invalid(var_len)) {
@@ -164,6 +163,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         frame_data->encrypted = ctx->encrypted;
         frame_data->decrypted_data_head = NULL;
         frame_data->decrypted_data_tail = NULL;
+        frame_data->first_compression_packet = false;
         frame_data->compression_threshold = ctx->compression_threshold;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0, frame_data);
     }
@@ -285,7 +285,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         }
 
         offset += packet_len_len;
-        dissect_je_core(use_tvb, pinfo, tree, offset, packet_len_len, len);
+        dissect_je_core(use_tvb, pinfo, tree, offset, packet_len_len, len, packet_count);
         offset += len;
         packet_count++;
     }

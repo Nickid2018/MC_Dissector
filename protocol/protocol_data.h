@@ -50,6 +50,8 @@ typedef struct {
     uint8_t *decrypted_data_head;
     uint8_t *decrypted_data_tail;
     int32_t compression_threshold;
+
+    bool first_compression_packet;
 } mc_frame_data;
 
 extern char *STATE_NAME[];

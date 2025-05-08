@@ -160,7 +160,7 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
     return 0;
 }
 
-int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
+int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client) {
     if (ctx->dissector_set == NULL) return INVALID_DATA;
     uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
     int32_t packet_id;
@@ -184,6 +184,8 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, bool is_client) {
             len = read_var_int(tvb, len, &threshold);
             if (is_invalid(len)) return INVALID_DATA;
             ctx->compression_threshold = threshold;
+            frame_data->first_compression_packet = true;
+            frame_data->compression_threshold = threshold;
         }
         if (strcmp(mark, "registry") == 0) {
             wmem_map_t *writable_registry = wmem_map_lookup(ctx->global_data, "#writable_registry");
