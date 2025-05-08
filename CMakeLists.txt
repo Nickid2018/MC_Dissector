@@ -71,8 +71,8 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
     include(FetchContent)
     FetchContent_Declare(
             cJSON
-            GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-            GIT_TAG v1.7.14
+            GIT_REPOSITORY .git
+            GIT_TAG v1.7.18
     )
     FetchContent_MakeAvailable(cJSON)
     include_directories(${cJSON_SOURCE_DIR})
