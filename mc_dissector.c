@@ -9,7 +9,7 @@
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
 
-WS_DLL_PUBLIC_DEF _U_ const gchar plugin_version[] = "1.3.0";
+WS_DLL_PUBLIC_DEF _U_ const gchar plugin_version[] = "1.3.3";
 WS_DLL_PUBLIC_DEF _U_ const int plugin_want_major = WIRESHARK_VERSION_MAJOR;
 WS_DLL_PUBLIC_DEF _U_ const int plugin_want_minor = WIRESHARK_VERSION_MINOR;
 
