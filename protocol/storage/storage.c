@@ -177,7 +177,7 @@ void clear_storage() {
 
 char **get_mapped_java_versions(uint32_t protocol_version) {
     ensure_cached_versions();
-    GStrvBuilder *builder = g_strv_builder_new();
+    GPtrArray *array = g_ptr_array_new_with_free_func(g_free);
     for (int i = 0; i < cJSON_GetArraySize(cached_versions); i++) {
         cJSON *item = cJSON_GetArrayItem(cached_versions, i);
         cJSON *version = cJSON_GetObjectItem(item, "protocol_version");
@@ -186,9 +186,10 @@ char **get_mapped_java_versions(uint32_t protocol_version) {
         cJSON *name = cJSON_GetObjectItem(item, "version");
         if (name == NULL)
             continue;
-        g_strv_builder_add(builder, name->valuestring);
+        g_ptr_array_add(array, g_strdup(name->valuestring));
     }
-    return g_strv_builder_end(builder);
+    g_ptr_array_add(array, NULL);
+    return (char **) g_ptr_array_steal(array, NULL);
 }
 
 int32_t get_data_version(char *java_version) {
@@ -208,11 +209,11 @@ int32_t get_data_version(char *java_version) {
 
 cJSON *get_protocol_source(uint32_t protocol_version) {
     char *file = g_build_filename(
-            pref_protocol_data_dir,
-            "java_edition/indexed_data",
-            get_index(protocol_version, "protocol"),
-            "protocol.json",
-            NULL
+        pref_protocol_data_dir,
+        "java_edition/indexed_data",
+        get_index(protocol_version, "protocol"),
+        "protocol.json",
+        NULL
     );
     char *content = NULL;
     if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -258,11 +259,11 @@ char *get_entity_sync_data_name(uint32_t protocol_version, char *entity_id, uint
     cJSON *cached = get_cached_entity_sync_data(protocol_version);
     if (cached == NULL) {
         char *file = g_build_filename(
-                pref_protocol_data_dir,
-                "java_edition/indexed_data",
-                get_index(protocol_version, "entity_sync_data"),
-                "entity_sync_data.json",
-                NULL
+            pref_protocol_data_dir,
+            "java_edition/indexed_data",
+            get_index(protocol_version, "entity_sync_data"),
+            "entity_sync_data.json",
+            NULL
         );
         char *content = NULL;
         if (!g_file_get_contents(file, &content, NULL, NULL)) {
@@ -289,12 +290,12 @@ void ensure_cached_registry(uint32_t protocol_version, char *registry) {
     if (cached == NULL) {
         char *file_name = g_strdup_printf("%s.json", registry);
         char *file = g_build_filename(
-                pref_protocol_data_dir,
-                "java_edition/indexed_data",
-                get_index(protocol_version, registry),
-                "registries",
-                file_name,
-                NULL
+            pref_protocol_data_dir,
+            "java_edition/indexed_data",
+            get_index(protocol_version, registry),
+            "registries",
+            file_name,
+            NULL
         );
         g_free(file_name);
         char *content = NULL;

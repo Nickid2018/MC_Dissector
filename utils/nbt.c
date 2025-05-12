@@ -10,7 +10,7 @@ extern int hf_string;
 #define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
 void parse_to_string(
-        tvbuff_t *tvb, packet_info *pinfo, int32_t offset_global, uint32_t type, int32_t *length, char **text
+    tvbuff_t *tvb, packet_info *pinfo, int32_t offset_global, uint32_t type, int32_t *length, char **text
 ) {
     switch (type) {
         case TAG_BYTE:
@@ -46,32 +46,33 @@ void parse_to_string(
             *length += array_length * element_length;
 
             int32_t record_length = array_length > 20 ? 20 : array_length;
-            GStrvBuilder *builder = g_strv_builder_new();
+            GPtrArray *array = g_ptr_array_new_with_free_func(g_free);
             for (int i = 0; i < record_length; i++) {
                 if (type == TAG_BYTE_ARRAY)
-                    g_strv_builder_add(builder, g_strdup_printf(
-                            "%d",
-                            tvb_get_int8(tvb, offset_global + 4 + i)
+                    g_ptr_array_add(array, g_strdup_printf(
+                        "%d",
+                        tvb_get_int8(tvb, offset_global + 4 + i)
                     ));
                 else if (type == TAG_INT_ARRAY)
-                    g_strv_builder_add(builder, g_strdup_printf(
-                            "%d",
-                            tvb_get_int32(tvb, offset_global + 4 + i * 4, ENC_BIG_ENDIAN)
+                    g_ptr_array_add(array, g_strdup_printf(
+                        "%d",
+                        tvb_get_int32(tvb, offset_global + 4 + i * 4, ENC_BIG_ENDIAN)
                     ));
                 else
-                    g_strv_builder_add(builder, g_strdup_printf(
-                            "%ld",
-                            tvb_get_int64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN)
+                    g_ptr_array_add(array, g_strdup_printf(
+                        "%ld",
+                        tvb_get_int64(tvb, offset_global + 4 + i * 8, ENC_BIG_ENDIAN)
                     ));
             }
-            char *el_type = type == TAG_BYTE_ARRAY ? "<ba>" : (type == TAG_INT_ARRAY ? "<ia>" : "<la>");
-            char **built = g_strv_builder_end(builder);
-            char *elements_text = g_strjoinv(", ", g_strv_builder_end(builder));
+            char *el_type = type == TAG_BYTE_ARRAY ? "<ba>" : type == TAG_INT_ARRAY ? "<ia>" : "<la>";
+            g_ptr_array_add(array, NULL);
+            char **built = (char **) g_ptr_array_steal(array, NULL);
+            char *elements_text = g_strjoinv(", ", built);
             g_strfreev(built);
             *text = wmem_strdup_printf(
-                    pinfo->pool,
-                    record_length == array_length ? "%s: [%d] (%s)" : "%s: [%d] (%s, ...)",
-                    el_type, array_length, elements_text
+                pinfo->pool,
+                record_length == array_length ? "%s: [%d] (%s)" : "%s: [%d] (%s, ...)",
+                el_type, array_length, elements_text
             );
             g_free(elements_text);
             break;
@@ -80,8 +81,8 @@ void parse_to_string(
             int32_t string_length = tvb_get_uint16(tvb, offset_global, ENC_BIG_ENDIAN);
             *length += string_length;
             *text = wmem_strdup_printf(
-                    pinfo->pool, "<str>: %s",
-                    tvb_format_text(pinfo->pool, tvb, offset_global + 2, string_length)
+                pinfo->pool, "<str>: %s",
+                tvb_format_text(pinfo->pool, tvb, offset_global + 2, string_length)
             );
             break;
         default:
@@ -128,23 +129,23 @@ int32_t add_list_type(proto_item *item, packet_info *pinfo, proto_tree *tree,
     if (is_primitive_type(sub_type)) {
         for (uint32_t i = 0; i < sub_length; i++)
             length += add_primitive_type(
-                    subtree, pinfo, tvb,
-                    offset_global + length, sub_type,
-                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
+                subtree, pinfo, tvb,
+                offset_global + length, sub_type,
+                wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_LIST) {
         for (uint32_t i = 0; i < sub_length; i++)
             length += add_list_type(
-                    NULL, pinfo, subtree, tvb, ett,
-                    offset_global + length,
-                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
+                NULL, pinfo, subtree, tvb, ett,
+                offset_global + length,
+                wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_COMPOUND) {
         for (uint32_t i = 0; i < sub_length; i++)
             length += add_compound_type(
-                    NULL, pinfo, subtree, tvb, ett,
-                    offset_global + length,
-                    wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
+                NULL, pinfo, subtree, tvb, ett,
+                offset_global + length,
+                wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     }
 
@@ -172,18 +173,18 @@ int32_t add_compound_type(proto_item *item, packet_info *pinfo, proto_tree *tree
         length += 2 + name_length;
         if (is_primitive_type(sub_type)) {
             length += add_primitive_type(
-                    subtree, pinfo, tvb,
-                    offset_global + length, sub_type, name
+                subtree, pinfo, tvb,
+                offset_global + length, sub_type, name
             );
         } else if (sub_type == TAG_LIST) {
             length += add_list_type(
-                    NULL, pinfo, subtree, tvb, ett,
-                    offset_global + length, name
+                NULL, pinfo, subtree, tvb, ett,
+                offset_global + length, name
             );
         } else if (sub_type == TAG_COMPOUND) {
             length += add_compound_type(
-                    NULL, pinfo, subtree, tvb, ett,
-                    offset_global + length, name
+                NULL, pinfo, subtree, tvb, ett,
+                offset_global + length, name
             );
         }
         length += 1;

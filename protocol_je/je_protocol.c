@@ -16,9 +16,8 @@ extern int hf_packet_name_je;
 extern int hf_unknown_packet;
 
 void handle_with_set(
-        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, protocol_dissector_set *set, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, protocol_dissector_set *set, je_state state, bool is_client
 ) {
-
     uint32_t now_state = je_state_to_protocol_set_state(state, is_client);
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
@@ -38,8 +37,8 @@ void handle_with_set(
     char **name = wmem_map_lookup(set->readable_names, (void *) (uint64_t) now_state);
     protocol_dissector **d = wmem_map_lookup(set->dissectors_by_state, (void *) (uint64_t) now_state);
     proto_tree_add_string_format_value(
-            tree, hf_packet_name_je, tvb, 0, len, key[packet_id],
-            "%s (%s)", name[packet_id], key[packet_id]
+        tree, hf_packet_name_je, tvb, 0, len, key[packet_id],
+        "%s (%s)", name[packet_id], key[packet_id]
     );
 
     bool ignore = false;
@@ -57,20 +56,20 @@ void handle_with_set(
         wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
         wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
         int32_t sub_len = d[packet_id]->dissect_protocol(
-                tree, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
+            tree, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
         );
         wmem_destroy_allocator(temp_alloc);
         if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
-                    tree, hf_invalid_data, tvb, len, (int32_t) length - len,
-                    "length mismatch", "Packet length mismatch, expected %d, got %d", length - len,
-                    sub_len
+                tree, hf_invalid_data, tvb, len, (int32_t) length - len,
+                "length mismatch", "Packet length mismatch, expected %d, got %d", length - len,
+                sub_len
             );
     }
 }
 
 void handle_initial(
-        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 ) {
     protocol_dissector_set *initial_set = get_initial_protocol();
     if (initial_set == NULL) {
@@ -82,7 +81,7 @@ void handle_initial(
 }
 
 void handle_protocol(
-        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 ) {
     if (ctx->dissector_set == NULL) {
         proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
@@ -113,7 +112,7 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
             wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
             wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
             int32_t sub_len = d[packet_id]->dissect_protocol(
-                    NULL, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
+                NULL, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
             );
             if (sub_len + len != tvb_reported_length(tvb) && sub_len != DISSECT_ERROR) {
                 wmem_destroy_allocator(temp_alloc);
@@ -200,7 +199,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
             }
             char *registry_name;
             int32_t offset = len;
-            len = read_buffer(tvb, offset, (uint8_t * *) & registry_name, wmem_file_scope());
+            len = read_buffer(tvb, offset, (uint8_t * *) &registry_name, wmem_file_scope());
             if (is_invalid(len)) return INVALID_DATA;
             int64_t length = g_utf8_strlen(registry_name, 400);
             int64_t split_pos = length - 1;
@@ -217,7 +216,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
             bool is_new_nbt = wmem_map_lookup(ctx->global_data, "nbt_any_type");
             for (int i = 0; i < count; i++) {
                 char *name;
-                len = read_buffer(tvb, offset, (uint8_t * *) & name, wmem_file_scope());
+                len = read_buffer(tvb, offset, (uint8_t * *) &name, wmem_file_scope());
                 if (is_invalid(len)) {
                     wmem_free(wmem_file_scope(), data);
                     return INVALID_DATA;

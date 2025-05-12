@@ -6,6 +6,7 @@
 #include "protocol/protocol_data.h"
 #include "utils/nbt.h"
 #include "functions.h"
+#include <errno.h>
 #include <epan/conversation.h>
 
 extern int hf_int8;
