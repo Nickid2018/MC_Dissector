@@ -2,6 +2,7 @@
 // Created by Nickid2018 on 2023/7/12.
 //
 #include <ws_version.h>
+#include <wsutil/plugins.h>
 #include <wsutil/filesystem.h>
 
 #include "mc_dissector.h"
@@ -14,6 +15,7 @@ WS_DLL_PUBLIC_DEF _U_ const int plugin_want_major = WIRESHARK_VERSION_MAJOR;
 WS_DLL_PUBLIC_DEF _U_ const int plugin_want_minor = WIRESHARK_VERSION_MINOR;
 
 WS_DLL_PUBLIC _U_ void plugin_register();
+WS_DLL_PUBLIC _U_ uint32_t plugin_describe();
 
 int proto_mc = -1;
 int proto_mcje = -1;
@@ -38,21 +40,21 @@ void proto_register() {
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
     pref_mc = prefs_register_protocol(proto_mc, clear_storage);
     prefs_register_directory_preference(
-            pref_mc, "protocol_data_dir", "Protocol Data Directory",
-            "Directory for protocol data", (const char **) &pref_protocol_data_dir
+        pref_mc, "protocol_data_dir", "Protocol Data Directory",
+        "Directory for protocol data", (const char **) &pref_protocol_data_dir
     );
     pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, NULL);
     prefs_register_string_preference(
-            pref_mcje, "ignore_packets", "Ignore Packets",
-            "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
+        pref_mcje, "ignore_packets", "Ignore Packets",
+        "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
     );
     prefs_register_string_preference(
-            pref_mcje, "secret_key", "Secret Key",
-            "Secret key for decryption", (const char **) &pref_secret_key
+        pref_mcje, "secret_key", "Secret Key",
+        "Secret key for decryption", (const char **) &pref_secret_key
     );
     prefs_register_bool_preference(
-            pref_mcje, "do_nbt_decode", "NBT Decoding",
-            "Decode NBT data", &pref_do_nbt_decode
+        pref_mcje, "do_nbt_decode", "NBT Decoding",
+        "Decode NBT data", &pref_do_nbt_decode
     );
 
     pref_mcbe = prefs_register_protocol_subtree("Minecraft", proto_mcbe, NULL);
@@ -70,4 +72,8 @@ _U_ void plugin_register() {
         plugin.register_handoff = proto_reg_handoff;
         proto_register_plugin(&plugin);
     }
+}
+
+uint32_t plugin_describe() {
+    return WS_PLUGIN_DESC_DISSECTOR;
 }
