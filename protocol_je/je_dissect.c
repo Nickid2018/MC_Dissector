@@ -21,16 +21,18 @@ void proto_reg_handoff_mcje() {
     dissector_add_for_decode_as(MCJE_NAME, mcje_handle);
 }
 
-void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_frame_data *frame_data,
-                    mc_protocol_context *ctx, bool is_server,
-                    bool visited) {
-    switch (is_server ? frame_data->server_state : frame_data->client_state) {
+void sub_dissect_je(
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_frame_data *frame_data,
+    mc_protocol_context *ctx, bool is_server, bool visited
+) {
+    je_state state = is_server ? frame_data->server_state : frame_data->client_state;
+    switch (state) {
         case HANDSHAKE:
         case STATUS:
             if (!visited && is_invalid(try_switch_initial(tvb, pinfo, ctx, !is_server)))
                 return;
             if (tree)
-                handle_initial(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+                handle_initial(tree, pinfo, tvb, ctx, state, !is_server);
             return;
         case LOGIN:
         case TRANSFER:
@@ -40,7 +42,7 @@ void sub_dissect_je(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_fram
                 return;
             if (tree) {
                 TRY {
-                        handle_protocol(tree, pinfo, tvb, ctx, frame_data->server_state, !is_server);
+                        handle_protocol(tree, pinfo, tvb, ctx, state, !is_server);
                     }
                     CATCH_BOUNDS_ERRORS {
                         proto_tree_add_string_format_value(
@@ -74,8 +76,10 @@ void mark_invalid(packet_info *pinfo) {
     ctx->client_state = ctx->server_state = INVALID;
 }
 
-void dissect_je_core(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset,
-                     int32_t packet_len_len, int32_t len, int32_t packet_count) {
+void dissect_je_core(
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int32_t offset,
+    int32_t packet_len_len, int32_t len, int32_t packet_count
+) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
@@ -244,6 +248,22 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
         use_tvb = tvb_new_real_data(*decrypt_data, length, (int32_t) length);
         add_new_data_source(pinfo, use_tvb, "Decrypted packet");
+    }
+
+    if (!pinfo->fd->visited && ctx->client_state == HANDSHAKE && tvb_get_uint8(tvb, 0) == 0xFE) {
+        ctx->client_state = ctx->server_state = LEGACY_QUERY;
+        frame_data->client_state = frame_data->server_state = LEGACY_QUERY;
+    }
+
+    if (frame_data->client_state == LEGACY_QUERY) {
+        if (!pinfo->fd->visited && is_server && wmem_map_lookup(ctx->global_data, "meet_first") == NULL) {
+            pinfo->desegment_offset = 0;
+            pinfo->desegment_len = DESEGMENT_UNTIL_FIN;
+            wmem_map_insert(ctx->global_data, "meet_first", GINT_TO_POINTER(1));
+            return (int32_t) tvb_captured_length(tvb);
+        }
+        handle_legacy_query(tvb, pinfo, tree, ctx);
+        return (int32_t) tvb_captured_length(tvb);
     }
 
     int32_t offset = 0;

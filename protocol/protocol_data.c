@@ -66,3 +66,11 @@ uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
         state = LOGIN;
     return is_client ? state : 16 + state;
 }
+
+uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
+    int16_t str_len = tvb_get_int16(tvb, offset, ENC_BIG_ENDIAN);
+    if (str_len < 0) return NULL;
+    if (tvb_reported_length_remaining(tvb, offset + 2) < str_len * 2) return NULL;
+    *len = str_len * 2 + 2;
+    return tvb_get_string_enc(wmem_file_scope(), tvb, offset + 2, str_len * 2, ENC_UTF_16);
+}

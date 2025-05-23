@@ -15,6 +15,7 @@
 
 typedef enum {
     HANDSHAKE, PLAY, STATUS, LOGIN, TRANSFER, CONFIGURATION, // Normal states
+    LEGACY_QUERY, // Old version compatibility for <1.6
     INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND // Special states
 } je_state;
 
@@ -67,5 +68,7 @@ int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_lengt
 int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
 int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **resul, wmem_allocator_t *allocator);
+
+uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

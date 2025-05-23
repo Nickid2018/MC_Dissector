@@ -13,11 +13,13 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
 int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client);
 
 void handle_initial(
-        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 );
 
 void handle_protocol(
-        proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 );
+
+void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H

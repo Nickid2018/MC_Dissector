@@ -14,6 +14,11 @@ extern int hf_ignored_packet;
 extern int hf_packet_id_je;
 extern int hf_packet_name_je;
 extern int hf_unknown_packet;
+extern int hf_string;
+extern int hf_generated;
+extern int hf_uint8;
+extern int hf_uint16;
+extern int hf_int32;
 
 void handle_with_set(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, protocol_dissector_set *set, je_state state, bool is_client
@@ -238,4 +243,189 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
         }
     }
     return 0;
+}
+
+void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx) {
+    bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
+    if (is_server) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[C => S] Legacy Query");
+        bool is_version1;
+        if (!pinfo->fd->visited) {
+            is_version1 = tvb_reported_length_remaining(tvb, 1) > 0;
+            wmem_map_insert(ctx->global_data, "legacy_query", (void *) is_version1);
+        } else {
+            is_version1 = wmem_map_lookup(ctx->global_data, "legacy_query");
+        }
+        if (tree) {
+            proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, (int32_t) tvb_reported_length(tvb), FALSE);
+            proto_item_append_text(ti, ", Client State: Legacy Query, Server State: Legacy Query");
+            tree = proto_item_add_subtree(ti, ett_mc);
+            proto_item *gen;
+            if (is_version1) {
+                if (tvb_get_uint8(tvb, 1) != 0x01) {
+                    proto_tree_add_string(tree, hf_invalid_data, tvb, 1, 1, "Invalid Version 1 header");
+                    return;
+                }
+                if (tvb_reported_length_remaining(tvb, 2) > 0) {
+                    gen = proto_tree_add_string(tree, hf_generated, tvb, 1, 1, "Version 1, 1.6");
+                    bool valid = tvb_get_uint8(tvb, 2) == 0xFA;
+                    int32_t offset = 3;
+                    int32_t len;
+                    if (valid) {
+                        uint8_t *str = read_legacy_string(tvb, offset, &len);
+                        if (str != NULL) {
+                            if (strcmp((char *) str, "MC|PingHost") != 0) valid = false;
+                            else offset += len;
+                        } else valid = false;
+                    }
+                    if (valid) {
+                        int32_t len_should = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+                        if (len_should != tvb_reported_length_remaining(tvb, offset + 2)) valid = false;
+                        else {
+                            proto_item *payload = proto_tree_add_uint(tree, hf_uint16, tvb, offset, 2, len_should);
+                            proto_item_prepend_text(payload, "Payload Length ");
+                            offset += 2;
+                        }
+                    }
+                    if (valid) {
+                        uint8_t protocol = tvb_get_uint8(tvb, offset);
+                        if (protocol < 73) valid = false;
+                        else {
+                            proto_item *payload = proto_tree_add_uint(tree, hf_uint8, tvb, offset, 1, protocol);
+                            proto_item_prepend_text(payload, "Protocol Version ");
+                            offset++;
+                        }
+                    }
+                    if (valid) {
+                        uint8_t *str = read_legacy_string(tvb, offset, &len);
+                        if (str != NULL) {
+                            proto_item *payload =
+                                    proto_tree_add_string(tree, hf_string, tvb, offset, len, (char *) str);
+                            proto_item_prepend_text(payload, "Host Name ");
+                            offset += len;
+                        } else valid = false;
+                    }
+                    if (valid) {
+                        int32_t port = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
+                        if (port <= 65535) {
+                            proto_item *payload = proto_tree_add_int(tree, hf_int32, tvb, offset, 4, port);
+                            proto_item_prepend_text(payload, "Port ");
+                            offset += 4;
+                        } else valid = false;
+                    }
+                    if (valid) {
+                        valid = tvb_reported_length_remaining(tvb, offset) == 0;
+                    }
+                    if (!valid) {
+                        proto_tree_add_string(
+                            tree, hf_invalid_data, tvb,
+                            offset, tvb_reported_length_remaining(tvb, offset), "Invalid query"
+                        );
+                    }
+                } else {
+                    gen = proto_tree_add_string(tree, hf_generated, tvb, 1, 1, "Version 1, 1.4-1.5.x");
+                }
+            } else {
+                gen = proto_tree_add_string(tree, hf_generated, tvb, 0, 1, "Version 0, <1.3.x");
+            }
+            proto_item_set_generated(gen);
+            proto_item_prepend_text(gen, "Legacy Query Request Version ");
+        }
+    } else {
+        col_set_str(pinfo->cinfo, COL_INFO, "[S => C] Legacy Query Response");
+        if (tree) {
+            proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, (int32_t) tvb_reported_length(tvb), FALSE);
+            proto_item_append_text(ti, ", Client State: Legacy Query, Server State: Legacy Query");
+            tree = proto_item_add_subtree(ti, ett_mc);
+            bool is_version1 = wmem_map_lookup(ctx->global_data, "legacy_query");
+            proto_item *gen = proto_tree_add_string(
+                tree, hf_generated, tvb, 1, 1, is_version1 ? "Version 1" : "Version 0"
+            );
+            proto_item_set_generated(gen);
+            proto_item_prepend_text(gen, "Legacy Query Response Version ");
+            if (tvb_get_uint8(tvb, 0) != 0xFF) {
+                proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Invalid header");
+                return;
+            }
+            int32_t len;
+            uint8_t *str = read_legacy_string(tvb, 1, &len);
+            if (str != NULL) {
+                if (is_version1) {
+                    int32_t start = 7;
+                    int32_t offset = 7;
+                    while (offset < len / 2 - 2) {
+                        if (tvb_get_uint16(tvb, offset * 2 + 3, ENC_BIG_ENDIAN) == 0) break;
+                        offset++;
+                    }
+                    proto_item *payload = proto_tree_add_string(
+                        tree, hf_string, tvb, start * 2 + 3, (offset - start) * 2,
+                        (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
+                    );
+                    proto_item_prepend_text(payload, "Server Version ");
+                    start = ++offset;
+                    while (offset < len / 2 - 2) {
+                        if (tvb_get_uint16(tvb, offset * 2 + 3, ENC_BIG_ENDIAN) == 0) break;
+                        offset++;
+                    }
+                    payload = proto_tree_add_string(
+                        tree, hf_string, tvb, 3 + start * 2, (offset - start) * 2,
+                        (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
+                    );
+                    proto_item_prepend_text(payload, "Motd ");
+                    start = ++offset;
+                    while (offset < len / 2 - 2) {
+                        if (tvb_get_uint16(tvb, offset * 2 + 3, ENC_BIG_ENDIAN) == 0) break;
+                        offset++;
+                    }
+                    payload = proto_tree_add_string(
+                        tree, hf_string, tvb, 3 + start * 2, (offset - start) * 2,
+                        (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
+                    );
+                    proto_item_prepend_text(payload, "Player Count ");
+                    start = ++offset;
+                    payload = proto_tree_add_string(
+                        tree, hf_string, tvb, 3 + start * 2, len - start * 2 - 2,
+                        (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, len - start * 2 - 2, ENC_UTF_16)
+                    );
+                    proto_item_prepend_text(payload, "Max Players ");
+                } else {
+                    char **strv = g_strsplit((char *) str, "\u00a7", 100);
+                    uint32_t array = g_strv_length(strv);
+                    int64_t offset0 = 0, offset1;
+                    if (array > 3) {
+                        for (int32_t i = 0; i < array - 2; i++) offset0 += g_utf8_strlen(strv[i], 400) + 1;
+                        offset1 = offset0 + g_utf8_strlen(strv[array - 2], 400) + 1;
+                    } else {
+                        offset0 = g_utf8_strlen(strv[0], 400) + 1;
+                        offset1 = offset0 + g_utf8_strlen(strv[1], 400) + 1;
+                    }
+                    proto_item *payload = proto_tree_add_string(
+                        tree, hf_string, tvb, 3, (int32_t) (offset0 - 1) * 2,
+                        (char *) tvb_get_string_enc(pinfo->pool, tvb, 3, (int32_t) (offset0 - 1) * 2, ENC_UTF_16)
+                    );
+                    proto_item_prepend_text(payload, "Motd ");
+                    payload = proto_tree_add_string(
+                        tree, hf_string, tvb, (int32_t) offset0 * 2 + 3, (int32_t) (offset1 - offset0 - 1) * 2,
+                        (char *) tvb_get_string_enc(
+                            pinfo->pool, tvb, (int32_t) offset0 * 2 + 3, (int32_t) (offset1 - offset0 - 1) * 2,
+                            ENC_UTF_16
+                        )
+                    );
+                    proto_item_prepend_text(payload, "Player Count ");
+                    payload = proto_tree_add_string(
+                        tree, hf_string, tvb, (int32_t) offset1 * 2 + 3, (int32_t) (len - offset1 * 2 - 2),
+                        (char *) tvb_get_string_enc(
+                            pinfo->pool, tvb, (int32_t) offset1 * 2 + 3, (int32_t) (len - offset1 * 2 - 2), ENC_UTF_16
+                        )
+                    );
+                    proto_item_prepend_text(payload, "Max Players ");
+                }
+            } else {
+                proto_tree_add_string(
+                    tree, hf_invalid_data, tvb,
+                    1, (int32_t) tvb_reported_length(tvb) - 1, "Invalid response"
+                );
+            }
+        }
+    }
 }
