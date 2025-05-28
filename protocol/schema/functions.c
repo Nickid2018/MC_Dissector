@@ -19,8 +19,12 @@ DISSECT_PROTOCOL(record_entity_id) {
         wmem_map_insert(get_global_data(pinfo), "#entity_id_record", entity_id_record);
     }
     char *entity_id = wmem_map_lookup(packet_saves, "entity_id");
-    char *str_type = wmem_map_lookup(packet_saves, "entity_type");
-    wmem_map_insert(entity_id_record, entity_id, str_type);
+    char *entity_type = wmem_map_lookup(packet_saves, "entity_type");
+    wmem_map_insert(
+        entity_id_record,
+        wmem_strdup(wmem_file_scope(), entity_id),
+        wmem_strdup(wmem_file_scope(), entity_type)
+    );
     return 0;
 }
 
@@ -33,7 +37,7 @@ DISSECT_PROTOCOL(record_entity_id_player) {
         wmem_map_insert(get_global_data(pinfo), "#entity_id_record", entity_id_record);
     }
     char *entity_id = wmem_map_lookup(packet_saves, "entity_id");
-    wmem_map_insert(entity_id_record, entity_id, "player");
+    wmem_map_insert(entity_id_record, wmem_strdup(wmem_file_scope(), entity_id), "player");
     return 0;
 }
 
@@ -46,7 +50,7 @@ DISSECT_PROTOCOL(record_entity_id_experience_orb) {
         wmem_map_insert(get_global_data(pinfo), "#entity_id_record", entity_id_record);
     }
     char *entity_id = wmem_map_lookup(packet_saves, "entity_id");
-    wmem_map_insert(entity_id_record, entity_id, "experience_orb");
+    wmem_map_insert(entity_id_record, wmem_strdup(wmem_file_scope(), entity_id), "experience_orb");
     return 0;
 }
 
@@ -59,7 +63,7 @@ DISSECT_PROTOCOL(record_entity_id_painting) {
         wmem_map_insert(get_global_data(pinfo), "#entity_id_record", entity_id_record);
     }
     char *entity_id = wmem_map_lookup(packet_saves, "entity_id");
-    wmem_map_insert(entity_id_record, entity_id, "painting");
+    wmem_map_insert(entity_id_record, wmem_strdup(wmem_file_scope(), entity_id), "painting");
     return 0;
 }
 
