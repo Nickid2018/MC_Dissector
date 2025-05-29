@@ -910,7 +910,8 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
     if (!cJSON_IsString(ref_node)) return make_error(allocator, "Reference param needs to be a string");
     char *ref = ref_node->valuestring;
 
-    if (!wmem_map_contains(dissectors, ref)) {
+    char *cache_ref = wmem_strdup_printf(allocator, "ref_%s", ref);
+    if (!wmem_map_contains(dissectors, cache_ref)) {
         char *file = build_protocol_file_name("structures", ref, protocol_version);
 
         char *content = NULL;
@@ -931,13 +932,13 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
         g_free(file);
 
         protocol_dissector *this_dissector = make_void(allocator);
-        wmem_map_insert(dissectors, wmem_strdup(allocator, ref), this_dissector);
+        wmem_map_insert(dissectors, cache_ref, this_dissector);
         protocol_dissector *dissector = make_protocol_dissector(allocator, json, dissectors, protocol_version, NULL);
         this_dissector->dissect_arguments = dissector->dissect_arguments;
         this_dissector->dissect_protocol = dissector->dissect_protocol;
         return this_dissector;
     } else {
-        return wmem_map_lookup(dissectors, ref);
+        return wmem_map_lookup(dissectors, cache_ref);
     }
 }
 
@@ -950,7 +951,8 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
     if (!cJSON_IsString(key_node)) return make_error(allocator, "Codec param 2 needs to be a string");
     char *key = key_node->valuestring;
 
-    if (!wmem_map_contains(dissectors, ref)) {
+    char *cache_ref = wmem_strdup_printf(allocator, "codec_%s", ref);
+    if (!wmem_map_contains(dissectors, cache_ref)) {
         cJSON *registry = get_registry(protocol_version, ref);
         if (registry == NULL) return make_error(allocator, "Invalid registry");
         int entry_count = cJSON_GetArraySize(registry);
@@ -996,10 +998,10 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
         wmem_map_insert(this_dissector->dissect_arguments, "d", map);
         wmem_map_insert(this_dissector->dissect_arguments, "k", wmem_strdup(allocator, key));
         this_dissector->dissect_protocol = dissect_codec;
-        wmem_map_insert(dissectors, ref, this_dissector);
+        wmem_map_insert(dissectors, cache_ref, this_dissector);
         return this_dissector;
     } else {
-        return wmem_map_lookup(dissectors, ref);
+        return wmem_map_lookup(dissectors, cache_ref);
     }
 }
 
