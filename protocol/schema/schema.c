@@ -71,21 +71,21 @@ DISSECT_PROTOCOL(i8) {
 }
 
 DISSECT_PROTOCOL(i16) {
-    int16_t i16 = tvb_get_ntohis(tvb, offset);
+    int16_t i16 = tvb_get_int16(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i16);
     if (tree) add_name(proto_tree_add_int(tree, hf_int16, tvb, offset, 2, i16), name);
     return 2;
 }
 
 DISSECT_PROTOCOL(i32) {
-    int32_t i32 = tvb_get_ntohil(tvb, offset);
+    int32_t i32 = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i32);
     if (tree) add_name(proto_tree_add_int(tree, hf_int32, tvb, offset, 4, i32), name);
     return 4;
 }
 
 DISSECT_PROTOCOL(i64) {
-    int64_t i64 = tvb_get_ntohi64(tvb, offset);
+    int64_t i64 = tvb_get_int64(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", i64);
     if (tree) add_name(proto_tree_add_int64(tree, hf_int64, tvb, offset, 8, i64), name);
     return 8;
@@ -99,21 +99,21 @@ DISSECT_PROTOCOL(u8) {
 }
 
 DISSECT_PROTOCOL(u16) {
-    uint16_t u16 = tvb_get_ntohs(tvb, offset);
+    uint16_t u16 = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
     if (tree) add_name(proto_tree_add_uint(tree, hf_uint16, tvb, offset, 2, u16), name);
     return 2;
 }
 
 DISSECT_PROTOCOL(u32) {
-    uint32_t u32 = tvb_get_ntohl(tvb, offset);
+    uint32_t u32 = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
     if (tree) add_name(proto_tree_add_uint(tree, hf_uint32, tvb, offset, 4, u32), name);
     return 4;
 }
 
 DISSECT_PROTOCOL(u64) {
-    uint64_t u64 = tvb_get_ntoh64(tvb, offset);
+    uint64_t u64 = tvb_get_uint64(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
     if (tree) add_name(proto_tree_add_uint64(tree, hf_uint64, tvb, offset, 8, u64), name);
     return 8;
@@ -127,21 +127,21 @@ DISSECT_PROTOCOL(h8) {
 }
 
 DISSECT_PROTOCOL(h16) {
-    uint16_t u16 = tvb_get_ntohs(tvb, offset);
+    uint16_t u16 = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
     if (tree) add_name(proto_tree_add_uint(tree, hf_hint16, tvb, offset, 2, u16), name);
     return 2;
 }
 
 DISSECT_PROTOCOL(h32) {
-    uint32_t u32 = tvb_get_ntohl(tvb, offset);
+    uint32_t u32 = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
     if (tree) add_name(proto_tree_add_uint(tree, hf_hint32, tvb, offset, 4, u32), name);
     return 4;
 }
 
 DISSECT_PROTOCOL(h64) {
-    uint64_t u64 = tvb_get_ntoh64(tvb, offset);
+    uint64_t u64 = tvb_get_uint64(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
     if (tree) add_name(proto_tree_add_uint64(tree, hf_hint64, tvb, offset, 8, u64), name);
     return 8;
@@ -168,14 +168,14 @@ DISSECT_PROTOCOL(varlong) {
 // FLOAT POINTER NUMBER SUB-DISSECTORS ---------------------------------------------------------------------------------
 
 DISSECT_PROTOCOL(f32) {
-    float f32 = tvb_get_ntohieee_float(tvb, offset);
+    float f32 = tvb_get_ieee_float(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%f", f32);
     if (tree) add_name(proto_tree_add_float(tree, hf_float, tvb, offset, 4, f32), name);
     return 4;
 }
 
 DISSECT_PROTOCOL(f64) {
-    double f64 = tvb_get_ntohieee_double(tvb, offset);
+    double f64 = tvb_get_ieee_double(tvb, offset, ENC_BIG_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%f", f64);
     if (tree) add_name(proto_tree_add_double(tree, hf_double, tvb, offset, 8, f64), name);
     return 8;
