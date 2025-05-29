@@ -31,11 +31,11 @@ void parse_to_string(
             break;
         case TAG_FLOAT:
             *length = 4;
-            *text = wmem_strdup_printf(pinfo->pool, "<f>: %f", tvb_get_ntohieee_float(tvb, offset_global));
+            *text = wmem_strdup_printf(pinfo->pool, "<f>: %f", tvb_get_ieee_float(tvb, offset_global, ENC_BIG_ENDIAN));
             break;
         case TAG_DOUBLE:
             *length = 8;
-            *text = wmem_strdup_printf(pinfo->pool, "<d>: %lf", tvb_get_ntohieee_double(tvb, offset_global));
+            *text = wmem_strdup_printf(pinfo->pool, "<d>: %lf", tvb_get_ieee_double(tvb, offset_global, ENC_BIG_ENDIAN));
             break;
         case TAG_BYTE_ARRAY:
         case TAG_INT_ARRAY:
