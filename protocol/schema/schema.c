@@ -151,8 +151,8 @@ DISSECT_PROTOCOL(varint) {
     int32_t result;
     int32_t length = read_var_int(tvb, offset, &result);
     if (length < 0) return add_invalid_data(tree, tvb, offset, name, "Invalid VarInt");
-    if (value) *value = wmem_strdup_printf(packet_alloc, "%u", result);
-    if (tree) add_name(proto_tree_add_uint(tree, hf_varint, tvb, offset, length, result), name);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%d", result);
+    if (tree) add_name(proto_tree_add_int(tree, hf_varint, tvb, offset, length, result), name);
     return length;
 }
 
@@ -160,8 +160,8 @@ DISSECT_PROTOCOL(varlong) {
     int64_t result;
     int32_t length = read_var_long(tvb, offset, &result);
     if (length < 0) return add_invalid_data(tree, tvb, offset, name, "Invalid VarLong");
-    if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", result);
-    if (tree) add_name(proto_tree_add_uint64(tree, hf_varlong, tvb, offset, length, result), name);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", result);
+    if (tree) add_name(proto_tree_add_int64(tree, hf_varlong, tvb, offset, length, result), name);
     return length;
 }
 
@@ -1035,6 +1035,7 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
     FUNC_PROTOCOL(record_entity_id_experience_orb, dissect_record_entity_id_experience_orb)
     FUNC_PROTOCOL(record_entity_id_painting, dissect_record_entity_id_painting)
     FUNC_PROTOCOL(display_protocol_version, dissect_display_protocol_version)
+    FUNC_PROTOCOL(legacy_registry_holder, dissect_legacy_registry_holder)
 
     if (this_dissector->dissect_protocol == NULL) {
         wmem_free(allocator, this_dissector);
@@ -1137,13 +1138,18 @@ protocol_dissector *make_protocol_dissector(
     COMPOSITE_PROTOCOL(bitfield, 1)
     COMPOSITE_PROTOCOL(save, 2)
     COMPOSITE_PROTOCOL(global_save, 2)
-    COMPOSITE_PROTOCOL(registry, 1)
-    COMPOSITE_PROTOCOL(registry, 2)
     COMPOSITE_PROTOCOL(fix_buffer, 1)
     COMPOSITE_PROTOCOL(entity_metadata_loop, 1)
     COMPOSITE_PROTOCOL(top_bit_set_terminated_array, 1)
     COMPOSITE_PROTOCOL(reference, 1)
     COMPOSITE_PROTOCOL(codec, 2)
+
+    if (get_settings_flag("registries")) {
+        COMPOSITE_PROTOCOL(registry, 1)
+        COMPOSITE_PROTOCOL(registry, 2)
+    } else {
+        SIMPLE_PROTOCOL(registry, dissect_varint)
+    }
 
     if (strcmp(type, "func") == 0 && composite_type)
         return make_func(allocator, root, dissectors, protocol_version, recursive_root);

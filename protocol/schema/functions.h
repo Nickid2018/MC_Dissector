@@ -25,4 +25,6 @@ DISSECT_PROTOCOL(sync_entity_data);
 
 DISSECT_PROTOCOL(display_protocol_version);
 
+DISSECT_PROTOCOL(legacy_registry_holder);
+
 #endif //MC_DISSECTOR_FUNCTIONS_H
