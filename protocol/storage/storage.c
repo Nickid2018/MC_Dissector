@@ -89,16 +89,18 @@ wmem_map_t *read_csv(char *path) {
     char **split_lines = g_strsplit(content, "\n", 10000);
     char **header = g_strsplit(split_lines[0], ",", 1000);
     char *now_line;
+    for (int i = 0; (now_line = header[i]) != NULL; i++)
+        header[i] = g_strstrip(now_line);
     for (int i = 1; (now_line = split_lines[i]) != NULL; i++) {
         char **now_line_split = g_strsplit(now_line, ",", 10000);
         if (now_line_split == NULL) continue;
         wmem_map_t *map = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal);
         char *end;
-        uint64_t protocol_version = strtol(now_line_split[0], &end, 10);
+        uint64_t protocol_version = strtol(g_strstrip(now_line_split[0]), &end, 10);
         wmem_map_insert(csv, (void *) protocol_version, map);
         char *now_value;
         for (int j = 1; (now_value = now_line_split[j]) != NULL; j++)
-            wmem_map_insert(map, header[j], g_strdup(now_value));
+            wmem_map_insert(map, header[j], g_strdup(g_strstrip(now_value)));
         g_strfreev(now_line_split);
     }
     g_strfreev(split_lines);
