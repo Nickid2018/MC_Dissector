@@ -14,7 +14,7 @@
 
 Windows 下载后把`mcdissector.dll`文件放入 Wireshark 的解析器目录（`plugins/<Wireshark版本>/epan`）并启动 Wireshark 即可。
 
-Linux 下载后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/<Wireshark版本>/epan`）并启动 Wireshark 即可。
+Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件放入 Wireshark 的解析器目录（`~/.local/lib/wireshark/plugins/<Wireshark版本>/epan`）并启动 Wireshark 即可。
 
 对于 Arch Linux，可以直接使用 AUR 里面的`wireshark-minecraft-dissector`包。
 

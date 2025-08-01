@@ -17,7 +17,7 @@ After downloading:
 For Windows,
 put file `mcdissector.dll` into dissector directory of Wireshark (`plugins/<Wireshark Version>/epan`) and run Wireshark.
 
-For Linux, please make sure your `glib` version is greater than **2.68** and make `cjson` installed,
+For Linux, please make `cjson` installed,
 then put file `mcdissector.so` into dissector directory of Wireshark
 (`~/.local/lib/wireshark/plugins/<Wireshark Version>/epan`) and run Wireshark.
 
