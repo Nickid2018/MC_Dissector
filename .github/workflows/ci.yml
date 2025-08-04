@@ -141,11 +141,13 @@ jobs:
         env:
           REF: ${{ github.ref }}
         run: echo "NAME=${REF##*/}" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Get Tag Message
         id: tag
         run: |
           git fetch --tags --force
-          echo ::set-output name=subject::$(git for-each-ref $GITHUB_REF --format='%(contents:subject)')
+          echo ::set-output name=subject::$(git for-each-ref $GITHUB_REF --format='%(contents)' | sed -E '/^-----BEGIN PGP SIGNATURE-----$/,$d')
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
