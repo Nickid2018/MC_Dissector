@@ -231,7 +231,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
                     len += 1;
                 } else {
                     if (is_new_nbt) {
-                        bool present = tvb_get_uint8(tvb, offset + len + 1);
+                        uint8_t present = tvb_get_uint8(tvb, offset + len + 1);
                         len += present ? count_nbt_length_with_type(tvb, offset + len + 2, present) + 2 : 2;
                     } else
                         len += count_nbt_length(tvb, offset + len + 1) + 1;
