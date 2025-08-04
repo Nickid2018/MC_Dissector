@@ -141,11 +141,17 @@ jobs:
         env:
           REF: ${{ github.ref }}
         run: echo "NAME=${REF##*/}" >> $GITHUB_OUTPUT
+      - name: Get Tag Message
+        id: tag
+        run: |
+          git fetch --tags --force
+          echo ::set-output name=subject::$(git for-each-ref $GITHUB_REF --format='%(contents:subject)')
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.process-name.outputs.NAME }}
           prerelease: ${{ contains(github.ref, 'beta') }}
+          body: ${{ steps.tag.outputs.subject }}
           files: |
             windows/mcdissector.dll
             linux/mcdissector.so
