@@ -123,6 +123,14 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     permissions: write-all
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get Tag Message
+        id: tag
+        run: |
+          git fetch --tags --force
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "TAG_MESSAGE<<$EOF"$'\n'"$(git for-each-ref $GITHUB_REF --format='%(contents)' | sed -E '/^-----BEGIN PGP SIGNATURE-----$/,$d')"$'\n'$EOF >> $GITHUB_OUTPUT
       - name: Download windows artifact
         uses: actions/download-artifact@v4
         with:
@@ -141,19 +149,12 @@ jobs:
         env:
           REF: ${{ github.ref }}
         run: echo "NAME=${REF##*/}" >> $GITHUB_OUTPUT
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Get Tag Message
-        id: tag
-        run: |
-          git fetch --tags --force
-          echo ::set-output name=subject::$(git for-each-ref $GITHUB_REF --format='%(contents)' | sed -E '/^-----BEGIN PGP SIGNATURE-----$/,$d')
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ steps.process-name.outputs.NAME }}
           prerelease: ${{ contains(github.ref, 'beta') }}
-          body: ${{ steps.tag.outputs.subject }}
+          body: ${{ steps.tag.outputs.TAG_MESSAGE }}
           files: |
             windows/mcdissector.dll
             linux/mcdissector.so
