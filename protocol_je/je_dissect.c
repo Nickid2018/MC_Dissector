@@ -155,6 +155,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->client_last_segment_remaining = 0;
         ctx->server_last_remains = NULL;
         ctx->client_last_remains = NULL;
+        ctx->encrypted = false;
         copy_address(&ctx->server_address, &pinfo->dst);
         ctx->global_data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
         conversation_add_proto_data(conv, proto_mcje, ctx);
