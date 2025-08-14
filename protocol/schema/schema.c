@@ -210,7 +210,7 @@ DISSECT_PROTOCOL(buffer) {
     if (length < 0) return add_invalid_data(tree, tvb, offset, name, "Invalid Buffer");
     if (tree) {
         uint8_t *buffer = tvb_memdup(pinfo->pool, tvb, offset + length, buffer_len > 200 ? 200 : buffer_len);
-        add_name(proto_tree_add_bytes(tree, hf_bytes, tvb, offset, length + buffer_len, buffer), name);
+        add_name(proto_tree_add_bytes(tree, hf_bytes, tvb, offset + length, buffer_len, buffer), name);
     }
     return length + buffer_len;
 }
@@ -264,10 +264,10 @@ DISSECT_PROTOCOL(error) {
     char *error_message = wmem_map_lookup(dissector->dissect_arguments, "e");
     if (tree)
         add_name(proto_tree_add_string_format_value(
-            tree, hf_parsing_error, tvb, offset, 0,
-            "", "The protocol dissector failed to parse: %s",
-            error_message
-        ), name);
+                     tree, hf_parsing_error, tvb, offset, 0,
+                     "", "The protocol dissector failed to parse: %s",
+                     error_message
+                 ), name);
     return DISSECT_ERROR;
 }
 
@@ -386,9 +386,9 @@ DISSECT_PROTOCOL(mapper) {
     if (value) *value = wmem_strdup(packet_alloc, mapped);
     if (tree)
         add_name(proto_tree_add_string_format_value(
-            tree, hf_string, tvb, offset, len,
-            mapped, "%s (%s)", mapped, saved_value
-        ), name);
+                     tree, hf_string, tvb, offset, len,
+                     mapped, "%s (%s)", mapped, saved_value
+                 ), name);
     return len;
 }
 
@@ -504,9 +504,9 @@ DISSECT_PROTOCOL(registry) {
     if (value) *value = wmem_strdup(packet_alloc, key);
     if (tree)
         add_name(proto_tree_add_string_format_value(
-            tree, hf_string, tvb, offset, len,
-            key, "%s (%d)", key, index
-        ), name);
+                     tree, hf_string, tvb, offset, len,
+                     key, "%s (%d)", key, index
+                 ), name);
     return len;
 }
 
@@ -1158,8 +1158,8 @@ protocol_dissector *make_protocol_dissector(
         return make_func(allocator, root, dissectors, protocol_version, recursive_root);
 
     return make_error(allocator, wmem_strdup_printf(
-            allocator, "Invalid protocol dissector type: %s%s", type, composite_type ? " (composite)" : ""
-    ));
+                          allocator, "Invalid protocol dissector type: %s%s", type, composite_type ? " (composite)" : ""
+                      ));
 }
 
 void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t state) {

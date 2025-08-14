@@ -1,22 +1,36 @@
 plugins {
     id 'java'
+    id 'java-library'
     id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 group 'io.github.nickid2018'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
 }
 
+compileJava {
+    targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+}
+
 dependencies {
     implementation("org.ow2.asm:asm-tree:9.5")
+    implementation("org.ow2.asm:asm-commons:9.5")
+
+    compileOnlyApi("org.projectlombok:lombok:1.18.32")
+    annotationProcessor("org.projectlombok:lombok:1.18.32")
+    testCompileOnly("org.projectlombok:lombok:1.18.32")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.32")
+
+    compileOnlyApi("org.slf4j:slf4j-api:2.0.13")
 }
 
 jar {
     manifest {
-        attributes 'Premain-Class': 'io.github.nickid2018.crypt.ProgramInjector'
+        attributes 'Premain-Class': 'io.github.nickid2018.crypt.AgentBasedInjector'
         attributes 'Can-Redefine-Classes': true
         attributes 'Can-Retransform-Classes': true
     }
@@ -26,4 +40,5 @@ shadowJar {
     manifest {
         inheritFrom project.tasks.jar.manifest
     }
+    relocate 'org.objectweb.asm', 'org.objectweb.asm.shadow' // Relocate ASM to avoid conflicts with forge/fabric
 }
