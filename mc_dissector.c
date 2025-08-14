@@ -1,6 +1,7 @@
 //
 // Created by Nickid2018 on 2023/7/12.
 //
+#include <epan/uat.h>
 #include <ws_version.h>
 #include <wsutil/plugins.h>
 #include <wsutil/filesystem.h>
@@ -15,6 +16,7 @@ WS_DLL_PUBLIC_DEF _U_ const int plugin_want_major = WIRESHARK_VERSION_MAJOR;
 WS_DLL_PUBLIC_DEF _U_ const int plugin_want_minor = WIRESHARK_VERSION_MINOR;
 
 WS_DLL_PUBLIC _U_ void plugin_register();
+
 WS_DLL_PUBLIC _U_ uint32_t plugin_describe();
 
 int proto_mc = -1;
@@ -23,9 +25,11 @@ int proto_mcbe = -1;
 
 module_t *pref_mc = NULL;
 gchar *pref_protocol_data_dir;
+
 module_t *pref_mcje = NULL;
 gchar *pref_ignore_packets_je = "";
-gchar *pref_secret_key = "";
+gchar *pref_secret_key = NULL;
+gchar *pref_key_log_filepath = NULL;
 bool pref_do_nbt_decode = false;
 
 module_t *pref_mcbe = NULL;
@@ -51,6 +55,10 @@ void proto_register() {
     prefs_register_string_preference(
         pref_mcje, "secret_key", "Secret Key",
         "Secret key for decryption", (const char **) &pref_secret_key
+    );
+    prefs_register_filename_preference(
+        pref_mcje, "key_log_filepath", "Key Log File",
+        "", (const char **) &pref_key_log_filepath, false
     );
     prefs_register_bool_preference(
         pref_mcje, "do_nbt_decode", "NBT Decoding",

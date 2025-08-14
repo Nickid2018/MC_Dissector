@@ -16,7 +16,7 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
-#define PROTOCOL_DATA_VERSION "2.2"
+#define PROTOCOL_DATA_VERSION "2.3"
 
 #if defined(DEBUG)
 #define WS_LOG(format, ...) ws_log("", LOG_LEVEL_CRITICAL, format, ##__VA_ARGS__)
@@ -30,6 +30,7 @@ extern int proto_mcbe;
 extern module_t *pref_mcje;
 extern gchar *pref_ignore_packets_je;
 extern gchar *pref_secret_key;
+extern gchar *pref_key_log_filepath;
 extern bool pref_do_nbt_decode;
 
 extern module_t *pref_mcbe;

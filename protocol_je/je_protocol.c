@@ -7,6 +7,9 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
+
+#include <errno.h>
+
 #include "utils/nbt.h"
 
 extern int hf_invalid_data;
@@ -164,6 +167,34 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
     return 0;
 }
 
+gchar *match_secret_key(gchar *challenge, gchar *content) {
+    char **split = g_strsplit(content, " ", 2);
+    if (split[1] == NULL) return NULL;
+    char **split_key = g_strsplit(split[1], "\n", 2);
+    if (strlen(split_key[0]) != 32) return NULL;
+    if (strcmp(split[0], challenge) == 0) return split_key[0];
+    return NULL;
+}
+
+gchar *find_encryption_key(gchar *challenge_str) {
+    if (!challenge_str) return NULL;
+    if (!pref_key_log_filepath) return pref_secret_key;
+    char *content = NULL;
+    if (!g_file_get_contents(pref_key_log_filepath, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read key file %s", pref_key_log_filepath);
+        return pref_secret_key;
+    }
+    gchar *matched = match_secret_key(challenge_str, content);
+    if (matched) return matched;
+    while ((content = g_utf8_strchr(content, -1, '\n'))) {
+        content++;
+        if (content[0] == '\0') break;
+        matched = match_secret_key(challenge_str, content);
+        if (matched) return matched;
+    }
+    return pref_secret_key;
+}
+
 int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client) {
     if (ctx->dissector_set == NULL) return INVALID_DATA;
     uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
@@ -182,7 +213,45 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
     if (wmem_map_contains(special_mark, (void *) (uint64_t) packet_id)) {
         char *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
 
-        if (strcmp(mark, "encrypt") == 0) ctx->encrypted = true;
+        if (strcmp(mark, "encrypt_request") == 0) {
+            int32_t str_len;
+            len += read_var_int(tvb, len, &str_len);
+            len += str_len;
+            len += read_buffer(tvb, len, NULL, NULL);
+            uint8_t *challenge;
+            read_buffer(tvb, len, &challenge, wmem_packet_scope());
+            gchar *challenge_str = wmem_strdup_printf(
+                wmem_file_scope(), "%02x%02x%02x%02x",
+                challenge[0], challenge[1], challenge[2], challenge[3]
+            );
+            wmem_map_insert(ctx->global_data, "#key_challenge", challenge_str);
+        }
+
+        if (strcmp(mark, "encrypt") == 0) {
+            ctx->encrypted = true;
+            gchar *encryption_key = find_encryption_key(wmem_map_lookup(ctx->global_data, "#key_challenge"));
+            if (encryption_key == NULL || strlen(encryption_key) != 32) {
+                ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+            } else {
+                uint8_t *secret_key = wmem_alloc(wmem_file_scope(), 16);
+                bool failed = false;
+                for (int i = 0; i < 16; i++) {
+                    gchar hex[3] = {encryption_key[i * 2], encryption_key[i * 2 + 1], '\0'};
+                    errno = 0;
+                    secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
+                    if (errno != 0) {
+                        failed = true;
+                        break;
+                    }
+                }
+                if (failed) {
+                    ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                } else {
+                    ctx->secret_key = secret_key;
+                }
+            }
+        }
+
         if (strcmp(mark, "compress") == 0) {
             int32_t threshold;
             len = read_var_int(tvb, len, &threshold);
@@ -191,6 +260,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
             frame_data->first_compression_packet = true;
             frame_data->compression_threshold = threshold;
         }
+
         if (strcmp(mark, "registry") == 0) {
             wmem_map_t *writable_registry = wmem_map_lookup(ctx->global_data, "#writable_registry");
             if (writable_registry == NULL) {

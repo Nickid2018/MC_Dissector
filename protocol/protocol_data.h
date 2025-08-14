@@ -16,7 +16,7 @@
 typedef enum {
     HANDSHAKE, PLAY, STATUS, LOGIN, TRANSFER, CONFIGURATION, // Normal states
     LEGACY_QUERY, // Old version compatibility for <1.6
-    INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND // Special states
+    INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND, SECRET_KEY_NOT_FOUND // Special states
 } je_state;
 
 typedef struct {
@@ -33,6 +33,7 @@ typedef struct {
     int32_t compression_threshold;
     bool encrypted;
 
+    uint8_t *secret_key;
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
     int32_t server_last_segment_remaining;

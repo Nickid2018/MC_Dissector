@@ -51,7 +51,8 @@ int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **result, wmem_alloca
     int32_t read = read_var_int(tvb, offset, &length);
     if (is_invalid(read))
         return INVALID_DATA;
-    *result = tvb_memdup(allocator, tvb, offset + read, length);
+    if (result)
+        *result = tvb_memdup(allocator, tvb, offset + read, length);
     return read + length;
 }
 

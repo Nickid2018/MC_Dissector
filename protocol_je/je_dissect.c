@@ -149,6 +149,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx->server_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
         ctx->compression_threshold = -1;
         ctx->server_port = pinfo->destport;
+        ctx->secret_key = NULL;
         ctx->server_cipher = NULL;
         ctx->client_cipher = NULL;
         ctx->server_last_segment_remaining = 0;
@@ -189,6 +190,10 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not found or invalid");
         return (int32_t) tvb_captured_length(tvb);
     }
+    if (frame_data->client_state == SECRET_KEY_NOT_FOUND || frame_data->server_state == SECRET_KEY_NOT_FOUND) {
+        col_set_str(pinfo->cinfo, COL_INFO, "[Decryption Failed] Missing or invalid secret key");
+        return (int32_t) tvb_captured_length(tvb);
+    }
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
 
@@ -209,20 +214,9 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                     : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
-            gchar *secret_key_str = pref_secret_key;
-            if (strlen(secret_key_str) != 32) {
-                col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Secret key is not set");
-                mark_invalid(pinfo);
-                return (int32_t) tvb_captured_length(tvb);
-            }
-            uint8_t secret_key[16];
-            for (int i = 0; i < 16; i++) {
-                gchar hex[3] = {secret_key_str[i * 2], secret_key_str[i * 2 + 1], '\0'};
-                secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
-            }
             gcry_cipher_open(cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-            gcry_cipher_setkey(*cipher, secret_key, sizeof(secret_key));
-            gcry_cipher_setiv(*cipher, secret_key, sizeof(secret_key));
+            gcry_cipher_setkey(*cipher, ctx->secret_key, 16);
+            gcry_cipher_setiv(*cipher, ctx->secret_key, 16);
         }
 
         if (!*decrypt_data) {
@@ -234,7 +228,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                 length - length_remaining
             );
             if (err) {
-                col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Decryption Error: Decryption failed with code ");
+                col_set_str(pinfo->cinfo, COL_INFO, "[Decryption Failed] Decryption failed with code ");
                 col_append_fstr(pinfo->cinfo, COL_INFO, "%d", err);
                 mark_invalid(pinfo);
                 return (int32_t) tvb_captured_length(tvb);

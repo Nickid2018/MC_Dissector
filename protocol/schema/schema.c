@@ -195,7 +195,6 @@ DISSECT_PROTOCOL(bool) {
 }
 
 DISSECT_PROTOCOL(string) {
-    uint8_t *str;
     int32_t len;
     int32_t length = read_var_int(tvb, offset, &len);
     if (length < 0) return add_invalid_data(tree, tvb, offset, name, "Invalid String");
