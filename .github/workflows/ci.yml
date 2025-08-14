@@ -32,7 +32,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: wireshark-4.4.6
+          ref: wireshark-4.4.8
       - name: Choco install Wireshark Deps
         run: |
           choco install -y --no-progress winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw

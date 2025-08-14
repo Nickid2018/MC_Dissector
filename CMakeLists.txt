@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 project(MC_Dissector C)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 
 add_compile_definitions(SYSTEM_NAME=${CMAKE_SYSTEM_NAME})
 if (CMAKE_BUILD_TYPE MATCHES Debug)
