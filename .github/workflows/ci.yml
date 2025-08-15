@@ -115,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: encryption-helper
-          path: encryption-helper/build/libs/encryption-helper-1.0-all.jar
+          path: encryption-helper/build/libs/encryption-helper-1.1-all.jar
 
   publish:
     needs: [ build-windows, build-linux, build-encryption-helper ]
@@ -158,4 +158,4 @@ jobs:
           files: |
             windows/mcdissector.dll
             linux/mcdissector.so
-            encryption-helper-1.0-all.jar
+            encryption-helper-1.1-all.jar
