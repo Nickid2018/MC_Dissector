@@ -28,9 +28,15 @@ For Arch Linux, you can directly use package `wireshark-minecraft-dissector` in 
 `Minecraft` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
 * `Directory for protocol data`: The directory for protocol data, used to parse data.
-* `Ignore Packets`: Prevent parsing some packets to filter unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to the client. The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
+* `Ignore Packets`: Prevent parsing some packets to filter unwanted information.
+  The format is commas-separated list of `<s|c>:<packet_name>`.
+  `s` represents packets sent to server, `c` represents packets sent to the client. 
+  The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
 * `Key Log File`：Path to the file for logging keys.
-* `Secret Key`: To realize encrypted connection among keys for decrypting data. The format is in hexadecimal strings with a length of 32.
+* `Secret Key`: To realize encrypted connection among keys for decrypting data.
+  The format is in hexadecimal strings with a length of 32. 
+  If `Key Log File` does not exist or the key log file does not contain the key corresponding to the current encrypted connection,
+  the program will automatically use this key for decryption.
 * `NBT Decoding`: To decode NBT data.
 * `TCP Port(s)`: To change TCP ports used by MCJE protocol to identify protocol.
 
@@ -80,9 +86,10 @@ because it locates the injection point only by the following features that will 
     * The method has the descriptor `(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V`.
     * This injection point usually represents `net.minecraft.network.protocol.login.ServerboundKeyPacket#<init>`.
 - For the case with specifying a key, the program will search for an injection point with the following features:
-    * The method is a constructor.
-    * The method has the descriptor `(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V`.
-    * This injection point usually represents `net.minecraft.network.protocol.login.ServerboundKeyPacket#<init>`.
+    * Method return value is `javax.crypto.SecretKey`.
+    * The Method has no parameter.
+    * The type of the first local variable of the method is `javax.crypto.KeyGenerator`.
+    * This injection point usually represents `net.minecraft.util.Crypt#generateSecretKey`.
 
 The vast majority of the time, these injection points are **stable**, meaning they will not be modified by mods,
 so this injection can work in most cases, including vanilla clients,

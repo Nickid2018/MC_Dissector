@@ -27,6 +27,7 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
   代表发向服务端的包，`c`代表发向客户端的包。默认为空。推荐设置为`c:level_chunk,c:level_chunk_with_light`。
 * `Key Log File`：用于记录密钥的文件路径。
 * `Secret Key`：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
+  如果`Key Log File`不存在或者密钥记录文件内不存在与当前加密连接对应的密钥，程序将自动使用此密钥进行解密。
 * `NBT Decoding`：是否解析 NBT 数据。
 * `TCP Port(s)`：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
 
