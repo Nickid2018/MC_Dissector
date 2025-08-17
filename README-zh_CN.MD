@@ -22,12 +22,13 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 
 可以在 Wireshark 的`首选项/Protocols`里面找到`Minecraft`，在这里可以调整一些选项。
 
-* Directory for protocol data：放置协议数据的目录，用于解析数据。
-* Ignore Packets：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
+* `Directory for protocol data`：放置协议数据的目录，用于解析数据。
+* `Ignore Packets`：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
   代表发向服务端的包，`c`代表发向客户端的包。默认为空。推荐设置为`c:level_chunk,c:level_chunk_with_light`。
-* Secret Key：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
-* NBT Decoding：是否解析 NBT 数据。
-* TCP Port(s)：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+* `Key Log File`：用于记录密钥的文件路径。
+* `Secret Key`：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
+* `NBT Decoding`：是否解析 NBT 数据。
+* `TCP Port(s)`：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
 
 ## 协议数据
 
@@ -41,26 +42,39 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 此步骤在登录阶段压缩前执行，整个连接内的数据都会被加密，包括拆分数据的数据长度字段。
 
 为了能监听加密连接内的数据，我们必须知道密钥是什么。项目内的`encryption-helper`可以做到这点，
-它利用对称加密的密钥由客户端执行生成这一特点，在客户端创建密钥时强制替换为指定的密钥而不是生成随机密钥。
+它利用对称加密的密钥由客户端执行生成这一特点，在客户端创建密钥时强制替换为指定的密钥而不是生成随机密钥，
+或将当前的密钥记录在文件中以供Wireshark读取。
 
 `encryption-helper`是一个 Java Agent，在 Minecraft 运行时动态注入执行代码。它需要用下面的 JVM 参数附加到一个 Minecraft
 客户端中：
 
 ```shell
--javaagent:<文件位置>=<密钥>
+-javaagent:<文件位置>[=<密钥>]
 ```
 
-密钥是一个 32 长度的，只包含 0-F 的 16 进制字符串。如果输入格式错误，在启动客户端时会立刻报错崩溃。
+如果不指定密钥，在游戏加入服务器时会自动向环境变量`MINECRAFT_KEY_LOG_FILE`指定的文件中记录密钥。
+此文件的每一行都包含了一个挑战（Challenge）和对应的密钥，以空格分割。
+挑战是在登录阶段由服务端发送到客户端的`key`包中的`challenge`字段，可以作为此连接的唯一标识。
+使用Wireshark时，需要将首选项`Key Log File`设置为运行游戏的环境变量`MINECRAFT_KEY_LOG_FILE`相同的路径，
+这样Wireshark就可以立刻读取密钥从而追踪TCP流解析整个加密连接。
+
+如果指定了密钥，则会指定加密连接强制使用此密钥而不是生成随机密钥。
+此密钥需要是一个32长度的16进制字符串，如果输入格式错误，在启动客户端时会立刻报错崩溃。
 
 `encryption-helper`理论上可以运行在所有未混淆和混淆的可注入客户端中，因为它定位的注入点只包含下列不会被混淆的特征：
 
-* 方法返回值为`javax.crypto.SecretKey`。
-* 方法没有参数。
-* 方法的第一个局部变量类型为`javax.crypto.KeyGenerator`。
+- 对于不指定密钥的情况，程序将搜索下列特征的注入点：
+    * 方法是构造函数。
+    * 方法具有下列描述符`(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V`。
+    * 此注入点通常代表了`net.minecraft.network.protocol.login.ServerboundKeyPacket#<init>`。
+- 对于指定密钥的情况，程序将搜索下列特征的注入点：
+    * 方法返回值为`javax.crypto.SecretKey`。
+    * 方法没有参数。
+    * 方法的第一个局部变量类型为`javax.crypto.KeyGenerator`。
+    * 此注入点通常代表了`net.minecraft.util.Crypt#generateSecretKey`。
 
-基本不会有模组会修改此处的逻辑，所以程序修改这里是安全的，应该不会和模组冲突。
-
-只有一种可能会导致此程序失效：模组修改了原版的加密逻辑，导致此处不会被调用无法替换密钥，但那种协议就已经不在我们程序的使用范围内了。
+绝大多数情况下，这些注入点都是**稳定**的，即不会被模组修改，
+因此此注入可以在大多数情况下（包括原版、未知混淆表的客户端、Fabric/Forge/NeoForge等模组加载器）正常工作。
 
 ## 解析错误
 

@@ -27,11 +27,12 @@ For Arch Linux, you can directly use package `wireshark-minecraft-dissector` in 
 
 `Minecraft` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
-* Directory for protocol data: The directory for protocol data, used to parse data.
-* Ignore Packets: Prevent parsing some packets to filter unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to the client. The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
-* Secret Key: To realize encrypted connection among keys for decrypting data. The format is in hexadecimal strings with a length of 32.
-* NBT Decoding: To decode NBT data.
-* TCP Port(s): To change TCP ports used by MCJE protocol to identify protocol.
+* `Directory for protocol data`: The directory for protocol data, used to parse data.
+* `Ignore Packets`: Prevent parsing some packets to filter unwanted information. The format is commas-separated list of `<s|c>:<packet_name>`. `s` represents packets sent to server, `c` represents packets sent to the client. The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
+* `Key Log File`：Path to the file for logging keys.
+* `Secret Key`: To realize encrypted connection among keys for decrypting data. The format is in hexadecimal strings with a length of 32.
+* `NBT Decoding`: To decode NBT data.
+* `TCP Port(s)`: To change TCP ports used by MCJE protocol to identify protocol.
 
 ## Protocol Data
 
@@ -50,28 +51,42 @@ All data in the connection will be encrypted, including data length fields used 
 To get data in encrypted connection,
 we need to know what the key is with the help of `encryption-helper` in the project.
 By using the feature that client executed the generation of symmetric encrypted keys,
-it forced the client to use a specified key,
-instead create a random one.
+it can force the client to use a specified key instead create a random one,
+or log the current key to a file for Wireshark to read.
 
 `encryption-helper` is a Java Agent injects executive code dynamically when running Minecraft. It needs JVM parameters as follows to attach to a Minecraft client:
 
 ```shell
--javaagent:<jarfile path>=<key>
+-javaagent:<jarfile path>[=<key>]
 ```
 
+If no key is specified,
+it will log the key to a file specified by environment variable `MINECRAFT_KEY_LOG_FILE` when joining a server.
+Each line in the file contains a challenge and the corresponding key, separated by a space.
+The challenge is the `challenge` field in the `key` packet sent from server to client during login,
+which can be used as a unique identifier for the connection.
+When using Wireshark,
+you need to set the preference `Key Log File` to the same path as the environment variable `MINECRAFT_KEY_LOG_FILE` of the running game,
+so that Wireshark can read the key immediately to track the TCP stream and parse the entire encrypted connection.
+
+If a key is specified, it will force the encrypted connection to use this key instead of generating a random one.
 The key is a hexadecimal string only contains 0-F with length of 32.
 If the input format is incorrect, it will crash immediately and throw an error when starting the client.
 
-Theoretically, `encryption-helper` can run in all unobfuscated and obfuscated injectable clients,
-since the injection points it locates only contain features could not be obfuscated as follows:
+`encryption-helper` can theoretically run on all unobfuscated and obfuscated injectable clients,
+because it locates the injection point only by the following features that will not be obfuscated:
+- For the case without specifying a key, the program will search for an injection point with the following features:
+    * The method is a constructor.
+    * The method has the descriptor `(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V`.
+    * This injection point usually represents `net.minecraft.network.protocol.login.ServerboundKeyPacket#<init>`.
+- For the case with specifying a key, the program will search for an injection point with the following features:
+    * The method is a constructor.
+    * The method has the descriptor `(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V`.
+    * This injection point usually represents `net.minecraft.network.protocol.login.ServerboundKeyPacket#<init>`.
 
-* Method return value is `javax.crypto.SecretKey`.
-* The Method has no parameter.
-* The type of the first local variable of the method is `javax.crypto.KeyGenerator`.
-
-Very few mods modify logics here, so it's safe for the program to modify. It should not conflict with mods.
-
-Only a single circumstance will disable the program: Mods have modified encryption logics here and resulted in failure in call to replace keys, but that kind of protocol is out of the scope of our program's use.
+The vast majority of the time, these injection points are **stable**, meaning they will not be modified by mods,
+so this injection can work in most cases, including vanilla clients,
+clients with unknown obfuscation mappings, and mod loaders like Fabric/Forge/NeoForge.
 
 ## Parsing Errors
 
