@@ -1198,9 +1198,14 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
         cJSON *type = cJSON_GetObjectItem(dissector_data, "type");
         protocol_dissector *dissector;
         if (type == NULL) {
-            char *file_key = g_strdup_printf("%s_%s", map_state_to_name(state), key);
+            char *key_replaced = g_strdup(key);
+            for (char *p = key_replaced; *p; p++)
+                if (*p == '/')
+                    *p = '_';
+            char *file_key = g_strdup_printf("%s_%s", map_state_to_name(state), key_replaced);
             type = get_packet_source(set->protocol_version, file_key);
             g_free(file_key);
+            g_free(key_replaced);
         }
         if (type == NULL)
             dissector = make_error(set->allocator, "Cannot find packet file");
