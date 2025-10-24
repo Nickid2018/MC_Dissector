@@ -195,7 +195,9 @@ gchar *find_encryption_key(gchar *challenge_str) {
     return pref_secret_key;
 }
 
-int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client) {
+int try_switch_state(
+    tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client
+) {
     if (ctx->dissector_set == NULL) return INVALID_DATA;
     uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
     int32_t packet_id;
@@ -219,7 +221,7 @@ int try_switch_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fra
             len += str_len;
             len += read_buffer(tvb, len, NULL, NULL);
             uint8_t *challenge;
-            read_buffer(tvb, len, &challenge, wmem_packet_scope());
+            read_buffer(tvb, len, &challenge, pinfo->pool);
             gchar *challenge_str = wmem_strdup_printf(
                 wmem_file_scope(), "%02x%02x%02x%02x",
                 challenge[0], challenge[1], challenge[2], challenge[3]

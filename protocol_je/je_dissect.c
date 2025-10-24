@@ -38,7 +38,7 @@ void sub_dissect_je(
         case TRANSFER:
         case PLAY:
         case CONFIGURATION:
-            if (!visited && is_invalid(try_switch_state(tvb, ctx, frame_data, !is_server)))
+            if (!visited && is_invalid(try_switch_state(tvb, pinfo, ctx, frame_data, !is_server)))
                 return;
             if (tree) {
                 TRY {
