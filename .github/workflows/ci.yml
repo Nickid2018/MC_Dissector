@@ -18,7 +18,7 @@ jobs:
     env:
       PLATFORM: x64
       WIRESHARK_DIR: ${{ github.workspace }}/wireshark
-      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.4
+      WIRESHARK_LIB_DIR: C:/wireshark-win64-libs-4.6
       WIRESHARK_BUILD_DIR: ${{ github.workspace }}/wireshark/build
       WIRESHARK_LIB_FILE_DIR: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo
     steps:
@@ -32,7 +32,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: wireshark-4.4.8
+          ref: v4.6.0
       - name: Choco install Wireshark Deps
         run: |
           choco install -y --no-progress winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
