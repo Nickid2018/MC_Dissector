@@ -1060,11 +1060,8 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
 
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(top_bit_set_terminated_array) {
-    cJSON *object = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsObject(object))
-        return make_error(allocator, "top_bit_set_terminated_array param needs to be a object");
-    cJSON *type = cJSON_GetObjectItem(object, "type");
-    if (type == NULL) return make_error(allocator, "Lack of type for top_bit_set_terminated_array object");
+    cJSON *type = cJSON_GetArrayItem(params, 1);
+    if (type == NULL) return make_error(allocator, "Lack of type for top_bit_set_terminated_array");
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *sub = make_protocol_dissector(allocator, type, dissectors, protocol_version, RECURSIVE_ROOT);
