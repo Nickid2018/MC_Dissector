@@ -2,6 +2,7 @@
 // Created by nickid2018 on 24-7-13.
 //
 
+#include "mc_dissector.h"
 #include "storage.h"
 
 extern char *pref_protocol_data_dir;

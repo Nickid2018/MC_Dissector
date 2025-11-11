@@ -6,7 +6,6 @@
 #define MC_DISSECTOR_STORAGE_H
 
 #include "cJSON.h"
-#include "mc_dissector.h"
 #include "protocol/schema/schema.h"
 
 void clear_storage();

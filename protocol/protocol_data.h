@@ -7,7 +7,6 @@
 
 #include <epan/proto.h>
 #include <gcrypt.h>
-#include "storage/storage.h"
 #include "protocol/schema/schema.h"
 
 #define INVALID_DATA (-1)

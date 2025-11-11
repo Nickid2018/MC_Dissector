@@ -4,12 +4,11 @@
 
 #include <epan/proto.h>
 #include <epan/conversation.h>
+#include <errno.h>
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
-
-#include <errno.h>
-
+#include "protocol/storage/storage.h"
 #include "utils/nbt.h"
 
 extern int hf_invalid_data;
@@ -372,7 +371,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         uint8_t *str = read_legacy_string(tvb, offset, &len);
                         if (str != NULL) {
                             proto_item *payload =
-                                    proto_tree_add_string(tree, hf_string, tvb, offset, len, (char *) str);
+                                proto_tree_add_string(tree, hf_string, tvb, offset, len, (char *) str);
                             proto_item_prepend_text(payload, "Host Name ");
                             offset += len;
                         } else valid = false;

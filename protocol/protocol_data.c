@@ -4,6 +4,7 @@
 
 #include <epan/conversation.h>
 #include "protocol_data.h"
+#include "mc_dissector.h"
 
 char *STATE_NAME[] = {"Handshake", "Play", "Status", "Login", "Transfer", "Configuration", "Invalid"};
 

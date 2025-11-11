@@ -7,6 +7,7 @@
 
 #include "mc_dissector.h"
 #include "protocol/protocol_data.h"
+#include "protocol/storage/storage.h"
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
 

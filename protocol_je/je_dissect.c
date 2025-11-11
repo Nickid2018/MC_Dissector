@@ -8,6 +8,7 @@
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
+#include "protocol/storage/storage.h"
 
 extern int hf_packet_length;
 extern int hf_packet_data_length;
@@ -209,9 +210,9 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
                                        : ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
         uint8_t **decrypt_data =
-                pinfo->curr_proto_layer_num == 1
-                    ? &frame_data->decrypted_data_head
-                    : &frame_data->decrypted_data_tail;
+            pinfo->curr_proto_layer_num == 1
+                ? &frame_data->decrypted_data_head
+                : &frame_data->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gcry_cipher_open(cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
