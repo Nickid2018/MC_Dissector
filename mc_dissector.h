@@ -16,7 +16,7 @@
 #define MCJE_FILTER "mcje"
 #define MCBE_FILTER "mcbe"
 
-#define PLUGIN_VERSION "1.4.2"
+#define PLUGIN_VERSION "1.4.3"
 #define PROTOCOL_DATA_VERSION "2.4"
 
 #if defined(DEBUG)
