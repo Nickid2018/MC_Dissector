@@ -17,7 +17,7 @@
 #define MCBE_FILTER "mcbe"
 
 #define PLUGIN_VERSION "1.4.2"
-#define PROTOCOL_DATA_VERSION "2.3"
+#define PROTOCOL_DATA_VERSION "2.4"
 
 #if defined(DEBUG)
 #define WS_LOG(format, ...) ws_log("", LOG_LEVEL_CRITICAL, format, ##__VA_ARGS__)
