@@ -113,7 +113,8 @@ DISSECT_PROTOCOL(display_protocol_version) {
     } else {
         char *java_version = g_strjoinv(", ", java_versions);
         g_strfreev(java_versions);
-        item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, java_version);
+        item = proto_tree_add_string(tree, hf_generated, tvb, 0, 0, wmem_strdup(wmem_file_scope(), java_version));
+        g_free(java_version);
     }
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Game Version ");
@@ -144,6 +145,9 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
             if (registry_name[split_pos] == '/' || registry_name[split_pos] == ':')
                 break;
         char *registry = g_utf8_substring(registry_name, split_pos + 1, length);
+        char *copy = wmem_strdup(wmem_file_scope(), registry);
+        g_free(registry);
+        registry = copy;
         offset += name_length;
         // 08 00 04 74 79 70 65 = STRING type
         offset += 7;
@@ -169,7 +173,9 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
             offset += count_nbt_length_with_type(tvb, offset, TAG_COMPOUND);
             // TAG_END
             offset += 1;
-            data[i] = g_utf8_substring(item, 10, g_utf8_strlen(item, 400));
+            char *sub = g_utf8_substring(item, 10, g_utf8_strlen(item, 400));
+            data[i] = wmem_strdup(wmem_file_scope(), sub);
+            g_free(sub);
         }
         wmem_map_insert(writable_registry, registry, data);
         wmem_map_insert(writable_registry_size, registry, (void *) (uint64_t) array_length);

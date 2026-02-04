@@ -533,6 +533,7 @@ DISSECT_PROTOCOL(codec) {
                 break;
         key = g_utf8_substring(key, split_pos + 1, length);
         sub = wmem_map_lookup(map, key);
+        g_free(key);
     }
     if (sub == NULL) return add_invalid_data(tree, tvb, offset, name, "No codec found");
     return sub->dissect_protocol(tree, pinfo, tvb, offset, packet_alloc, sub, name, packet_saves, value);

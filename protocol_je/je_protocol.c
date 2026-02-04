@@ -50,22 +50,20 @@ void handle_with_set(
 
     bool ignore = false;
     if (strlen(pref_ignore_packets_je) != 0) {
-        char *search_name = g_strdup_printf("%s:%s", is_client ? "c" : "s", key[packet_id]);
+        char *search_name = wmem_strdup_printf(pinfo->pool, "%s:%s", is_client ? "c" : "s", key[packet_id]);
         GList *list = prefs_get_string_list(pref_ignore_packets_je);
         ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
-        g_free(search_name);
+        wmem_free(pinfo->pool, search_name);
     }
 
     uint32_t length = tvb_reported_length(tvb);
     if (ignore)
         proto_tree_add_string(tree, hf_ignored_packet, tvb, len, (int32_t) length - len, "Ignored by user");
     else {
-        wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
-        wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
+        wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
         int32_t sub_len = d[packet_id]->dissect_protocol(
-            tree, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
+            tree, pinfo, tvb, len, pinfo->pool, d[packet_id], "Packet Data", packet_save, NULL
         );
-        wmem_destroy_allocator(temp_alloc);
         if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
                 tree, hf_invalid_data, tvb, len, (int32_t) length - len,

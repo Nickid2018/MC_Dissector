@@ -51,14 +51,12 @@ void parse_to_string(
                 if (type == TAG_BYTE_ARRAY)
                     g_ptr_array_add(
                         array,
-                        g_strdup_printf("%d", tvb_get_int8(tvb, offset_g + 4 + i)
-                        )
+                        g_strdup_printf("%d", tvb_get_int8(tvb, offset_g + 4 + i))
                     );
                 else if (type == TAG_INT_ARRAY)
                     g_ptr_array_add(
                         array,
-                        g_strdup_printf("%d", tvb_get_int32(tvb, offset_g + 4 + i * 4, ENC_BIG_ENDIAN)
-                        )
+                        g_strdup_printf("%d", tvb_get_int32(tvb, offset_g + 4 + i * 4, ENC_BIG_ENDIAN))
                     );
                 else
                     g_ptr_array_add(

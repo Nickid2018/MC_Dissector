@@ -276,9 +276,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             if (!pinfo->fd->visited) {
                 if (is_server) {
                     ctx->server_last_segment_remaining = available;
+                    if (ctx->server_last_remains) wmem_free(wmem_file_scope(), ctx->server_last_remains);
                     ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 } else {
                     ctx->client_last_segment_remaining = available;
+                    if (ctx->client_last_remains) wmem_free(wmem_file_scope(), ctx->client_last_remains);
                     ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 }
             }
@@ -292,9 +294,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             if (!pinfo->fd->visited) {
                 if (is_server) {
                     ctx->server_last_segment_remaining = available;
+                    if (ctx->server_last_remains) wmem_free(wmem_file_scope(), ctx->server_last_remains);
                     ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 } else {
                     ctx->client_last_segment_remaining = available;
+                    if (ctx->client_last_remains) wmem_free(wmem_file_scope(), ctx->client_last_remains);
                     ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 }
             }
