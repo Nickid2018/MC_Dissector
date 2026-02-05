@@ -52,9 +52,17 @@ int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **result, wmem_alloca
     int32_t read = read_var_int(tvb, offset, &length);
     if (is_invalid(read))
         return INVALID_DATA;
-    if (result)
+    if (result && allocator)
         *result = tvb_memdup(allocator, tvb, offset + read, length);
     return read + length;
+}
+
+int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator_t *allocator) {
+    int32_t len;
+    int32_t length = read_var_int(tvb, offset, &len);
+    if (is_invalid(length)) return INVALID_DATA;
+    *result = tvb_format_text(allocator, tvb, offset + length, len);
+    return length + len;
 }
 
 wmem_map_t *get_global_data(packet_info *pinfo) {

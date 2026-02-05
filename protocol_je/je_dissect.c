@@ -118,7 +118,7 @@ void dissect_je_core(
                 return;
             }
 
-            new_tvb = tvb_uncompress_zlib(tvb, offset, len - var_len);
+            new_tvb = tvb_child_uncompress_zlib(tvb, tvb, offset, len - var_len);
             if (new_tvb == NULL)
                 return;
 
@@ -242,7 +242,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             *decrypt_data = merged;
         }
 
-        use_tvb = tvb_new_real_data(*decrypt_data, length, (int32_t) length);
+        use_tvb = tvb_new_child_real_data(tvb, *decrypt_data, length, (int32_t) length);
         add_new_data_source(pinfo, use_tvb, "Decrypted packet");
     }
 

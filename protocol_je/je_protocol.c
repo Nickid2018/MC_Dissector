@@ -273,14 +273,24 @@ int try_switch_state(
             }
             char *registry_name;
             int32_t offset = len;
-            len = read_buffer(tvb, offset, (uint8_t * *) &registry_name, wmem_file_scope());
+            len = read_string(tvb, offset, &registry_name, wmem_file_scope());
             if (is_invalid(len)) return INVALID_DATA;
-            int64_t length = g_utf8_strlen(registry_name, 400);
-            int64_t split_pos = length - 1;
-            for (; split_pos >= 0; split_pos--)
-                if (registry_name[split_pos] == '/' || registry_name[split_pos] == ':')
-                    break;
-            registry_name = g_utf8_substring(registry_name, split_pos + 1, length);
+
+            char **splits = g_strsplit(registry_name, ":", 10);
+            char *last_split = "";
+            for (int i = 0; splits[i] != NULL; i++) {
+                last_split = splits[i];
+            }
+            char **second_splits = g_strsplit(last_split, "/", 10);
+            char *real_name = "";
+            for (int i = 0; second_splits[i] != NULL; i++) {
+                real_name = second_splits[i];
+            }
+            wmem_free(wmem_file_scope(), registry_name);
+            registry_name = wmem_strdup(wmem_file_scope(), real_name);
+            g_strfreev(splits);
+            g_strfreev(second_splits);
+
             offset += len;
             int32_t count;
             len = read_var_int(tvb, offset, &count);
@@ -290,12 +300,12 @@ int try_switch_state(
             bool is_new_nbt = wmem_map_lookup(ctx->global_data, "nbt_any_type");
             for (int i = 0; i < count; i++) {
                 char *name;
-                len = read_buffer(tvb, offset, (uint8_t * *) &name, wmem_file_scope());
+                len = read_string(tvb, offset, &name, wmem_file_scope());
                 if (is_invalid(len)) {
                     wmem_free(wmem_file_scope(), data);
                     return INVALID_DATA;
                 }
-                data[i] = g_utf8_substring(name, 10, g_utf8_strlen(name, 400));
+                data[i] = name + 10;
                 if (tvb_get_uint8(tvb, offset + len) == 0) {
                     len += 1;
                 } else {

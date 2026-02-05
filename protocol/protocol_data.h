@@ -69,6 +69,8 @@ int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
 int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **resul, wmem_allocator_t *allocator);
 
+int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator_t *allocator);
+
 uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H
