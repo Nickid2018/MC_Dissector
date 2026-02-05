@@ -6,7 +6,7 @@ on:
       - 'README.MD'
       - 'README-*.MD'
       - 'LICENSE'
-  pull_request:   
+  pull_request:
     branches:
       - master
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
         with:
           repository: wireshark/wireshark
           path: wireshark
-          ref: v4.6.0
+          ref: v4.6.3
       - name: Choco install Wireshark Deps
         run: |
           choco install -y --no-progress winflexbison3 strawberryperl asciidoctorj xsltproc docbook-bundle ninja make mingw
