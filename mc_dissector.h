@@ -8,7 +8,7 @@
 #include <epan/prefs.h>
 
 #define MCJE_PORT "25565"
-#define MCBE_PORT "19132"
+#define MCBE_PORT 19132
 #define MCJE_NAME "Minecraft Java Edition"
 #define MCBE_NAME "Minecraft Bedrock Edition"
 #define MCJE_SHORT_NAME "MCJE"

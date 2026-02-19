@@ -6,8 +6,6 @@
 #include <wsutil/filesystem.h>
 
 #include "mc_dissector.h"
-#include "protocol/protocol_data.h"
-#include "protocol/storage/storage.h"
 #include "protocol_je/je_dissect.h"
 #include "protocol_be/be_dissect.h"
 
@@ -42,12 +40,13 @@ void proto_register() {
 
     // Preference ------------------------------------------------------------------------------------------------------
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
-    pref_mc = prefs_register_protocol(proto_mc, clear_storage);
+    pref_mc = prefs_register_protocol(proto_mc, NULL);
     prefs_register_directory_preference(
         pref_mc, "protocol_data_dir", "Protocol Data Directory",
         "Directory for protocol data", (const char **) &pref_protocol_data_dir
     );
-    pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, NULL);
+
+    pref_mcje = prefs_register_protocol_subtree("Minecraft", proto_mcje, init_storage_je);
     prefs_register_string_preference(
         pref_mcje, "ignore_packets", "Ignore Packets",
         "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
@@ -65,12 +64,14 @@ void proto_register() {
         "Decode NBT data", &pref_do_nbt_decode
     );
 
-    pref_mcbe = prefs_register_protocol_subtree("Minecraft", proto_mcbe, NULL);
+    pref_mcbe = prefs_register_protocol_subtree("Minecraft", proto_mcbe, init_storage_be);
 }
 
 void proto_reg_handoff() {
     proto_reg_handoff_mcje();
+    init_storage_je();
     proto_reg_handoff_mcbe();
+    init_storage_be();
 }
 
 _U_ void plugin_register() {

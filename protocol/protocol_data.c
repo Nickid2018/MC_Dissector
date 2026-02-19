@@ -71,12 +71,6 @@ wmem_map_t *get_global_data(packet_info *pinfo) {
     return ctx->global_data;
 }
 
-uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
-    if (state == TRANSFER)
-        state = LOGIN;
-    return is_client ? state : 16 + state;
-}
-
 uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
     int16_t str_len = tvb_get_int16(tvb, offset, ENC_BIG_ENDIAN);
     if (str_len < 0) return NULL;

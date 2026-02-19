@@ -10,13 +10,14 @@
 
 extern dissector_handle_t mcje_handle;
 
-extern int ett_mc;
-extern int ett_proto;
-extern int ett_sub;
+extern int ett_mc_je;
+extern int ett_proto_je;
 
 void proto_register_mcje();
 
 void proto_reg_handoff_mcje();
+
+void init_storage_je();
 
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 

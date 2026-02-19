@@ -5,7 +5,8 @@
 #include "nbt.h"
 #include "protocol_je/je_dissect.h"
 
-extern int hf_string;
+extern int hf_string_je;
+extern int ett_sub_je;
 
 #define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
@@ -101,7 +102,7 @@ int32_t add_primitive_type(
     int32_t length;
     char *text;
     parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
-    proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
+    proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
     proto_item_set_text(item, "%s %s", sup_name, text);
     proto_item_set_len(item, length);
     return length;
@@ -130,7 +131,7 @@ int32_t add_list_type(
     if (sup_name == NULL)
         subtree = tree;
     else {
-        item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
+        item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
         subtree = proto_item_add_subtree(item, ett);
         proto_item_set_text(item, "%s", sup_name);
     }
@@ -173,7 +174,7 @@ int32_t add_compound_type(
     if (sup_name == NULL)
         subtree = tree;
     else {
-        item = proto_tree_add_item(tree, hf_string, tvb, offset_global, 0, ENC_NA);
+        item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
         subtree = proto_item_add_subtree(item, ett);
         proto_item_set_text(item, "%s", sup_name);
     }
@@ -217,15 +218,15 @@ int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t
     if (is_primitive_type(type)) {
         offset += add_primitive_type(tree, pinfo, tvb, offset, type, name);
     } else {
-        proto_item *item = proto_tree_add_item(tree, hf_string, tvb, offset, 0, ENC_NA);
+        proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset, 0, ENC_NA);
         proto_item_set_text(item, "%s", name);
-        proto_tree *subtree = proto_item_add_subtree(item, ett_sub);
+        proto_tree *subtree = proto_item_add_subtree(item, ett_sub_je);
 
         int32_t length = 0;
         if (type == TAG_LIST)
-            length = add_list_type(item, pinfo, subtree, tvb, ett_sub, offset, NULL);
+            length = add_list_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
         else if (type == TAG_COMPOUND)
-            length = add_compound_type(item, pinfo, subtree, tvb, ett_sub, offset, NULL);
+            length = add_compound_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
         offset += length;
 
         proto_item_set_len(item, length);

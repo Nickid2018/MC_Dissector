@@ -6,7 +6,24 @@
 #define MC_DISSECTOR_JE_PROTOCOL_H
 
 #include <epan/proto.h>
-#include "protocol/protocol_data.h"
+
+typedef enum {
+    HANDSHAKE, PLAY, STATUS, LOGIN, TRANSFER, CONFIGURATION, // Normal states
+    LEGACY_QUERY, // Old version compatibility for <1.6
+    INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND, SECRET_KEY_NOT_FOUND // Special states
+} je_state;
+
+enum je_protocol_state {
+    HANDSHAKE_SERVER = 0,
+    PLAY_SERVER = 1,
+    STATUS_SERVER = 2,
+    LOGIN_SERVER = 3,
+    CONFIGURATION_SERVER = 4,
+    PLAY_CLIENT = PLAY_SERVER + 8,
+    STATUS_CLIENT = STATUS_SERVER + 8,
+    LOGIN_CLIENT = LOGIN_SERVER + 8,
+    CONFIGURATION_CLIENT = CONFIGURATION_SERVER + 8,
+};
 
 int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, bool is_client);
 

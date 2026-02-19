@@ -6,6 +6,7 @@ ContinuationIndentWidth: 4
 ColumnLimit: 120
 LineEndingStyle: LF
 InsertNewlineAtEOF: true
+OneLineFormatOffRegex: ^// NO FORMAT
 
 AlignConsecutiveMacros: Consecutive
 AlignConsecutiveShortCaseStatements:
@@ -13,7 +14,7 @@ AlignConsecutiveShortCaseStatements:
 AlignEscapedNewlines: LeftWithLastLine
 AlignTrailingComments:
     Kind: Always
-    AlignPPAndNotPP: true
+#    AlignPPAndNotPP: true
 PointerAlignment: Right
 
 AlignAfterOpenBracket: false
@@ -46,5 +47,5 @@ IndentCaseLabels: true
 SortIncludes:
     Enabled: true
     IgnoreCase: false
-    IgnoreExtension: true
+#    IgnoreExtension: true
 SpaceAfterCStyleCast: true

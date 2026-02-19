@@ -10,9 +10,9 @@
 #include "je_protocol.h"
 #include "protocol/storage/storage.h"
 
-extern int hf_packet_length;
-extern int hf_packet_data_length;
-extern int hf_invalid_data;
+extern int hf_packet_length_je;
+extern int hf_packet_data_length_je;
+extern int hf_invalid_data_je;
 
 dissector_handle_t mcje_handle;
 
@@ -47,19 +47,19 @@ void sub_dissect_je(
                     }
                     CATCH_BOUNDS_ERRORS {
                         proto_tree_add_string_format_value(
-                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            tree, hf_invalid_data_je, tvb, 0, -1, "DISSECT_ERROR",
                             "Packet dissecting error: Bound Error (%s)", GET_MESSAGE
                         );
                     }
                     CATCH_BOUNDS_AND_DISSECTOR_ERRORS {
                         proto_tree_add_string_format_value(
-                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            tree, hf_invalid_data_je, tvb, 0, -1, "DISSECT_ERROR",
                             "Packet dissecting error: Dissector Error (%s)", GET_MESSAGE
                         );
                     }
                     CATCH_ALL {
                         proto_tree_add_string_format_value(
-                            tree, hf_invalid_data, tvb, 0, -1, "DISSECT_ERROR",
+                            tree, hf_invalid_data_je, tvb, 0, -1, "DISSECT_ERROR",
                             "Packet dissecting error: Other Error (%s)", GET_MESSAGE
                         );
                     }
@@ -88,8 +88,8 @@ void dissect_je_core(
     proto_tree *mcje_tree;
     if (tree) {
         proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, -1, FALSE);
-        mcje_tree = proto_item_add_subtree(ti, ett_mc);
-        proto_tree_add_uint(mcje_tree, hf_packet_length, tvb, offset - packet_len_len, packet_len_len, len);
+        mcje_tree = proto_item_add_subtree(ti, ett_mc_je);
+        proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, offset - packet_len_len, packet_len_len, len);
         proto_item_append_text(
             ti, ", Client State: %s, Server State: %s",
             STATE_NAME[frame_data->client_state], STATE_NAME[frame_data->server_state]
@@ -134,7 +134,7 @@ void dissect_je_core(
     if (tree) {
         proto_item *packet_item = proto_tree_add_item(mcje_tree, proto_mcje, new_tvb, 0, -1, FALSE);
         proto_item_set_text(packet_item, "Minecraft JE Packet");
-        proto_tree *sub_mcje_tree = proto_item_add_subtree(packet_item, ett_proto);
+        proto_tree *sub_mcje_tree = proto_item_add_subtree(packet_item, ett_proto_je);
         sub_dissect_je(new_tvb, pinfo, sub_mcje_tree, frame_data, ctx, is_server, pinfo->fd->visited);
     } else {
         sub_dissect_je(new_tvb, pinfo, NULL, frame_data, ctx, is_server, pinfo->fd->visited);

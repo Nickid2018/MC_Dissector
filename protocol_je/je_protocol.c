@@ -11,16 +11,56 @@
 #include "protocol/storage/storage.h"
 #include "utils/nbt.h"
 
-extern int hf_invalid_data;
-extern int hf_ignored_packet;
+extern int hf_invalid_data_je;
+extern int hf_ignored_packet_je;
 extern int hf_packet_id_je;
 extern int hf_packet_name_je;
-extern int hf_unknown_packet;
-extern int hf_string;
-extern int hf_generated;
-extern int hf_uint8;
-extern int hf_uint16;
-extern int hf_int32;
+extern int hf_unknown_packet_je;
+extern int hf_string_je;
+extern int hf_generated_je;
+extern int hf_uint8_je;
+extern int hf_uint16_je;
+extern int hf_int32_je;
+
+extern protocol_dissector_settings *settings_je;
+extern protocol_storage *storage_je;
+
+uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
+    uint32_t base_state = 0;
+    switch (state) {
+        case PLAY:
+            base_state = PLAY_SERVER;
+            break;
+        case STATUS:
+            base_state = STATUS_SERVER;
+            break;
+        case LOGIN:
+        case TRANSFER:
+            base_state = LOGIN_SERVER;
+            break;
+        case CONFIGURATION:
+            base_state = CONFIGURATION_SERVER;
+            break;
+        default:
+            base_state = HANDSHAKE_SERVER;
+    }
+    return is_client ? 8 + base_state : base_state;
+}
+
+je_state protocol_set_state_to_je_state(uint32_t base_state) {
+    switch (base_state) {
+        case PLAY_SERVER:
+            return PLAY;
+        case STATUS_SERVER:
+            return STATUS;
+        case CONFIGURATION_SERVER:
+            return CONFIGURATION;
+        case LOGIN_SERVER:
+            return LOGIN;
+        default:
+            return HANDSHAKE;
+    }
+}
 
 void handle_with_set(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, protocol_dissector_set *set, je_state state, bool is_client
@@ -36,7 +76,7 @@ void handle_with_set(
     proto_tree_add_uint(tree, hf_packet_id_je, tvb, 0, len, packet_id);
     uint32_t count = (uint64_t) wmem_map_lookup(set->count_by_state, (void *) (uint64_t) now_state);
     if (packet_id >= count) {
-        proto_tree_add_string(tree, hf_unknown_packet, tvb, 0, 1, "Unknown Packet ID");
+        proto_tree_add_string(tree, hf_unknown_packet_je, tvb, 0, 1, "Unknown Packet ID");
         return;
     }
 
@@ -58,7 +98,7 @@ void handle_with_set(
 
     uint32_t length = tvb_reported_length(tvb);
     if (ignore)
-        proto_tree_add_string(tree, hf_ignored_packet, tvb, len, (int32_t) length - len, "Ignored by user");
+        proto_tree_add_string(tree, hf_ignored_packet_je, tvb, len, (int32_t) length - len, "Ignored by user");
     else {
         wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
         int32_t sub_len = d[packet_id]->dissect_protocol(
@@ -66,7 +106,7 @@ void handle_with_set(
         );
         if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
-                tree, hf_invalid_data, tvb, len, (int32_t) length - len,
+                tree, hf_invalid_data_je, tvb, len, (int32_t) length - len,
                 "length mismatch", "Packet length mismatch, expected %d, got %d", length - len,
                 sub_len
             );
@@ -76,9 +116,9 @@ void handle_with_set(
 void handle_initial(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 ) {
-    protocol_dissector_set *initial_set = get_initial_protocol();
+    protocol_dissector_set *initial_set = get_initial_protocol(storage_je);
     if (initial_set == NULL) {
-        proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Can't find initial protocol set");
+        proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Can't find initial protocol set");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return;
     }
@@ -89,12 +129,12 @@ void handle_protocol(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 ) {
     if (ctx->dissector_set == NULL) {
-        proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Can't find protocol set for this version");
+        proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return;
     }
     if (!ctx->dissector_set->valid) {
-        proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Protocol dissector is freed");
+        proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Protocol dissector is freed");
         ctx->client_state = ctx->server_state = INVALID;
         return;
     }
@@ -103,12 +143,12 @@ void handle_protocol(
 }
 
 int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, bool is_client) {
-    protocol_dissector_set *initial_set = get_initial_protocol();
+    protocol_dissector_set *initial_set = get_initial_protocol(storage_je);
     if (initial_set == NULL) return INVALID_DATA;
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
     if (is_invalid(len)) return INVALID_DATA;
-    uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
+    uint32_t now_state = je_state_to_protocol_set_state(is_client ? ctx->client_state : ctx->server_state, is_client);
     wmem_map_t *special_mark = wmem_map_lookup(initial_set->special_mark, (void *) (uint64_t) now_state);
     if (wmem_map_contains(special_mark, (void *) (uint64_t) packet_id)) {
         char *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
@@ -144,19 +184,19 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
                 return INVALID_DATA;
             }
             ctx->client_state = ctx->server_state = next_state;
-            char **java_versions = get_mapped_java_versions(protocol_version);
+            char **java_versions = get_mapped_readable_versions(storage_je, protocol_version);
             if (java_versions == NULL || java_versions[0] == NULL) {
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
                 return INVALID_DATA;
             }
-            ctx->data_version = get_data_version(java_versions[0]);
+            ctx->data_version = get_data_version(storage_je, java_versions[0]);
             g_strfreev(java_versions);
             wmem_map_insert(ctx->global_data, "data_version", (void *) (uint64_t) ctx->data_version);
             if (ctx->data_version >= 3567)
                 wmem_map_insert(ctx->global_data, "nbt_any_type", (void *) 1);
             if (next_state == STATUS)
                 return 0;
-            ctx->dissector_set = get_protocol_set(protocol_version);
+            ctx->dissector_set = get_protocol_set(storage_je, protocol_version);
             if (ctx->dissector_set == NULL)
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         }
@@ -196,7 +236,7 @@ int try_switch_state(
     tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client
 ) {
     if (ctx->dissector_set == NULL) return INVALID_DATA;
-    uint32_t now_state = is_client ? ctx->client_state : ctx->server_state + 16;
+    uint32_t now_state = je_state_to_protocol_set_state(is_client ? ctx->client_state : ctx->server_state, is_client);
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
     if (is_invalid(len)) return INVALID_DATA;
@@ -204,7 +244,9 @@ int try_switch_state(
     wmem_map_t *state_side = wmem_map_lookup(ctx->dissector_set->state_to_next_side, (void *) (uint64_t) now_state);
     wmem_map_t *special_mark = wmem_map_lookup(ctx->dissector_set->special_mark, (void *) (uint64_t) now_state);
     if (wmem_map_contains(state_to_next, (void *) (uint64_t) packet_id)) {
-        uint32_t state = (uint64_t) wmem_map_lookup(state_to_next, (void *) (uint64_t) packet_id);
+        uint32_t state = protocol_set_state_to_je_state(
+            (uint64_t) wmem_map_lookup(state_to_next, (void *) (uint64_t) packet_id)
+        );
         uint32_t side = (uint64_t) wmem_map_lookup(state_side, (void *) (uint64_t) packet_id);
         if ((side & 1) != 0) ctx->client_state = state;
         if ((side & 2) != 0) ctx->server_state = state;
@@ -338,15 +380,15 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
         if (tree) {
             proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, (int32_t) tvb_reported_length(tvb), FALSE);
             proto_item_append_text(ti, ", Client State: Legacy Query, Server State: Legacy Query");
-            tree = proto_item_add_subtree(ti, ett_mc);
+            tree = proto_item_add_subtree(ti, ett_mc_je);
             proto_item *gen;
             if (is_version1) {
                 if (tvb_get_uint8(tvb, 1) != 0x01) {
-                    proto_tree_add_string(tree, hf_invalid_data, tvb, 1, 1, "Invalid Version 1 header");
+                    proto_tree_add_string(tree, hf_invalid_data_je, tvb, 1, 1, "Invalid Version 1 header");
                     return;
                 }
                 if (tvb_reported_length_remaining(tvb, 2) > 0) {
-                    gen = proto_tree_add_string(tree, hf_generated, tvb, 1, 1, "Version 1, 1.6");
+                    gen = proto_tree_add_string(tree, hf_generated_je, tvb, 1, 1, "Version 1, 1.6");
                     bool valid = tvb_get_uint8(tvb, 2) == 0xFA;
                     int32_t offset = 3;
                     int32_t len;
@@ -361,7 +403,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         int32_t len_should = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
                         if (len_should != tvb_reported_length_remaining(tvb, offset + 2)) valid = false;
                         else {
-                            proto_item *payload = proto_tree_add_uint(tree, hf_uint16, tvb, offset, 2, len_should);
+                            proto_item *payload = proto_tree_add_uint(tree, hf_uint16_je, tvb, offset, 2, len_should);
                             proto_item_prepend_text(payload, "Payload Length ");
                             offset += 2;
                         }
@@ -370,7 +412,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         uint8_t protocol = tvb_get_uint8(tvb, offset);
                         if (protocol < 73) valid = false;
                         else {
-                            proto_item *payload = proto_tree_add_uint(tree, hf_uint8, tvb, offset, 1, protocol);
+                            proto_item *payload = proto_tree_add_uint(tree, hf_uint8_je, tvb, offset, 1, protocol);
                             proto_item_prepend_text(payload, "Protocol Version ");
                             offset++;
                         }
@@ -379,7 +421,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         uint8_t *str = read_legacy_string(tvb, offset, &len);
                         if (str != NULL) {
                             proto_item *payload =
-                                proto_tree_add_string(tree, hf_string, tvb, offset, len, (char *) str);
+                                proto_tree_add_string(tree, hf_string_je, tvb, offset, len, (char *) str);
                             proto_item_prepend_text(payload, "Host Name ");
                             offset += len;
                         } else valid = false;
@@ -387,7 +429,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                     if (valid) {
                         int32_t port = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
                         if (port <= 65535) {
-                            proto_item *payload = proto_tree_add_int(tree, hf_int32, tvb, offset, 4, port);
+                            proto_item *payload = proto_tree_add_int(tree, hf_int32_je, tvb, offset, 4, port);
                             proto_item_prepend_text(payload, "Port ");
                             offset += 4;
                         } else valid = false;
@@ -397,15 +439,15 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                     }
                     if (!valid) {
                         proto_tree_add_string(
-                            tree, hf_invalid_data, tvb,
+                            tree, hf_invalid_data_je, tvb,
                             offset, tvb_reported_length_remaining(tvb, offset), "Invalid query"
                         );
                     }
                 } else {
-                    gen = proto_tree_add_string(tree, hf_generated, tvb, 1, 1, "Version 1, 1.4-1.5.x");
+                    gen = proto_tree_add_string(tree, hf_generated_je, tvb, 1, 1, "Version 1, 1.4-1.5.x");
                 }
             } else {
-                gen = proto_tree_add_string(tree, hf_generated, tvb, 0, 1, "Version 0, <1.3.x");
+                gen = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 1, "Version 0, <1.3.x");
             }
             proto_item_set_generated(gen);
             proto_item_prepend_text(gen, "Legacy Query Request Version ");
@@ -415,15 +457,15 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
         if (tree) {
             proto_item *ti = proto_tree_add_item(tree, proto_mcje, tvb, 0, (int32_t) tvb_reported_length(tvb), FALSE);
             proto_item_append_text(ti, ", Client State: Legacy Query, Server State: Legacy Query");
-            tree = proto_item_add_subtree(ti, ett_mc);
+            tree = proto_item_add_subtree(ti, ett_mc_je);
             bool is_version1 = wmem_map_lookup(ctx->global_data, "legacy_query");
             proto_item *gen = proto_tree_add_string(
-                tree, hf_generated, tvb, 1, 1, is_version1 ? "Version 1" : "Version 0"
+                tree, hf_generated_je, tvb, 1, 1, is_version1 ? "Version 1" : "Version 0"
             );
             proto_item_set_generated(gen);
             proto_item_prepend_text(gen, "Legacy Query Response Version ");
             if (tvb_get_uint8(tvb, 0) != 0xFF) {
-                proto_tree_add_string(tree, hf_invalid_data, tvb, 0, 1, "Invalid header");
+                proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Invalid header");
                 return;
             }
             int32_t len;
@@ -437,7 +479,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         offset++;
                     }
                     proto_item *payload = proto_tree_add_string(
-                        tree, hf_string, tvb, start * 2 + 3, (offset - start) * 2,
+                        tree, hf_string_je, tvb, start * 2 + 3, (offset - start) * 2,
                         (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
                     );
                     proto_item_prepend_text(payload, "Server Version ");
@@ -447,7 +489,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         offset++;
                     }
                     payload = proto_tree_add_string(
-                        tree, hf_string, tvb, 3 + start * 2, (offset - start) * 2,
+                        tree, hf_string_je, tvb, 3 + start * 2, (offset - start) * 2,
                         (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
                     );
                     proto_item_prepend_text(payload, "Motd ");
@@ -457,13 +499,13 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         offset++;
                     }
                     payload = proto_tree_add_string(
-                        tree, hf_string, tvb, 3 + start * 2, (offset - start) * 2,
+                        tree, hf_string_je, tvb, 3 + start * 2, (offset - start) * 2,
                         (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, (offset - start) * 2, ENC_UTF_16)
                     );
                     proto_item_prepend_text(payload, "Player Count ");
                     start = ++offset;
                     payload = proto_tree_add_string(
-                        tree, hf_string, tvb, 3 + start * 2, len - start * 2 - 2,
+                        tree, hf_string_je, tvb, 3 + start * 2, len - start * 2 - 2,
                         (char *) tvb_get_string_enc(pinfo->pool, tvb, start * 2 + 3, len - start * 2 - 2, ENC_UTF_16)
                     );
                     proto_item_prepend_text(payload, "Max Players ");
@@ -479,12 +521,12 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                         offset1 = offset0 + g_utf8_strlen(strv[1], 400) + 1;
                     }
                     proto_item *payload = proto_tree_add_string(
-                        tree, hf_string, tvb, 3, (int32_t) (offset0 - 1) * 2,
+                        tree, hf_string_je, tvb, 3, (int32_t) (offset0 - 1) * 2,
                         (char *) tvb_get_string_enc(pinfo->pool, tvb, 3, (int32_t) (offset0 - 1) * 2, ENC_UTF_16)
                     );
                     proto_item_prepend_text(payload, "Motd ");
                     payload = proto_tree_add_string(
-                        tree, hf_string, tvb, (int32_t) offset0 * 2 + 3, (int32_t) (offset1 - offset0 - 1) * 2,
+                        tree, hf_string_je, tvb, (int32_t) offset0 * 2 + 3, (int32_t) (offset1 - offset0 - 1) * 2,
                         (char *) tvb_get_string_enc(
                             pinfo->pool, tvb, (int32_t) offset0 * 2 + 3, (int32_t) (offset1 - offset0 - 1) * 2,
                             ENC_UTF_16
@@ -492,7 +534,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                     );
                     proto_item_prepend_text(payload, "Player Count ");
                     payload = proto_tree_add_string(
-                        tree, hf_string, tvb, (int32_t) offset1 * 2 + 3, (int32_t) (len - offset1 * 2 - 2),
+                        tree, hf_string_je, tvb, (int32_t) offset1 * 2 + 3, (int32_t) (len - offset1 * 2 - 2),
                         (char *) tvb_get_string_enc(
                             pinfo->pool, tvb, (int32_t) offset1 * 2 + 3, (int32_t) (len - offset1 * 2 - 2), ENC_UTF_16
                         )
@@ -501,7 +543,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                 }
             } else {
                 proto_tree_add_string(
-                    tree, hf_invalid_data, tvb,
+                    tree, hf_invalid_data_je, tvb,
                     1, (int32_t) tvb_reported_length(tvb) - 1, "Invalid response"
                 );
             }

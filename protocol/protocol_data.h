@@ -12,15 +12,9 @@
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)
 
-typedef enum {
-    HANDSHAKE, PLAY, STATUS, LOGIN, TRANSFER, CONFIGURATION, // Normal states
-    LEGACY_QUERY, // Old version compatibility for <1.6
-    INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND, SECRET_KEY_NOT_FOUND // Special states
-} je_state;
-
 typedef struct {
-    je_state client_state;
-    je_state server_state;
+    uint32_t client_state;
+    uint32_t server_state;
 
     uint32_t server_port;
     address server_address;
@@ -44,8 +38,8 @@ typedef struct {
 } mc_protocol_context;
 
 typedef struct {
-    je_state client_state;
-    je_state server_state;
+    uint32_t client_state;
+    uint32_t server_state;
 
     bool encrypted;
     uint8_t *decrypted_data_head;
@@ -58,8 +52,6 @@ typedef struct {
 extern char *STATE_NAME[];
 
 wmem_map_t *get_global_data(packet_info *pinfo);
-
-uint32_t je_state_to_protocol_set_state(je_state state, bool is_client);
 
 int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result);
 
