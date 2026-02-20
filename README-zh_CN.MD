@@ -23,13 +23,18 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 可以在 Wireshark 的`首选项/Protocols`里面找到`Minecraft`，在这里可以调整一些选项。
 
 * `Directory for protocol data`：放置协议数据的目录，用于解析数据。
-* `Ignore Packets`：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
-  代表发向服务端的包，`c`代表发向客户端的包。默认为空。推荐设置为`c:level_chunk,c:level_chunk_with_light`。
-* `Key Log File`：用于记录密钥的文件路径。
-* `Secret Key`：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
-  如果`Key Log File`不存在或者密钥记录文件内不存在与当前加密连接对应的密钥，程序将自动使用此密钥进行解密。
-* `NBT Decoding`：是否解析 NBT 数据。
-* `TCP Port(s)`：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+* `MCJE`中包含下列选项：
+  * `Ignore Packets`：阻止解析一些包，用于过滤不需要的信息。格式为以`<s|c>:<packet_name>`组成的以逗号分割的列表，其中`s`
+    代表发向服务端的包，`c`代表发向客户端的包。默认为空。推荐设置为`c:level_chunk,c:level_chunk_with_light`。
+  * `Key Log File`：用于记录密钥的文件路径。
+  * `Secret Key`：用于加密连接解密数据的密钥，格式为 32 长度的 16 进制字符串。
+    如果`Key Log File`不存在或者密钥记录文件内不存在与当前加密连接对应的密钥，程序将自动使用此密钥进行解密。
+  * `NBT Decoding`：是否解析 NBT 数据。
+  * `TCP Port(s)`：更改 MCJE 协议使用的 TCP 端口，用于识别协议。
+* `MCBE`中包含下列选项 (WIP)：
+  * `NBT Decoding`：是否解析 NBT 数据。
+
+请注意，如果需要使用`MCBE`解析，则必须将 Wireshark 中内置提供的`MCPE`端口设置为非0-65535的值，否则解析程序会因为冲突而丢失首包数据，造成逻辑端检测错误。
 
 ## 协议数据
 
@@ -37,7 +42,7 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 
 可以直接使用[MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data)提供的协议数据，直接使用源代码压缩包或者克隆仓库到指定协议目录即可。
 
-## 加密连接
+## 加密连接（Java版）
 
 如果你使用了正版进入 Minecraft 服务器，则客户端和服务端之间会使用`AES/CFB8/NoPadding`算法建立加密连接。
 此步骤在登录阶段压缩前执行，整个连接内的数据都会被加密，包括拆分数据的数据长度字段。
@@ -79,7 +84,7 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 
 ## 解析错误
 
-如果出现了解析错误，可能有下面两种种情况：
+如果出现了解析错误，可能有下面两种情况：
 
 * Wireshark 没有抓取到所有数据。由于 Java 版使用 TCP，数据由长度字段拆分，一旦缺少某一部分，
   数据就会立刻无法解析。如果你在数据解析错误的前后发现了`TCP Previous segment not captured`，那么就是这种情况。
@@ -112,4 +117,4 @@ Linux 需要确保安装`cjson`，下载构建文件后把`mcdissector.so`文件
 - [x] linux 支持 by @xtexChooser
 - [x] 支持加密。（应该没问题了！）
 - [x] 版本兼容性。（尽量支持到最新版）
-- [ ] 支持基岩版。
+- [ ] 支持基岩版。 （WIP）

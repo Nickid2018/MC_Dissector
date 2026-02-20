@@ -29,7 +29,7 @@ int32_t count_je_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
 
 int32_t count_je_nbt_length(tvbuff_t *tvb, int32_t offset);
 
-// int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip);
+int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name);
 
 int32_t count_be_nbt_length(tvbuff_t *tvb, int32_t offset);
 

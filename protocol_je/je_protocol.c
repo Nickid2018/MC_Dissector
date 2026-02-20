@@ -220,11 +220,11 @@ gchar *match_secret_key(gchar *challenge, gchar *content) {
 
 gchar *find_encryption_key(gchar *challenge_str) {
     if (!challenge_str) return NULL;
-    if (!pref_key_log_filepath) return pref_secret_key;
+    if (!pref_key_log_filepath_je) return pref_secret_key_je;
     char *content = NULL;
-    if (!g_file_get_contents(pref_key_log_filepath, &content, NULL, NULL)) {
-        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read key file %s", pref_key_log_filepath);
-        return pref_secret_key;
+    if (!g_file_get_contents(pref_key_log_filepath_je, &content, NULL, NULL)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read key file %s", pref_key_log_filepath_je);
+        return pref_secret_key_je;
     }
     gchar *matched = match_secret_key(challenge_str, content);
     if (matched) return matched;
@@ -234,7 +234,7 @@ gchar *find_encryption_key(gchar *challenge_str) {
         matched = match_secret_key(challenge_str, content);
         if (matched) return matched;
     }
-    return pref_secret_key;
+    return pref_secret_key_je;
 }
 
 int try_switch_state(

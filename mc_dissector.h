@@ -30,11 +30,11 @@ extern int proto_mcbe;
 
 extern module_t *pref_mcje;
 extern gchar *pref_ignore_packets_je;
-extern gchar *pref_secret_key;
-extern gchar *pref_key_log_filepath;
-extern bool pref_do_nbt_decode;
+extern gchar *pref_secret_key_je;
+extern gchar *pref_key_log_filepath_je;
+extern bool pref_do_nbt_decode_je;
 
 extern module_t *pref_mcbe;
-
+extern bool pref_do_nbt_decode_be;
 
 #endif //MC_DISSECTOR_MC_DISSECTOR_H

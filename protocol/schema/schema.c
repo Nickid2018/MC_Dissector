@@ -376,7 +376,7 @@ DISSECT_PROTOCOL(nbt) {
         }
         return 1;
     }
-    if (tree && pref_do_nbt_decode) return do_je_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
+    if (tree && pref_do_nbt_decode_je) return do_je_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
 
     int32_t len = is_new_nbt ? 1 : 0;
     int32_t len_nbt;
@@ -397,6 +397,7 @@ DISSECT_PROTOCOL(nbt) {
 DISSECT_PROTOCOL(bnbt) {
     int32_t len_nbt = count_be_nbt_length(tvb, offset);
 
+    if (tree && pref_do_nbt_decode_be) return do_be_nbt_tree(tree, pinfo, tvb, offset, name);
     if (tree)
         add_name(
             proto_tree_add_bytes(

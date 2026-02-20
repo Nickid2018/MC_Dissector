@@ -19,6 +19,8 @@ void proto_reg_handoff_mcje();
 
 void init_storage_je();
 
+void pref_register_mcje();
+
 int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, void *data _U_);
 
 #endif //MC_DISSECTOR_JE_DISSECT_H

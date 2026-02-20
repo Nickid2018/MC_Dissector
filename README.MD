@@ -28,17 +28,23 @@ For Arch Linux, you can directly use package `wireshark-minecraft-dissector` in 
 `Minecraft` can be found in `Preferences/Protocols` in Wireshark, where you can adjust some options here.
 
 * `Directory for protocol data`: The directory for protocol data, used to parse data.
-* `Ignore Packets`: Prevent parsing some packets to filter unwanted information.
-  The format is commas-separated list of `<s|c>:<packet_name>`.
-  `s` represents packets sent to server, `c` represents packets sent to the client. 
-  The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
-* `Key Log File`：Path to the file for logging keys.
-* `Secret Key`: To realize encrypted connection among keys for decrypting data.
-  The format is in hexadecimal strings with a length of 32. 
-  If `Key Log File` does not exist or the key log file does not contain the key corresponding to the current encrypted connection,
-  the program will automatically use this key for decryption.
-* `NBT Decoding`: To decode NBT data.
-* `TCP Port(s)`: To change TCP ports used by MCJE protocol to identify protocol.
+* For `MCJE`:
+  * `Ignore Packets`: Prevent parsing some packets to filter unwanted information.
+    The format is commas-separated list of `<s|c>:<packet_name>`.
+    `s` represents packets sent to server, `c` represents packets sent to the client. 
+    The default is an empty string. We recommend to use `c:level_chunk,c:level_chunk_with_light` for this option.
+  * `Key Log File`：Path to the file for logging keys.
+  * `Secret Key`: To realize encrypted connection among keys for decrypting data.
+    The format is in hexadecimal strings with a length of 32. 
+    If `Key Log File` does not exist or the key log file does not contain the key corresponding to the current encrypted connection,
+    the program will automatically use this key for decryption.
+  * `NBT Decoding`: To decode NBT data.
+  * `TCP Port(s)`: To change TCP ports used by MCJE protocol to identify protocol.
+* For `MCBE` (WIP):
+  * `NBT Decoding`: To decode NBT data.
+
+Please note that if you want to use `MCBE` dissector, you must set the `MCPE` port provided by Wireshark to a value other than 0-65535.
+Otherwise, the dissector will lose the first packet data due to the conflict.
 
 ## Protocol Data
 
@@ -47,7 +53,7 @@ All protocol data is read from external directory, which is controlled by option
 You can directly use protocol data provided by [MC_Protocol_Data](https://github.com/Nickid2018/MC_Protocol_Data).
 You can use the source code archives of the repository or clone the repository to the specified protocol directory.
 
-## Encrypted Connection
+## Encrypted Connection (Java Edition)
 
 If you enter Minecraft servers in a legitimated game client,
 encrypted connection will be built between server and client base on `AES/CFB8/NoPadding` algorithm.
@@ -127,4 +133,4 @@ It is much easier to build on Linux, read ci.yml for details. (Too lazy to write
 - [x] Linux support by @xtexChooser
 - [x] Support encryption. (It should be OK!)
 - [x] Version compatibility.
-- [ ] Support bedrock edition.
+- [ ] Support bedrock edition. (WIP)

@@ -50,6 +50,11 @@ int hf_packet_id_je = -1;
 int hf_packet_name_je = -1;
 int hf_unknown_packet_je = -1;
 
+gchar *pref_ignore_packets_je = "";
+gchar *pref_secret_key_je = NULL;
+gchar *pref_key_log_filepath_je = NULL;
+bool pref_do_nbt_decode_je = false;
+
 protocol_dissector_settings *settings_je;
 protocol_storage *storage_je;
 
@@ -95,6 +100,25 @@ void proto_register_mcje() {
 
     static gint *etts[] = {&ett_mc_je, &ett_proto_je, &ett_sub_je};
     proto_register_subtree_array(etts, array_length(etts));
+}
+
+void pref_register_mcje() {
+    prefs_register_string_preference(
+        pref_mcje, "ignore_packets", "Ignore Packets",
+        "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
+    );
+    prefs_register_string_preference(
+        pref_mcje, "secret_key", "Secret Key",
+        "Secret key for decryption", (const char **) &pref_secret_key_je
+    );
+    prefs_register_filename_preference(
+        pref_mcje, "key_log_filepath", "Key Log File",
+        "", (const char **) &pref_key_log_filepath_je, false
+    );
+    prefs_register_bool_preference(
+        pref_mcje, "do_nbt_decode", "NBT Decoding",
+        "Decode NBT data", &pref_do_nbt_decode_je
+    );
 }
 
 void init_storage_je() {

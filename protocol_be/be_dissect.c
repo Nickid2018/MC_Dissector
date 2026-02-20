@@ -24,7 +24,9 @@ extern int hf_packet_length_be;
 
 void proto_reg_handoff_mcbe() {
     mcbe_handle = create_dissector_handle(dissect_be_conv, proto_mcbe);
-    raknet_add_udp_dissector(MCBE_PORT, mcbe_handle);
+    heur_dtbl_entry_t *mcpe_handler = find_heur_dissector_by_unique_short_name("mcpe_raknet");
+    heur_dissector_delete("raknet", mcpe_handler->dissector, proto_get_id(mcpe_handler->protocol));
+    heur_dissector_add("raknet", dissect_be_core_heuristic, MCBE_NAME, MCBE_FILTER, proto_mcbe, true);
 }
 
 void mark_session_invalid_be(packet_info *pinfo) {
@@ -134,24 +136,6 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcbe);
-    if (!ctx) {
-        ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
-        ctx->client_state = is_compatible_protocol_data() ? INITIAL : NOT_COMPATIBLE;
-        ctx->server_state = is_compatible_protocol_data() ? INITIAL : NOT_COMPATIBLE;
-        ctx->compression_threshold = -1;
-        ctx->server_port = pinfo->destport;
-        ctx->secret_key = NULL;
-        ctx->server_cipher = NULL;
-        ctx->client_cipher = NULL;
-        ctx->server_last_segment_remaining = 0;
-        ctx->client_last_segment_remaining = 0;
-        ctx->server_last_remains = NULL;
-        ctx->client_last_remains = NULL;
-        ctx->encrypted = false;
-        copy_address(&ctx->server_address, &pinfo->dst);
-        ctx->global_data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
-        conversation_add_proto_data(conv, proto_mcbe, ctx);
-    }
 
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0);
     if (!frame_data) {
@@ -197,4 +181,52 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     }
 
     return dissect_be_core(tvb, pinfo, tree, ctx, frame_data) + 1;
+}
+
+bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+    if (tvb_reported_length(tvb) == 0 || tvb_get_uint8(tvb, 0) != MSG_GAME) {
+        return false;
+    }
+    raknet_conversation_set_dissector(pinfo, mcbe_handle);
+
+    conversation_t *conv = find_or_create_conversation(pinfo);
+    mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcbe);
+    if (!ctx) {
+        ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
+        ctx->client_state = is_compatible_protocol_data() ? INITIAL : NOT_COMPATIBLE;
+        ctx->server_state = is_compatible_protocol_data() ? INITIAL : NOT_COMPATIBLE;
+        ctx->compression_threshold = -1;
+        ctx->server_port = pinfo->destport;
+        ctx->secret_key = NULL;
+        ctx->server_cipher = NULL;
+        ctx->client_cipher = NULL;
+        ctx->server_last_segment_remaining = 0;
+        ctx->client_last_segment_remaining = 0;
+        ctx->server_last_remains = NULL;
+        ctx->client_last_remains = NULL;
+        ctx->encrypted = false;
+        copy_address(&ctx->server_address, &pinfo->dst);
+        ctx->global_data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
+        conversation_add_proto_data(conv, proto_mcbe, ctx);
+    }
+
+    mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0);
+    if (!frame_data) {
+        frame_data = wmem_alloc(wmem_file_scope(), sizeof(mc_frame_data));
+        frame_data->client_state = ctx->client_state;
+        frame_data->server_state = ctx->server_state;
+        frame_data->encrypted = ctx->encrypted;
+        frame_data->decrypted_data_head = NULL;
+        frame_data->decrypted_data_tail = NULL;
+        frame_data->first_compression_packet = false;
+        frame_data->compression_threshold = ctx->compression_threshold;
+        frame_data->compression_algorithm = ctx->compression_algorithm;
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
+    }
+
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, MCBE_SHORT_NAME);
+    col_set_str(pinfo->cinfo, COL_INFO, "[C => S] ");
+    dissect_be_core(tvb_new_subset_length(tvb, 1, tvb_reported_length(tvb) - 1), pinfo, tree, ctx, frame_data);
+
+    return true;
 }

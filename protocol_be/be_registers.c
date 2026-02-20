@@ -46,6 +46,8 @@ int hf_packet_id_be = -1;
 int hf_packet_name_be = -1;
 int hf_unknown_packet_be = -1;
 
+bool pref_do_nbt_decode_be = false;
+
 protocol_dissector_settings *settings_be;
 protocol_storage *storage_be;
 
@@ -91,6 +93,13 @@ void proto_register_mcbe() {
 
     static gint *etts[] = {&ett_mc_be, &ett_proto_be, &ett_sub_be};
     proto_register_subtree_array(etts, array_length(etts));
+}
+
+void pref_register_mcbe() {
+    prefs_register_bool_preference(
+        pref_mcbe, "do_nbt_decode", "NBT Decoding",
+        "Decode NBT data", &pref_do_nbt_decode_be
+    );
 }
 
 void init_storage_be() {
