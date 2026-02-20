@@ -7,6 +7,8 @@
 
 #include <epan/proto.h>
 
+extern char *JE_STATE_NAME[];
+
 typedef enum {
     HANDSHAKE, PLAY, STATUS, LOGIN, TRANSFER, CONFIGURATION, // Normal states
     LEGACY_QUERY, // Old version compatibility for <1.6

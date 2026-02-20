@@ -51,21 +51,21 @@ DISSECT_PROTOCOL(i8) {
 }
 
 DISSECT_PROTOCOL(i16) {
-    int16_t i16 = tvb_get_int16(tvb, offset, ENC_BIG_ENDIAN);
+    int16_t i16 = tvb_get_int16(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i16);
     if (tree) add_name(proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_int16], tvb, offset, 2, i16), name);
     return 2;
 }
 
 DISSECT_PROTOCOL(i32) {
-    int32_t i32 = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
+    int32_t i32 = tvb_get_int32(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i32);
     if (tree) add_name(proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_int32], tvb, offset, 4, i32), name);
     return 4;
 }
 
 DISSECT_PROTOCOL(i64) {
-    int64_t i64 = tvb_get_int64(tvb, offset, ENC_BIG_ENDIAN);
+    int64_t i64 = tvb_get_int64(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", i64);
     if (tree)
         add_name(
@@ -83,7 +83,7 @@ DISSECT_PROTOCOL(u8) {
 }
 
 DISSECT_PROTOCOL(u16) {
-    uint16_t u16 = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+    uint16_t u16 = tvb_get_uint16(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
     if (tree)
         add_name(
@@ -94,7 +94,7 @@ DISSECT_PROTOCOL(u16) {
 }
 
 DISSECT_PROTOCOL(u32) {
-    uint32_t u32 = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+    uint32_t u32 = tvb_get_uint32(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
     if (tree)
         add_name(
@@ -105,7 +105,7 @@ DISSECT_PROTOCOL(u32) {
 }
 
 DISSECT_PROTOCOL(u64) {
-    uint64_t u64 = tvb_get_uint64(tvb, offset, ENC_BIG_ENDIAN);
+    uint64_t u64 = tvb_get_uint64(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
     if (tree)
         add_name(proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_uint64], tvb, offset, 8, u64),
@@ -121,7 +121,7 @@ DISSECT_PROTOCOL(h8) {
 }
 
 DISSECT_PROTOCOL(h16) {
-    uint16_t u16 = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+    uint16_t u16 = tvb_get_uint16(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
     if (tree)
         add_name(
@@ -132,7 +132,7 @@ DISSECT_PROTOCOL(h16) {
 }
 
 DISSECT_PROTOCOL(h32) {
-    uint32_t u32 = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+    uint32_t u32 = tvb_get_uint32(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
     if (tree)
         add_name(
@@ -143,7 +143,96 @@ DISSECT_PROTOCOL(h32) {
 }
 
 DISSECT_PROTOCOL(h64) {
-    uint64_t u64 = tvb_get_uint64(tvb, offset, ENC_BIG_ENDIAN);
+    uint64_t u64 = tvb_get_uint64(tvb, offset, dissector->settings->endian);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
+    if (tree)
+        add_name(
+            proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_hint64], tvb, offset, 8, u64),
+            name
+        );
+    return 8;
+}
+
+DISSECT_PROTOCOL(i16r) {
+    int16_t i16 = tvb_get_int16(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i16);
+    if (tree) add_name(proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_int16], tvb, offset, 2, i16), name);
+    return 2;
+}
+
+DISSECT_PROTOCOL(i32r) {
+    int32_t i32 = tvb_get_int32(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%d", i32);
+    if (tree) add_name(proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_int32], tvb, offset, 4, i32), name);
+    return 4;
+}
+
+DISSECT_PROTOCOL(i64r) {
+    int64_t i64 = tvb_get_int64(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", i64);
+    if (tree)
+        add_name(
+            proto_tree_add_int64(tree, dissector->settings->hf_indexes[hf_int64], tvb, offset, 8, i64),
+            name
+        );
+    return 8;
+}
+
+DISSECT_PROTOCOL(u16r) {
+    uint16_t u16 = tvb_get_uint16(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
+    if (tree)
+        add_name(
+            proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_uint16], tvb, offset, 2, u16),
+            name
+        );
+    return 2;
+}
+
+DISSECT_PROTOCOL(u32r) {
+    uint32_t u32 = tvb_get_uint32(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
+    if (tree)
+        add_name(
+            proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_uint32], tvb, offset, 4, u32),
+            name
+        );
+    return 4;
+}
+
+DISSECT_PROTOCOL(u64r) {
+    uint64_t u64 = tvb_get_uint64(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
+    if (tree)
+        add_name(proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_uint64], tvb, offset, 8, u64),
+                 name);
+    return 8;
+}
+
+DISSECT_PROTOCOL(h16r) {
+    uint16_t u16 = tvb_get_uint16(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u16);
+    if (tree)
+        add_name(
+            proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_hint16], tvb, offset, 2, u16),
+            name
+        );
+    return 2;
+}
+
+DISSECT_PROTOCOL(h32r) {
+    uint32_t u32 = tvb_get_uint32(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
+    if (value) *value = wmem_strdup_printf(packet_alloc, "%u", u32);
+    if (tree)
+        add_name(
+            proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_hint32], tvb, offset, 4, u32),
+            name
+        );
+    return 4;
+}
+
+DISSECT_PROTOCOL(h64r) {
+    uint64_t u64 = tvb_get_uint64(tvb, offset, dissector->settings->endian + ENC_LITTLE_ENDIAN);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
     if (tree)
         add_name(
@@ -182,7 +271,7 @@ DISSECT_PROTOCOL(varlong) {
 // FLOAT POINTER NUMBER SUB-DISSECTORS ---------------------------------------------------------------------------------
 
 DISSECT_PROTOCOL(f32) {
-    float f32 = tvb_get_ieee_float(tvb, offset, ENC_BIG_ENDIAN);
+    float f32 = tvb_get_ieee_float(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%f", f32);
     if (tree)
         add_name(
@@ -193,7 +282,7 @@ DISSECT_PROTOCOL(f32) {
 }
 
 DISSECT_PROTOCOL(f64) {
-    double f64 = tvb_get_ieee_double(tvb, offset, ENC_BIG_ENDIAN);
+    double f64 = tvb_get_ieee_double(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%f", f64);
     if (tree)
         add_name(
@@ -287,12 +376,12 @@ DISSECT_PROTOCOL(nbt) {
         }
         return 1;
     }
-    if (tree && pref_do_nbt_decode) return do_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
+    if (tree && pref_do_nbt_decode) return do_je_nbt_tree(tree, pinfo, tvb, offset, name, !is_new_nbt);
 
     int32_t len = is_new_nbt ? 1 : 0;
     int32_t len_nbt;
-    if (is_new_nbt) len_nbt = count_nbt_length_with_type(tvb, offset + 1, present);
-    else len_nbt = count_nbt_length(tvb, offset);
+    if (is_new_nbt) len_nbt = count_je_nbt_length_with_type(tvb, offset + 1, present);
+    else len_nbt = count_je_nbt_length(tvb, offset);
     if (tree)
         add_name(
             proto_tree_add_bytes(
@@ -303,6 +392,21 @@ DISSECT_PROTOCOL(nbt) {
         );
 
     return len + len_nbt;
+}
+
+DISSECT_PROTOCOL(bnbt) {
+    int32_t len_nbt = count_be_nbt_length(tvb, offset);
+
+    if (tree)
+        add_name(
+            proto_tree_add_bytes(
+                tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset, len_nbt,
+                tvb_memdup(pinfo->pool, tvb, offset, len_nbt > 200 ? 200 : len_nbt)
+            ),
+            name
+        );
+
+    return len_nbt;
 }
 
 // COMPOSITE SUB-DISSECTORS --------------------------------------------------------------------------------------------
@@ -1285,6 +1389,15 @@ protocol_dissector *make_protocol_dissector(
     SIMPLE_PROTOCOL(u16_hex, dissect_h16)
     SIMPLE_PROTOCOL(u32_hex, dissect_h32)
     SIMPLE_PROTOCOL(u64_hex, dissect_h64)
+    SIMPLE_PROTOCOL(i16r, dissect_i16r)
+    SIMPLE_PROTOCOL(i32r, dissect_i32r)
+    SIMPLE_PROTOCOL(i64r, dissect_i64r)
+    SIMPLE_PROTOCOL(u16r, dissect_u16r)
+    SIMPLE_PROTOCOL(u32r, dissect_u32r)
+    SIMPLE_PROTOCOL(u64r, dissect_u64r)
+    SIMPLE_PROTOCOL(u16r_hex, dissect_h16r)
+    SIMPLE_PROTOCOL(u32r_hex, dissect_h32r)
+    SIMPLE_PROTOCOL(u64r_hex, dissect_h64r)
     SIMPLE_PROTOCOL(f32, dissect_f32)
     SIMPLE_PROTOCOL(f64, dissect_f64)
     SIMPLE_PROTOCOL(varint, dissect_varint)
@@ -1296,6 +1409,7 @@ protocol_dissector *make_protocol_dissector(
     SIMPLE_PROTOCOL(rest_buffer, dissect_rest_buffer)
     SIMPLE_PROTOCOL(uuid, dissect_uuid)
     SIMPLE_PROTOCOL(nbt, dissect_nbt)
+    SIMPLE_PROTOCOL(bnbt, dissect_bnbt)
 
     if (strcmp(type, "recursive") == 0 && !composite_type && recursive_root) return recursive_root;
 

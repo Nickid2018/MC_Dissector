@@ -152,7 +152,7 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
         // 08 00 04 74 79 70 65 = STRING type
         offset += 7;
         // Skip type name
-        offset += count_nbt_length_with_type(tvb, offset,TAG_STRING);
+        offset += count_je_nbt_length_with_type(tvb, offset,TAG_STRING);
         // 09 00 05 76 61 6C 75 65 0A = ARRAY value
         offset += 9;
         int32_t array_length = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
@@ -170,7 +170,7 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
             // 0A 00 07 65 6C 65 6D 65 6E 74 = COMPOUND element
             offset += 10;
             // Skip compound
-            offset += count_nbt_length_with_type(tvb, offset, TAG_COMPOUND);
+            offset += count_je_nbt_length_with_type(tvb, offset, TAG_COMPOUND);
             // TAG_END
             offset += 1;
             char *sub = g_utf8_substring(item, 10, g_utf8_strlen(item, 400));

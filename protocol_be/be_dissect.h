@@ -7,6 +7,8 @@
 
 #include <epan/packet.h>
 
+#define MSG_GAME 0xFE
+
 extern dissector_handle_t mcbe_handle;
 
 extern int ett_sub_be;

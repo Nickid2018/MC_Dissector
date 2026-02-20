@@ -71,7 +71,7 @@ void sub_dissect_je(
     }
 }
 
-void mark_invalid(packet_info *pinfo) {
+void mark_session_invalid_je(packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     ctx->client_state = ctx->server_state = INVALID;
@@ -92,7 +92,7 @@ void dissect_je_core(
         proto_tree_add_uint(mcje_tree, hf_packet_length_je, tvb, offset - packet_len_len, packet_len_len, len);
         proto_item_append_text(
             ti, ", Client State: %s, Server State: %s",
-            STATE_NAME[frame_data->client_state], STATE_NAME[frame_data->server_state]
+            JE_STATE_NAME[frame_data->client_state], JE_STATE_NAME[frame_data->server_state]
         );
     }
 
@@ -102,7 +102,7 @@ void dissect_je_core(
         int var_len = read_var_int(tvb, offset, &uncompressed_length);
         if (is_invalid(var_len)) {
             col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression VarInt");
-            mark_invalid(pinfo);
+            mark_session_invalid_je(pinfo);
             return;
         }
 
@@ -114,7 +114,7 @@ void dissect_je_core(
                     pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
                     uncompressed_length, frame_data->compression_threshold
                 );
-                mark_invalid(pinfo);
+                mark_session_invalid_je(pinfo);
                 return;
             }
 
@@ -179,8 +179,9 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
     if (frame_data->client_state == NOT_COMPATIBLE || frame_data->server_state == NOT_COMPATIBLE) {
-        col_set_str(pinfo->cinfo, COL_INFO,
-                    "[Invalid] Protocol data is not compatible with the current plugin version");
+        col_set_str(
+            pinfo->cinfo, COL_INFO, "[Invalid] Protocol data is not compatible with the current plugin version"
+        );
         return (int32_t) tvb_captured_length(tvb);
     }
     if (frame_data->client_state == INVALID || frame_data->server_state == INVALID) {
@@ -231,7 +232,7 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             if (err) {
                 col_set_str(pinfo->cinfo, COL_INFO, "[Decryption Failed] Decryption failed with code ");
                 col_append_fstr(pinfo->cinfo, COL_INFO, "%d", err);
-                mark_invalid(pinfo);
+                mark_session_invalid_je(pinfo);
                 return (int32_t) tvb_captured_length(tvb);
             }
 

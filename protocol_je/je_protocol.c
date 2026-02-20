@@ -25,6 +25,11 @@ extern int hf_int32_je;
 extern protocol_dissector_settings *settings_je;
 extern protocol_storage *storage_je;
 
+char *JE_STATE_NAME[] = {
+    "Handshake", "Play", "Status", "Login", "Transfer", "Configuration", "Legacy Query",
+    "Invalid", "Not Compatible", "Protocol Not Found", "Secret Key Not Found"
+};
+
 uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
     uint32_t base_state = 0;
     switch (state) {
@@ -353,9 +358,9 @@ int try_switch_state(
                 } else {
                     if (is_new_nbt) {
                         uint8_t present = tvb_get_uint8(tvb, offset + len + 1);
-                        len += present ? count_nbt_length_with_type(tvb, offset + len + 2, present) + 2 : 2;
+                        len += present ? count_je_nbt_length_with_type(tvb, offset + len + 2, present) + 2 : 2;
                     } else
-                        len += count_nbt_length(tvb, offset + len + 1) + 1;
+                        len += count_je_nbt_length(tvb, offset + len + 1) + 1;
                 }
                 offset += len;
             }

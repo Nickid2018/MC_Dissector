@@ -8,9 +8,7 @@
 extern int hf_string_je;
 extern int ett_sub_je;
 
-#define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
-
-void parse_to_string(
+void je_tag_parse_to_string(
     tvbuff_t *tvb, packet_info *pinfo, int32_t offset_g, uint32_t type, int32_t *length, char **text
 ) {
     switch (type) {
@@ -95,31 +93,31 @@ void parse_to_string(
     }
 }
 
-int32_t add_primitive_type(
+int32_t add_je_primitive_type(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
     int offset_global, uint32_t type, char *sup_name
 ) {
     int32_t length;
     char *text;
-    parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
+    je_tag_parse_to_string(tvb, pinfo, offset_global, type, &length, &text);
     proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset_global, 0, ENC_NA);
     proto_item_set_text(item, "%s %s", sup_name, text);
     proto_item_set_len(item, length);
     return length;
 }
 
-int32_t add_list_type(
+int32_t add_je_list_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 );
 
-int32_t add_compound_type(
+int32_t add_je_compound_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 );
 
 // NOLINTNEXTLINE
-int32_t add_list_type(
+int32_t add_je_list_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 ) {
@@ -139,21 +137,21 @@ int32_t add_list_type(
 
     if (is_primitive_type(sub_type)) {
         for (uint32_t i = 0; i < sub_length; i++)
-            length += add_primitive_type(
+            length += add_je_primitive_type(
                 subtree, pinfo, tvb,
                 offset_global + length, sub_type,
                 wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_LIST) {
         for (uint32_t i = 0; i < sub_length; i++)
-            length += add_list_type(
+            length += add_je_list_type(
                 NULL, pinfo, subtree, tvb, ett,
                 offset_global + length,
                 wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_COMPOUND) {
         for (uint32_t i = 0; i < sub_length; i++)
-            length += add_compound_type(
+            length += add_je_compound_type(
                 NULL, pinfo, subtree, tvb, ett,
                 offset_global + length,
                 wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
@@ -165,7 +163,7 @@ int32_t add_list_type(
 }
 
 // NOLINTNEXTLINE
-int32_t add_compound_type(
+int32_t add_je_compound_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 ) {
@@ -185,17 +183,17 @@ int32_t add_compound_type(
         char *name = tvb_format_text(pinfo->pool, tvb, offset_global + length + 2, name_length);
         length += 2 + name_length;
         if (is_primitive_type(sub_type)) {
-            length += add_primitive_type(
+            length += add_je_primitive_type(
                 subtree, pinfo, tvb,
                 offset_global + length, sub_type, name
             );
         } else if (sub_type == TAG_LIST) {
-            length += add_list_type(
+            length += add_je_list_type(
                 NULL, pinfo, subtree, tvb, ett,
                 offset_global + length, name
             );
         } else if (sub_type == TAG_COMPOUND) {
-            length += add_compound_type(
+            length += add_je_compound_type(
                 NULL, pinfo, subtree, tvb, ett,
                 offset_global + length, name
             );
@@ -207,7 +205,7 @@ int32_t add_compound_type(
     return length;
 }
 
-int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip) {
+int32_t do_je_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip) {
     uint32_t type = tvb_get_uint8(tvb, offset);
     int32_t origin_offset = offset;
     if (need_skip)
@@ -216,7 +214,7 @@ int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t
         offset += 1;
 
     if (is_primitive_type(type)) {
-        offset += add_primitive_type(tree, pinfo, tvb, offset, type, name);
+        offset += add_je_primitive_type(tree, pinfo, tvb, offset, type, name);
     } else {
         proto_item *item = proto_tree_add_item(tree, hf_string_je, tvb, offset, 0, ENC_NA);
         proto_item_set_text(item, "%s", name);
@@ -224,9 +222,9 @@ int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t
 
         int32_t length = 0;
         if (type == TAG_LIST)
-            length = add_list_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
+            length = add_je_list_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
         else if (type == TAG_COMPOUND)
-            length = add_compound_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
+            length = add_je_compound_type(item, pinfo, subtree, tvb, ett_sub_je, offset, NULL);
         offset += length;
 
         proto_item_set_len(item, length);
@@ -235,7 +233,7 @@ int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t
 }
 
 // NOLINTNEXTLINE
-int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type) {
+int32_t count_je_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type) {
     if (type == TAG_END)
         return 0;
     if (type == TAG_BYTE)
@@ -257,7 +255,7 @@ int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type)
         uint32_t length = tvb_get_uint32(tvb, offset + 1, ENC_BIG_ENDIAN);
         int32_t sub_length = 0;
         for (uint32_t i = 0; i < length; i++)
-            sub_length += count_nbt_length_with_type(tvb, offset + 5 + sub_length, sub_type);
+            sub_length += count_je_nbt_length_with_type(tvb, offset + 5 + sub_length, sub_type);
         return 5 + sub_length;
     }
     if (type == TAG_COMPOUND) {
@@ -266,7 +264,7 @@ int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type)
         while ((sub_type = tvb_get_uint8(tvb, offset + sub_length)) != TAG_END) {
             int32_t name_length = tvb_get_uint16(tvb, offset + sub_length + 1, ENC_BIG_ENDIAN);
             sub_length += 3 + name_length;
-            sub_length += count_nbt_length_with_type(tvb, offset + sub_length, sub_type);
+            sub_length += count_je_nbt_length_with_type(tvb, offset + sub_length, sub_type);
         }
         return sub_length + 1;
     }
@@ -277,8 +275,8 @@ int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type)
     return 0;
 }
 
-int32_t count_nbt_length(tvbuff_t *tvb, int32_t offset) {
+int32_t count_je_nbt_length(tvbuff_t *tvb, int32_t offset) {
     uint8_t type = tvb_get_uint8(tvb, offset);
     int32_t skip = tvb_get_uint16(tvb, offset + 1, ENC_BIG_ENDIAN);
-    return count_nbt_length_with_type(tvb, offset + 3 + skip, type) + 3 + skip;
+    return count_je_nbt_length_with_type(tvb, offset + 3 + skip, type) + 3 + skip;
 }

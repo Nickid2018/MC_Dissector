@@ -7,7 +7,7 @@
 #include "mc_dissector.h"
 #include "protocol/storage/storage.h"
 
-char *BE_PROTOCOL_STATES[] = {"bedrock"};
+char *BE_PROTOCOL_STATES[] = {"initial", "game"};
 
 // ett
 int ett_mc_be = -1;
@@ -124,8 +124,8 @@ void init_storage_be() {
     settings_be->hf_indexes[hf_invalid_data] = hf_invalid_data_be;
     settings_be->hf_indexes[hf_parsing_error] = hf_parsing_error_be;
     settings_be->hf_indexes[hf_ignored_packet] = hf_ignored_packet_be;
-    settings_be->endian = ENC_BIG_ENDIAN;
-    settings_be->total_states = 1;
+    settings_be->endian = ENC_LITTLE_ENDIAN;
+    settings_be->total_states = 2;
     settings_be->state_names = BE_PROTOCOL_STATES;
 
     if (storage_be != NULL) {

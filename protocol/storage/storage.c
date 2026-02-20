@@ -77,15 +77,15 @@ void set_cached_##name(protocol_storage *storage, uint32_t version, void *value)
 
 #define DATA_CACHED_STR(name) \
 wmem_map_t *cached_##name; \
-void *get_cached_##name(protocol_storage *storage, char *java_version) { \
+void *get_cached_##name(protocol_storage *storage, char *version) { \
     if (storage->cached_##name == NULL) \
         return NULL; \
-    return wmem_map_lookup(storage->cached_##name, java_version); \
+    return wmem_map_lookup(storage->cached_##name, version); \
 } \
-void set_cached_##name(protocol_storage *storage, char *java_version, void *value) { \
+void set_cached_##name(protocol_storage *storage, char *version, void *value) { \
     if (storage->cached_##name == NULL) \
         storage->cached_##name = wmem_map_new(wmem_epan_scope(), g_str_hash, g_str_equal); \
-    wmem_map_insert(storage->cached_##name, java_version, value); \
+    wmem_map_insert(storage->cached_##name, version, value); \
 }
 
 #define CLEAR_CACHED_JSON(name) \
@@ -375,7 +375,7 @@ char *get_registry_data(protocol_storage *storage, uint32_t protocol_version, ch
 
 protocol_dissector_set *get_initial_protocol(protocol_storage *storage) {
     if (storage->initial_set != NULL) return storage->initial_set;
-    char *file = g_build_filename(pref_protocol_data_dir, "java_edition", "initial.json", NULL);
+    char *file = g_build_filename(pref_protocol_data_dir, storage->root, "initial.json", NULL);
 
     char *content = NULL;
     if (!g_file_get_contents(file, &content, NULL, NULL)) {

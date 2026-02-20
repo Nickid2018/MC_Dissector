@@ -12,6 +12,10 @@
 #define INVALID_DATA (-1)
 #define is_invalid(x) ((x) == INVALID_DATA)
 
+typedef enum {
+    NONE, SNAPPY, ZLIB
+} compression_algorithm;
+
 typedef struct {
     uint32_t client_state;
     uint32_t server_state;
@@ -24,8 +28,9 @@ typedef struct {
     protocol_dissector_set *dissector_set;
 
     int32_t compression_threshold;
-    bool encrypted;
+    compression_algorithm compression_algorithm;
 
+    bool encrypted;
     uint8_t *secret_key;
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
@@ -41,15 +46,15 @@ typedef struct {
     uint32_t client_state;
     uint32_t server_state;
 
-    bool encrypted;
     uint8_t *decrypted_data_head;
     uint8_t *decrypted_data_tail;
-    int32_t compression_threshold;
 
+    int32_t compression_threshold;
+    compression_algorithm compression_algorithm;
+
+    bool encrypted;
     bool first_compression_packet;
 } mc_frame_data;
-
-extern char *STATE_NAME[];
 
 wmem_map_t *get_global_data(packet_info *pinfo);
 
@@ -64,5 +69,7 @@ int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **resul, wmem_allocat
 int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator_t *allocator);
 
 uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len);
+
+int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

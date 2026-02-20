@@ -6,8 +6,6 @@
 #include "protocol_data.h"
 #include "mc_dissector.h"
 
-char *STATE_NAME[] = {"Handshake", "Play", "Status", "Login", "Transfer", "Configuration", "Invalid"};
-
 int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
     uint8_t read;
     int32_t p = 0;
@@ -77,4 +75,9 @@ uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
     if (tvb_reported_length_remaining(tvb, offset + 2) < str_len * 2) return NULL;
     *len = str_len * 2 + 2;
     return tvb_get_string_enc(wmem_file_scope(), tvb, offset + 2, str_len * 2, ENC_UTF_16);
+}
+
+int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset) {
+    uint32_t read = tvb_get_uint32(tvb, offset, ENC_LITTLE_ENDIAN);
+    return (int32_t) (read >> 1) ^ -(int32_t) (read & 1);
 }

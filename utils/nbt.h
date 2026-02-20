@@ -21,10 +21,16 @@
 #define TAG_INT_ARRAY  11
 #define TAG_LONG_ARRAY 12
 
-int32_t do_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip);
+#define is_primitive_type(type) (type != TAG_COMPOUND && type != TAG_LIST && type != TAG_END)
 
-int32_t count_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type);
+int32_t do_je_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip);
 
-int32_t count_nbt_length(tvbuff_t *tvb, int32_t offset);
+int32_t count_je_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type);
+
+int32_t count_je_nbt_length(tvbuff_t *tvb, int32_t offset);
+
+// int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool need_skip);
+
+int32_t count_be_nbt_length(tvbuff_t *tvb, int32_t offset);
 
 #endif //MC_DISSECTOR_NBT_H
