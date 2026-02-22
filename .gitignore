@@ -1,7 +1,8 @@
-/.idea
-/encryption-helper/.idea
-/encryption-helper/.gradle
-/encryption-helper/build
+.idea
+.gradle
+build
+.xmake
+bin
 /cmake-*
-/build
 /tests
+compile_commands.json

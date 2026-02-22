@@ -13,7 +13,7 @@
 #define is_invalid(x) ((x) == INVALID_DATA)
 
 typedef enum {
-    NONE, SNAPPY, ZLIB
+    ZLIB, SNAPPY, NONE
 } compression_algorithm;
 
 typedef struct {

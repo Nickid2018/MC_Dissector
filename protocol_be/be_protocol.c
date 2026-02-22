@@ -12,6 +12,8 @@ extern int hf_packet_name_be;
 extern int hf_unknown_packet_be;
 extern int hf_invalid_data_be;
 
+extern gchar *pref_secret_key_be;
+
 char *BE_STATE_NAME[] = {
     "Initial", "Game",
     "Invalid", "Not Compatible", "Protocol Not Found", "Secret Key Not Found"
@@ -64,11 +66,35 @@ int try_change_state(
                 ctx->client_state = ctx->server_state = GAME;
         }
 
+        if (strcmp(mark, "encrypt") == 0) {
+            ctx->encrypted = true;
+            if (pref_secret_key_be == NULL || strlen(pref_secret_key_be) != 64) {
+                ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+            } else {
+                uint8_t *secret_key = wmem_alloc(wmem_file_scope(), 32);
+                bool failed = false;
+                for (int i = 0; i < 32; i++) {
+                    gchar hex[3] = {pref_secret_key_be[i * 2], pref_secret_key_be[i * 2 + 1], '\0'};
+                    errno = 0;
+                    secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
+                    if (errno != 0) {
+                        failed = true;
+                        break;
+                    }
+                }
+                if (failed) {
+                    ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                } else {
+                    ctx->secret_key = secret_key;
+                }
+            }
+        }
+
         if (strcmp(mark, "network_settings") == 0) {
             uint16_t compress_threshold = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
             uint16_t compress_algorithm = tvb_get_uint16(tvb, offset + 2, ENC_LITTLE_ENDIAN);
             ctx->compression_threshold = compress_threshold;
-            ctx->compression_algorithm = ZLIB - compress_algorithm;
+            ctx->compression_algorithm = compress_algorithm;
         }
     }
 

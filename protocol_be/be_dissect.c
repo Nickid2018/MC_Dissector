@@ -95,24 +95,17 @@ int32_t dissect_be_uncompress(
     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx, mc_frame_data *frame_data
 ) {
     int32_t report_len = tvb_reported_length(tvb);
-
-    int32_t len;
-    int32_t len_len = read_var_int(tvb, 0, &len);
-    if (is_invalid(len_len)) {
-        col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression VarInt");
-        mark_session_invalid_be(pinfo);
-        return report_len;
-    }
-
-    int32_t offset = len_len;
     tvbuff_t *new_tvb = NULL;
-    switch (frame_data->compression_algorithm) {
-        case SNAPPY:
-            new_tvb = tvb_child_uncompress_snappy(tvb, tvb, offset, report_len - offset);
-            break;
+    switch (tvb_get_uint8(tvb, 0)) {
         case ZLIB:
-            new_tvb = tvb_child_uncompress_zlib(tvb, tvb, offset, report_len - offset);
+            new_tvb = tvb_child_uncompress_zlib(tvb, tvb, 1, report_len - 1);
             break;
+        case SNAPPY:
+            new_tvb = tvb_child_uncompress_snappy(tvb, tvb, 1, report_len - 1);
+            break;
+        case NONE:
+            new_tvb = tvb_new_subset_length(tvb, 1, report_len - 1);
+            return dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data) + 1;
         default:
             col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression Algorithm");
             mark_session_invalid_be(pinfo);
@@ -124,7 +117,8 @@ int32_t dissect_be_uncompress(
     }
 
     add_new_data_source(pinfo, new_tvb, "Uncompressed packet");
-    return dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data);
+    dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data);
+    return report_len;
 }
 
 int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
@@ -173,8 +167,44 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     col_set_str(pinfo->cinfo, COL_INFO, is_server ? "[C => S] " : "[S => C] ");
-    if (frame_data->encrypted)
+
+    if (frame_data->encrypted) {
         col_append_str(pinfo->cinfo, COL_INFO, "(Encrypted) ");
+        uint32_t length = tvb_reported_length_remaining(tvb, 0);
+
+        gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
+
+        if (*cipher == NULL) {
+            gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CTR, 0);
+            gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
+            uint8_t *iv = wmem_alloc(wmem_file_scope(), 16);
+            memcpy(iv, ctx->secret_key, 12);
+            iv[12] = 0;
+            iv[13] = 0;
+            iv[14] = 0;
+            iv[15] = 2;
+            gcry_cipher_setiv(*cipher, iv, 16);
+        }
+
+        if (!frame_data->decrypted_data_head) {
+            frame_data->decrypted_data_head = wmem_alloc(wmem_file_scope(), length);
+            gcry_error_t err = gcry_cipher_decrypt(
+                *cipher, frame_data->decrypted_data_head,
+                length,
+                tvb_memdup(pinfo->pool, tvb, 0, length),
+                length
+            );
+            if (err) {
+                col_set_str(pinfo->cinfo, COL_INFO, "[Decryption Failed] Decryption failed with code ");
+                col_append_fstr(pinfo->cinfo, COL_INFO, "%d", err);
+                mark_session_invalid_be(pinfo);
+                return (int32_t) length + 1;
+            }
+        }
+
+        tvb = tvb_new_child_real_data(tvb, frame_data->decrypted_data_head, length, (int32_t) length - 8);
+        add_new_data_source(pinfo, tvb, "Decrypted packet");
+    }
 
     if (frame_data->compression_threshold > 0 && frame_data->compression_algorithm != NONE) {
         return dissect_be_uncompress(tvb, pinfo, tree, ctx, frame_data) + 1;

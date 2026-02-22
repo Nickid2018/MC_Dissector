@@ -36,5 +36,6 @@ extern bool pref_do_nbt_decode_je;
 
 extern module_t *pref_mcbe;
 extern bool pref_do_nbt_decode_be;
+extern gchar *pref_secret_key_be;
 
 #endif //MC_DISSECTOR_MC_DISSECTOR_H

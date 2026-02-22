@@ -47,6 +47,7 @@ int hf_packet_name_be = -1;
 int hf_unknown_packet_be = -1;
 
 bool pref_do_nbt_decode_be = false;
+gchar *pref_secret_key_be = NULL;
 
 protocol_dissector_settings *settings_be;
 protocol_storage *storage_be;
@@ -99,6 +100,10 @@ void pref_register_mcbe() {
     prefs_register_bool_preference(
         pref_mcbe, "do_nbt_decode", "NBT Decoding",
         "Decode NBT data", &pref_do_nbt_decode_be
+        );
+    prefs_register_string_preference(
+        pref_mcbe, "secret_key", "Secret Key",
+        "Secret key for decryption", (const char **) &pref_secret_key_be
     );
 }
 
