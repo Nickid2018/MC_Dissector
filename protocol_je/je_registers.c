@@ -55,8 +55,8 @@ gchar *pref_secret_key_je = NULL;
 gchar *pref_key_log_filepath_je = NULL;
 bool pref_do_nbt_decode_je = false;
 
-protocol_dissector_settings *settings_je;
-protocol_storage *storage_je;
+protocol_dissector_settings *settings_je = NULL;
+protocol_storage *storage_je = NULL;
 
 #define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}},
 
@@ -123,7 +123,6 @@ void pref_register_mcje() {
 
 void init_storage_je() {
     if (settings_je != NULL) {
-        wmem_free(wmem_epan_scope(), settings_je->hf_indexes);
         wmem_free(wmem_epan_scope(), settings_je);
     }
     settings_je = wmem_new(wmem_epan_scope(), protocol_dissector_settings);

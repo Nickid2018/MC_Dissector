@@ -175,15 +175,15 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
 
         if (*cipher == NULL) {
-            gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CTR, 0);
-            gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
-            uint8_t *iv = wmem_alloc(wmem_file_scope(), 16);
-            memcpy(iv, ctx->secret_key, 12);
-            iv[12] = 0;
-            iv[13] = 0;
-            iv[14] = 0;
-            iv[15] = 2;
-            gcry_cipher_setiv(*cipher, iv, 16);
+            if (ctx->protocol_version <= 431) {
+                gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB8, 0);
+                gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
+                gcry_cipher_setiv(*cipher, ctx->secret_key, 16);
+            } else {
+                gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, 0);
+                gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
+                gcry_cipher_setiv(*cipher, ctx->secret_key, 12);
+            }
         }
 
         if (!frame_data->decrypted_data_head) {

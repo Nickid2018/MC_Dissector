@@ -49,8 +49,8 @@ int hf_unknown_packet_be = -1;
 bool pref_do_nbt_decode_be = false;
 gchar *pref_secret_key_be = NULL;
 
-protocol_dissector_settings *settings_be;
-protocol_storage *storage_be;
+protocol_dissector_settings *settings_be = NULL;
+protocol_storage *storage_be = NULL;
 
 #define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_## type, BASE_## dis, NULL, 0x0, NULL, HFILL}},
 
@@ -109,7 +109,6 @@ void pref_register_mcbe() {
 
 void init_storage_be() {
     if (settings_be != NULL) {
-        wmem_free(wmem_epan_scope(), settings_be->hf_indexes);
         wmem_free(wmem_epan_scope(), settings_be);
     }
     settings_be = wmem_new(wmem_epan_scope(), protocol_dissector_settings);

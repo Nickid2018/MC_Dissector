@@ -106,6 +106,10 @@ void handle_packet(
     mc_protocol_context *ctx, be_state state, bool is_client
 ) {
     protocol_dissector_set *set = state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
+    if (ctx->dissector_set == NULL) {
+        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, 0, "No protocol data found");
+        return;
+    }
 
     int32_t packet_len;
     int32_t len = read_var_int(tvb, offset, &packet_len);
