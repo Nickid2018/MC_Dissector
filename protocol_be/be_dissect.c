@@ -147,15 +147,19 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
         frame_data->encrypted = ctx->encrypted;
-        mcbe_frame_data *protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
+        frame_data->protocol_data = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
+    }
+
+    mcbe_frame_data *protocol_frame = wmem_map_lookup(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num));
+    if (!protocol_frame) {
+        protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
         protocol_frame->decrypted_data = NULL;
         protocol_frame->compression_threshold = protocol_ctx->compression_threshold;
         protocol_frame->compression_algorithm = protocol_ctx->compression_algorithm;
         protocol_frame->expect_checksum = NULL;
-        frame_data->protocol_data = protocol_frame;
-        p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
+        wmem_map_insert(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num), protocol_frame);
     }
-    mcbe_frame_data *protocol_frame = frame_data->protocol_data;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCBE_SHORT_NAME);
     if (frame_data->client_state == NOT_COMPATIBLE || frame_data->server_state == NOT_COMPATIBLE) {
@@ -289,11 +293,12 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
         frame_data->encrypted = ctx->encrypted;
+        frame_data->protocol_data = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
         mcbe_frame_data *protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
         protocol_frame->decrypted_data = NULL;
         protocol_frame->compression_threshold = -1;
         protocol_frame->compression_algorithm = NONE;
-        frame_data->protocol_data = protocol_frame;
+        wmem_map_insert(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num), protocol_frame);
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
     }
 
