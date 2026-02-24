@@ -94,7 +94,7 @@ jobs:
           name: linux
           path: build/mcdissector.so
 
-  build-encryption-helper:
+  build-encryption-helper-java:
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
     steps:
@@ -107,18 +107,18 @@ jobs:
           distribution: temurin
       - name: Chmod Gradlew
         run: chmod +x gradlew
-        working-directory: encryption-helper
+        working-directory: encryption-helper/java
       - name: Build Encryption Helper
         run: ./gradlew shadowJar
-        working-directory: encryption-helper
+        working-directory: encryption-helper/java
       - name: Upload Encryption Helper
         uses: actions/upload-artifact@v4
         with:
-          name: encryption-helper
-          path: encryption-helper/build/libs/encryption-helper-1.1-all.jar
+          name: encryption-helper-java
+          path: encryption-helper/java/build/libs/encryption-helper-1.1-java.jar
 
   publish:
-    needs: [ build-windows, build-linux, build-encryption-helper ]
+    needs: [ build-windows, build-linux, build-encryption-helper-java ]
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
     permissions: write-all
@@ -144,7 +144,7 @@ jobs:
       - name: Download encryption-helper artifact
         uses: actions/download-artifact@v4
         with:
-          name: encryption-helper
+          name: encryption-helper-java
       - id: process-name
         env:
           REF: ${{ github.ref }}
@@ -158,4 +158,4 @@ jobs:
           files: |
             windows/mcdissector.dll
             linux/mcdissector.so
-            encryption-helper-1.1-all.jar
+            encryption-helper-1.1-java.jar
