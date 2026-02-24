@@ -4,16 +4,15 @@
 
 #include <epan/conversation.h>
 #include <epan/dissectors/packet-raknet.h>
+#include <epan/exceptions.h>
 #include <epan/proto_data.h>
 
 #include "be_dissect.h"
-
-#include <epan/exceptions.h>
-
 #include "be_protocol.h"
 #include "mc_dissector.h"
 #include "protocol/protocol_data.h"
 #include "protocol/storage/storage.h"
+#include "utils/endian.h"
 
 dissector_handle_t mcbe_handle;
 
