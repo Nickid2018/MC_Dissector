@@ -40,6 +40,6 @@ shadowJar {
     manifest {
         inheritFrom project.tasks.jar.manifest
     }
-    classifier = 'java'
     relocate 'org.objectweb.asm', 'org.objectweb.asm.shadow' // Relocate ASM to avoid conflicts with forge/fabric
+    archiveClassifier = 'java'
 }
