@@ -27,6 +27,22 @@ enum je_protocol_state {
     CONFIGURATION_CLIENT = CONFIGURATION_SERVER + 8,
 };
 
+typedef struct {
+    uint32_t data_version;
+    int32_t compression_threshold;
+    int32_t server_last_segment_remaining;
+    int32_t client_last_segment_remaining;
+    uint8_t *server_last_remains;
+    uint8_t *client_last_remains;
+} mcje_context;
+
+typedef struct {
+    uint8_t *decrypted_data_head;
+    uint8_t *decrypted_data_tail;
+    int32_t compression_threshold;
+    bool first_compression_packet;
+} mcje_frame_data;
+
 int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, bool is_client);
 
 int try_switch_state(

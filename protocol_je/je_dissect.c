@@ -84,6 +84,7 @@ void dissect_je_core(
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
+    mcje_frame_data *protocol_frame = frame_data->protocol_data;
 
     proto_tree *mcje_tree;
     if (tree) {
@@ -97,7 +98,7 @@ void dissect_je_core(
     }
 
     tvbuff_t *new_tvb;
-    if (frame_data->compression_threshold > 0 && !(packet_count == 0 && frame_data->first_compression_packet)) {
+    if (protocol_frame->compression_threshold > 0 && !(packet_count == 0 && protocol_frame->first_compression_packet)) {
         int32_t uncompressed_length;
         int var_len = read_var_int(tvb, offset, &uncompressed_length);
         if (is_invalid(var_len)) {
@@ -108,11 +109,11 @@ void dissect_je_core(
 
         offset += var_len;
         if (uncompressed_length > 0) {
-            if (uncompressed_length < frame_data->compression_threshold) {
+            if (uncompressed_length < protocol_frame->compression_threshold) {
                 col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Badly compressed packet");
                 col_append_fstr(
                     pinfo->cinfo, COL_INFO, " - size of %d is below server threshold of %d",
-                    uncompressed_length, frame_data->compression_threshold
+                    uncompressed_length, protocol_frame->compression_threshold
                 );
                 mark_session_invalid_je(pinfo);
                 return;
@@ -148,20 +149,24 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         ctx = wmem_alloc(wmem_file_scope(), sizeof(mc_protocol_context));
         ctx->client_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
         ctx->server_state = is_compatible_protocol_data() ? HANDSHAKE : NOT_COMPATIBLE;
-        ctx->compression_threshold = -1;
         ctx->server_port = pinfo->destport;
+        copy_address(&ctx->server_address, &pinfo->dst);
+        ctx->encrypted = false;
         ctx->secret_key = NULL;
         ctx->server_cipher = NULL;
         ctx->client_cipher = NULL;
-        ctx->server_last_segment_remaining = 0;
-        ctx->client_last_segment_remaining = 0;
-        ctx->server_last_remains = NULL;
-        ctx->client_last_remains = NULL;
-        ctx->encrypted = false;
-        copy_address(&ctx->server_address, &pinfo->dst);
+        mcje_context *protocol_ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_context));
+        protocol_ctx->data_version = -1;
+        protocol_ctx->compression_threshold = -1;
+        protocol_ctx->server_last_segment_remaining = 0;
+        protocol_ctx->client_last_segment_remaining = 0;
+        protocol_ctx->server_last_remains = NULL;
+        protocol_ctx->client_last_remains = NULL;
+        ctx->protocol_data = protocol_ctx;
         ctx->global_data = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
         conversation_add_proto_data(conv, proto_mcje, ctx);
     }
+    mcje_context *protocol_ctx = ctx->protocol_data;
 
     mc_frame_data *frame_data = p_get_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0);
     if (!frame_data) {
@@ -169,12 +174,15 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
         frame_data->encrypted = ctx->encrypted;
-        frame_data->decrypted_data_head = NULL;
-        frame_data->decrypted_data_tail = NULL;
-        frame_data->first_compression_packet = false;
-        frame_data->compression_threshold = ctx->compression_threshold;
+        mcje_frame_data *protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcje_frame_data));
+        protocol_frame->decrypted_data_head = NULL;
+        protocol_frame->decrypted_data_tail = NULL;
+        protocol_frame->first_compression_packet = false;
+        protocol_frame->compression_threshold = protocol_ctx->compression_threshold;
+        frame_data->protocol_data = protocol_frame;
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcje, 0, frame_data);
     }
+    mcje_frame_data *protocol_frame = frame_data->protocol_data;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCJE_SHORT_NAME);
 
@@ -207,13 +215,13 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
     if (frame_data->encrypted) {
         uint32_t length = tvb_reported_length_remaining(tvb, 0);
         int32_t length_remaining = is_server
-                                       ? ctx->server_last_segment_remaining
-                                       : ctx->client_last_segment_remaining;
+                                       ? protocol_ctx->server_last_segment_remaining
+                                       : protocol_ctx->client_last_segment_remaining;
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
         uint8_t **decrypt_data =
             pinfo->curr_proto_layer_num == 1
-                ? &frame_data->decrypted_data_head
-                : &frame_data->decrypted_data_tail;
+                ? &protocol_frame->decrypted_data_head
+                : &protocol_frame->decrypted_data_tail;
 
         if (*cipher == NULL) {
             gcry_cipher_open(cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
@@ -237,7 +245,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             }
 
             uint8_t *merged = wmem_alloc(wmem_file_scope(), length);
-            memcpy(merged, is_server ? ctx->server_last_remains : ctx->client_last_remains, length_remaining);
+            memcpy(
+                merged,
+                is_server ? protocol_ctx->server_last_remains : protocol_ctx->client_last_remains,
+                length_remaining
+            );
             memcpy(merged + length_remaining, decrypt, length - length_remaining);
 
             *decrypt_data = merged;
@@ -276,13 +288,15 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
             if (!pinfo->fd->visited) {
                 if (is_server) {
-                    ctx->server_last_segment_remaining = available;
-                    if (ctx->server_last_remains) wmem_free(wmem_file_scope(), ctx->server_last_remains);
-                    ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                    protocol_ctx->server_last_segment_remaining = available;
+                    if (protocol_ctx->server_last_remains)
+                        wmem_free(wmem_file_scope(), protocol_ctx->server_last_remains);
+                    protocol_ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 } else {
-                    ctx->client_last_segment_remaining = available;
-                    if (ctx->client_last_remains) wmem_free(wmem_file_scope(), ctx->client_last_remains);
-                    ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                    protocol_ctx->client_last_segment_remaining = available;
+                    if (protocol_ctx->client_last_remains)
+                        wmem_free(wmem_file_scope(), protocol_ctx->client_last_remains);
+                    protocol_ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 }
             }
             return offset + available;
@@ -294,13 +308,15 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
             pinfo->desegment_len = len + packet_len_len - available;
             if (!pinfo->fd->visited) {
                 if (is_server) {
-                    ctx->server_last_segment_remaining = available;
-                    if (ctx->server_last_remains) wmem_free(wmem_file_scope(), ctx->server_last_remains);
-                    ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                    protocol_ctx->server_last_segment_remaining = available;
+                    if (protocol_ctx->server_last_remains)
+                        wmem_free(wmem_file_scope(), protocol_ctx->server_last_remains);
+                    protocol_ctx->server_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 } else {
-                    ctx->client_last_segment_remaining = available;
-                    if (ctx->client_last_remains) wmem_free(wmem_file_scope(), ctx->client_last_remains);
-                    ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
+                    protocol_ctx->client_last_segment_remaining = available;
+                    if (protocol_ctx->client_last_remains)
+                        wmem_free(wmem_file_scope(), protocol_ctx->client_last_remains);
+                    protocol_ctx->client_last_remains = tvb_memdup(wmem_file_scope(), use_tvb, offset, available);
                 }
             }
             return offset + available;
@@ -314,11 +330,11 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
     if (!pinfo->fd->visited) {
         if (is_server) {
-            ctx->server_last_segment_remaining = 0;
-            ctx->server_last_remains = NULL;
+            protocol_ctx->server_last_segment_remaining = 0;
+            protocol_ctx->server_last_remains = NULL;
         } else {
-            ctx->client_last_segment_remaining = 0;
-            ctx->client_last_remains = NULL;
+            protocol_ctx->client_last_segment_remaining = 0;
+            protocol_ctx->client_last_remains = NULL;
         }
     }
     col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s)]", packet_count);

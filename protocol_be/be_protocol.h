@@ -16,6 +16,24 @@ typedef enum {
     INVALID, NOT_COMPATIBLE, PROTOCOL_NOT_FOUND, SECRET_KEY_NOT_FOUND // Special states
 } be_state;
 
+typedef enum {
+    ZLIB, SNAPPY, NONE
+} compression_algorithm;
+
+typedef struct {
+    int32_t compression_threshold;
+    compression_algorithm compression_algorithm;
+    int64_t client_counter;
+    int64_t server_counter;
+} mcbe_context;
+
+typedef struct {
+    uint8_t *decrypted_data;
+    int32_t compression_threshold;
+    compression_algorithm compression_algorithm;
+    char *expect_checksum;
+} mcbe_frame_data;
+
 int32_t read_packet_len(tvbuff_t *tvb, int32_t offset);
 
 int try_change_state(

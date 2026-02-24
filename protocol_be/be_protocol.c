@@ -93,8 +93,8 @@ int try_change_state(
         if (strcmp(mark, "network_settings") == 0) {
             uint16_t compress_threshold = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
             uint16_t compress_algorithm = tvb_get_uint16(tvb, offset + 2, ENC_LITTLE_ENDIAN);
-            ctx->compression_threshold = compress_threshold;
-            ctx->compression_algorithm = compress_algorithm;
+            ((mcbe_context *) ctx->protocol_data)->compression_threshold = compress_threshold;
+            ((mcbe_context *) ctx->protocol_data)->compression_algorithm = compress_algorithm;
         }
     }
 

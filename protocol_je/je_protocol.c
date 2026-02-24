@@ -194,10 +194,11 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
                 return INVALID_DATA;
             }
-            ctx->data_version = get_data_version(storage_je, java_versions[0]);
+            mcje_context *protocol_ctx = ctx->protocol_data;
+            protocol_ctx->data_version = get_data_version(storage_je, java_versions[0]);
             g_strfreev(java_versions);
-            wmem_map_insert(ctx->global_data, "data_version", (void *) (uint64_t) ctx->data_version);
-            if (ctx->data_version >= 3567)
+            wmem_map_insert(ctx->global_data, "data_version", (void *) (uint64_t) protocol_ctx->data_version);
+            if (protocol_ctx->data_version >= 3567)
                 wmem_map_insert(ctx->global_data, "nbt_any_type", (void *) 1);
             if (next_state == STATUS)
                 return 0;
@@ -302,9 +303,9 @@ int try_switch_state(
             int32_t threshold;
             len = read_var_int(tvb, len, &threshold);
             if (is_invalid(len)) return INVALID_DATA;
-            ctx->compression_threshold = threshold;
-            frame_data->first_compression_packet = true;
-            frame_data->compression_threshold = threshold;
+            ((mcje_context *) ctx->protocol_data)->compression_threshold = threshold;
+            ((mcje_frame_data *) frame_data->protocol_data)->first_compression_packet = true;
+            ((mcje_frame_data *) frame_data->protocol_data)->compression_threshold = threshold;
         }
 
         if (strcmp(mark, "registry") == 0) {
