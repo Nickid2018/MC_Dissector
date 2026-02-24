@@ -23,12 +23,12 @@ jobs:
       WIRESHARK_LIB_FILE_DIR: ${{ github.workspace }}/wireshark/build/run/RelWithDebInfo
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
           path: dissector
       - name: Checkout Wireshark
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: wireshark/wireshark
           path: wireshark
@@ -72,7 +72,7 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install Deps
@@ -115,16 +115,40 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: encryption-helper-java
-          path: encryption-helper/java/build/libs/encryption-helper-1.1-java.jar
+          path: encryption-helper/java/build/libs/encryption-helper-java.jar
+
+  build-encryption-helper-bedrock:
+    runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/') || !contains(github.event.head_commit.message, '[skip build]')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - uses: xmake-io/github-action-setup-xmake@v1
+      - uses: actions/cache@v5
+        with:
+          path: ~/AppData/Local/.xmake
+          key: xmake-${{ hashFiles('encryption-helper/bedrock-ll/xmake.lua') }}
+          restore-keys: xmake-
+      - name: Build Bedrock Encryption Helper (LeviLamina)
+        run: |
+          xmake repo -u
+          xmake f -a x64 -m release -p windows -v --target_type=client -y
+          xmake -v -y
+        working-directory: encryption-helper/bedrock-ll
+      - name: Upload Bedrock Encryption Helper (LeviLamina)
+        uses: actions/upload-artifact@v4
+        with:
+          name: encryption-helper-bedrock-ll
+          path: encryption-helper/bedrock-ll/bin
 
   publish:
-    needs: [ build-windows, build-linux, build-encryption-helper-java ]
+    needs: [ build-windows, build-linux, build-encryption-helper-java, build-encryption-helper-bedrock ]
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
     permissions: write-all
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Get Tag Message
         id: tag
         run: |
@@ -135,16 +159,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows
-          path: windows
       - name: Download linux artifact
         uses: actions/download-artifact@v4
         with:
           name: linux
-          path: linux
-      - name: Download encryption-helper artifact
+      - name: Download encryption-helper-java artifact
         uses: actions/download-artifact@v4
         with:
           name: encryption-helper-java
+      - name: Download encryption-helper-bedrock-ll artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: encryption-helper-bedrock-ll
+          path: encryption-helper-bedrock-ll
+      - name: Zip Bedrock Encryption Helper (LeviLamina)
+        run: zip -j encryption-helper-bedrock-ll.zip encryption-helper-bedrock-ll/*
       - id: process-name
         env:
           REF: ${{ github.ref }}
@@ -156,6 +185,7 @@ jobs:
           prerelease: ${{ contains(github.ref, 'beta') }}
           body: ${{ steps.tag.outputs.TAG_MESSAGE }}
           files: |
-            windows/mcdissector.dll
-            linux/mcdissector.so
-            encryption-helper-1.1-java.jar
+            mcdissector.dll
+            mcdissector.so
+            encryption-helper-java.jar
+            encryption-helper-bedrock-ll.zip
