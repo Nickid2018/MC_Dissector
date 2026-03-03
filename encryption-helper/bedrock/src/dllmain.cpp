@@ -3,8 +3,11 @@
 #include <cstdio>
 
 struct EVP_CIPHER_CTX;
-struct EVP_CIPHER;
 struct ENGINE;
+struct EVP_CIPHER {
+  int nid;
+  /*other members...*/
+};
 
 int (*ORIGINAL_EVP_EncryptInit_ex)(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
                                    ENGINE *impl, const unsigned char *key,
@@ -13,13 +16,13 @@ int (*ORIGINAL_EVP_EncryptInit_ex)(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
 int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
                        ENGINE *impl, const unsigned char *key,
                        const unsigned char *iv, int enc) {
-  if (key) {
+  if (key && type &&
+      (type->nid == 901 /*aes_256_gcm*/ || type->nid == 655 /*aes_256_cfb8*/)) {
+    std::printf("nid: %d\n", type->nid);
     for (auto i = 0uz; i < 32; i++) {
       std::printf("%s ", std::to_string(key[i]).c_str());
     }
     std::puts("");
-  } else {
-    std::puts("key is NULL");
   }
 
   return ORIGINAL_EVP_EncryptInit_ex(ctx, type, impl, key, iv, enc);
