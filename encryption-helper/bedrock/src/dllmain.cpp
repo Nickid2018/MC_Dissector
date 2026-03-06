@@ -1,6 +1,7 @@
 #include "MinHook.h"
 #include "libhat.hpp" // IWYU pragma: keep
 #include <cstdio>
+#include <tuple>
 
 struct EVP_CIPHER_CTX;
 struct ENGINE;
@@ -28,15 +29,25 @@ int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
   return ORIGINAL_EVP_EncryptInit_ex(ctx, type, impl, key, iv, enc);
 }
 
+constexpr void *lookup_signatures(hat::process::module module,
+                                  auto &&...signatures) {
+  std::array<hat::signature_view, sizeof...(signatures)> sigs{signatures...};
+  for (const auto &sig : sigs) {
+    if (auto result = hat::find_pattern(module.get_module_data(), sig).get()) {
+      return result;
+    }
+  }
+  return nullptr;
+}
+
 void init() {
   using namespace hat::literals::signature_literals;
   auto mc = hat::process::get_process_module();
   MH_Initialize();
-  if (auto target =
-          hat::find_pattern(
-              mc.get_module_data(),
-              "48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 54 41 56 41 57 B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 8B 44 24"_sig)
-              .get()) {
+  if (auto target = lookup_signatures(
+          hat::process::get_process_module(),
+          "48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 54 41 56 41 57 B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 8B 44 24"_sig,
+          "48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 8B 44 24"_sig)) {
     MH_CreateHook(target, reinterpret_cast<void *>(&EVP_EncryptInit_ex),
                   reinterpret_cast<void **>(&ORIGINAL_EVP_EncryptInit_ex));
     std::printf("hooked EVP_EncryptInit_ex() at %p\n", target);
