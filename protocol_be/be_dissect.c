@@ -115,7 +115,7 @@ int32_t dissect_be_uncompress(
             return dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data) + 1;
         default:
             col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression Algorithm");
-            // mark_session_invalid_be(pinfo);
+            mark_session_invalid_be(pinfo);
             return report_len;
     }
     if (new_tvb == NULL) {

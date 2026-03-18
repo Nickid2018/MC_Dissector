@@ -1461,10 +1461,15 @@ uint32_t map_name_to_state(protocol_dissector_set *set, char *name) {
 }
 
 void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t state) {
-    int count = cJSON_GetArraySize(root);
+    int array_count = cJSON_GetArraySize(root);
+    int count = array_count;
+
     protocol_dissector **dissectors = wmem_alloc(set->allocator, sizeof(protocol_dissector *) * count);
     char **keys = wmem_alloc(set->allocator, sizeof(char *) * count);
     char **names = wmem_alloc(set->allocator, sizeof(char *) * count);
+    bool *occupies = wmem_alloc(set->allocator, sizeof(char *) * count);
+    memset(occupies, false, sizeof(bool) * count);
+
     wmem_map_t *state_switch = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
     wmem_map_t *state_side = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
     wmem_map_t *special_mark = wmem_map_new(set->allocator, g_direct_hash, g_direct_equal);
@@ -1488,12 +1493,49 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
         dissectors[i] = void_dissector;
         keys[i] = "<unknown>";
         names[i] = "<unknown>";
+    }
+
+    int seqIndex = 0;
+    for (int i = 0; i < array_count; i++) {
         cJSON *dissector_data = cJSON_GetArrayItem(root, i);
+
+        int id;
+        if (cJSON_HasObjectItem(dissector_data, "id")) {
+            id = cJSON_GetObjectItem(dissector_data, "id")->valueint;
+            if (id >= count) {
+                dissectors = wmem_realloc(set->allocator, dissectors, sizeof(protocol_dissector *) * (id + 1));
+                keys = wmem_realloc(set->allocator, keys, sizeof(char *) * (id + 1));
+                names = wmem_realloc(set->allocator, names, sizeof(char *) * (id + 1));
+                occupies = wmem_realloc(set->allocator, occupies, sizeof(bool) * (id + 1));
+                memset(occupies + count, false, sizeof(bool) * (id - count + 1));
+
+                for (int now = count; now <= id; now++) {
+                    dissectors[now] = void_dissector;
+                    keys[now] = "<unknown>";
+                    names[now] = "<unknown>";
+                }
+                count = id + 1;
+                wmem_map_insert(set->dissectors_by_state, (void *) (uint64_t) state, dissectors);
+                wmem_map_insert(set->count_by_state, (void *) (uint64_t) state, (void *) (uint64_t) count);
+                wmem_map_insert(set->registry_keys, (void *) (uint64_t) state, keys);
+                wmem_map_insert(set->readable_names, (void *) (uint64_t) state, names);
+            }
+        } else {
+            while (occupies[seqIndex])
+                seqIndex++;
+            id = seqIndex++;
+        }
+
+        if (occupies[id])
+            ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Detect ID Conflict in protocol data: %d", id);
+        occupies[id] = true;
+
         if (!cJSON_HasObjectItem(dissector_data, "key")) continue;
         if (!cJSON_HasObjectItem(dissector_data, "name")) continue;
         char *key = cJSON_GetObjectItem(dissector_data, "key")->valuestring;
         char *name = cJSON_GetObjectItem(dissector_data, "name")->valuestring;
         cJSON *type = cJSON_GetObjectItem(dissector_data, "type");
+
         protocol_dissector *dissector;
         if (type == NULL) {
             char *key_replaced = g_strdup(key);
@@ -1511,9 +1553,10 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
             dissector = make_protocol_dissector(
                 set->settings, set->allocator, type, set->dissectors_by_name, set->protocol_version, NULL
             );
-        dissectors[i] = dissector;
-        keys[i] = wmem_strdup(set->allocator, key);
-        names[i] = wmem_strdup(set->allocator, name);
+
+        dissectors[id] = dissector;
+        keys[id] = wmem_strdup(set->allocator, key);
+        names[id] = wmem_strdup(set->allocator, name);
         if (cJSON_HasObjectItem(dissector_data, "stateNext")) {
             cJSON *state_to_next = cJSON_GetObjectItem(dissector_data, "stateNext");
             if (!cJSON_IsString(state_to_next)) continue;
@@ -1521,7 +1564,7 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
             uint32_t next_state = map_name_to_state(set, state_str);
             g_free(state_str);
             if (next_state == ~0u) continue;
-            wmem_map_insert(state_switch, (void *) (uint64_t) i, (void *) (uint64_t) next_state);
+            wmem_map_insert(state_switch, (void *) (uint64_t) id, (void *) (uint64_t) next_state);
             cJSON *state_side_node = cJSON_GetObjectItem(dissector_data, "stateSide");
             if (!cJSON_IsString(state_side_node)) continue;
             char *side = state_side_node->valuestring;
@@ -1529,12 +1572,12 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
             if (strcmp(side, "client") == 0) side_int = 1;
             if (strcmp(side, "server") == 0) side_int = 2;
             if (strcmp(side, "all") == 0) side_int = 3;
-            wmem_map_insert(state_side, (void *) (uint64_t) i, (void *) (uint64_t) side_int);
+            wmem_map_insert(state_side, (void *) (uint64_t) id, (void *) (uint64_t) side_int);
         }
         if (cJSON_HasObjectItem(dissector_data, "specialMark")) {
             cJSON *mark = cJSON_GetObjectItem(dissector_data, "specialMark");
             if (!cJSON_IsString(mark)) continue;
-            wmem_map_insert(special_mark, (void *) (uint64_t) i, wmem_strdup(set->allocator, mark->valuestring));
+            wmem_map_insert(special_mark, (void *) (uint64_t) id, wmem_strdup(set->allocator, mark->valuestring));
         }
     }
 }
