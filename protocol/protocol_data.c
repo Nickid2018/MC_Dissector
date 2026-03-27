@@ -78,15 +78,15 @@ uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
 }
 
 int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
-    uint32_t read;
-    int32_t len = read_var_int(tvb, offset, (int32_t *) &read);
-    *result = (int32_t) (read >> 1 ^ -(read & 1));
+    uint64_t read;
+    int32_t len = tvb_get_varint(tvb, offset, 5, &read, ENC_VARINT_ZIGZAG);
+    *result = (int32_t) (read & 0xFFFFFFFFL);
     return len;
 }
 
 int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result) {
     uint64_t read;
-    int32_t len = read_var_long(tvb, offset, (int64_t *) &read);
-    *result = (int64_t) (read >> 1 ^ -(read & 1));
+    int32_t len = tvb_get_varint(tvb, offset, 10, &read, ENC_VARINT_ZIGZAG);
+    *result = (int64_t) read;
     return len;
 }
