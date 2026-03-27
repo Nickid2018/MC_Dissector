@@ -246,10 +246,34 @@ DISSECT_PROTOCOL(varint) {
     int32_t result;
     int32_t length = read_var_int(tvb, offset, &result);
     if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarInt");
+    if (dissector->settings->signed_varint) {
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%d", result);
+        if (tree)
+            add_name(
+                proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_varint], tvb, offset, length, result),
+                name
+            );
+
+    } else {
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%u", result);
+        if (tree)
+            add_name(
+                proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_varint], tvb, offset, length, result),
+                name
+            );
+    }
+    return length;
+}
+
+DISSECT_PROTOCOL(zigzag32) {
+    int32_t result;
+    int32_t length = read_zigzag_int(tvb, offset, &result);
+    if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid Zigzag32");
+    result = result >> 1 & ~(1 << 31) ^ -(result & 1);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", result);
     if (tree)
         add_name(
-            proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_varint], tvb, offset, length, result),
+            proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_zigzag32], tvb, offset, length, result),
             name
         );
     return length;
@@ -259,10 +283,33 @@ DISSECT_PROTOCOL(varlong) {
     int64_t result;
     int32_t length = read_var_long(tvb, offset, &result);
     if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarLong");
+    if (dissector->settings->signed_varint) {
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", result);
+        if (tree)
+            add_name(
+                proto_tree_add_int64(tree, dissector->settings->hf_indexes[hf_varlong], tvb, offset, length, result),
+                name
+            );
+
+    } else {
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", result);
+        if (tree)
+            add_name(
+                proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_varlong], tvb, offset, length, result),
+                name
+            );
+    }
+    return length;
+}
+
+DISSECT_PROTOCOL(zigzag64) {
+    int64_t result;
+    int32_t length = read_zigzag_int64(tvb, offset, &result);
+    if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid Zigzag64");
     if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", result);
     if (tree)
         add_name(
-            proto_tree_add_int64(tree, dissector->settings->hf_indexes[hf_varlong], tvb, offset, length, result),
+            proto_tree_add_int64(tree, dissector->settings->hf_indexes[hf_zigzag64], tvb, offset, length, result),
             name
         );
     return length;
@@ -1403,6 +1450,8 @@ protocol_dissector *make_protocol_dissector(
     SIMPLE_PROTOCOL(f64, dissect_f64)
     SIMPLE_PROTOCOL(varint, dissect_varint)
     SIMPLE_PROTOCOL(varlong, dissect_varlong)
+    SIMPLE_PROTOCOL(zigzag32, dissect_zigzag32)
+    SIMPLE_PROTOCOL(zigzag64, dissect_zigzag64)
     SIMPLE_PROTOCOL(void, dissect_void)
     SIMPLE_PROTOCOL(bool, dissect_bool)
     SIMPLE_PROTOCOL(string, dissect_string)

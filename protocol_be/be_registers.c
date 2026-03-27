@@ -24,11 +24,13 @@ int hf_hint16_be = -1;
 int hf_int32_be = -1;
 int hf_uint32_be = -1;
 int hf_hint32_be = -1;
-int hf_varint_be = -1;
 int hf_int64_be = -1;
 int hf_uint64_be = -1;
 int hf_hint64_be = -1;
+int hf_varint_be = -1;
 int hf_varlong_be = -1;
+int hf_zigzag32_be = -1;
+int hf_zigzag64_be = -1;
 int hf_float_be = -1;
 int hf_double_be = -1;
 int hf_bytes_be = -1;
@@ -68,11 +70,13 @@ void proto_register_mcbe() {
         DEFINE_HF(hf_int32_be, "[int32]", "mcbe.int32", INT32, DEC)
         DEFINE_HF(hf_uint32_be, "[uint32]", "mcbe.uint32", UINT32, DEC)
         DEFINE_HF(hf_hint32_be, "[uint32]", "mcbe.hint32", UINT32, HEX)
-        DEFINE_HF(hf_varint_be, "[var int]", "mcbe.varint", INT32, DEC)
         DEFINE_HF(hf_int64_be, "[int64]", "mcbe.int64", INT64, DEC)
         DEFINE_HF(hf_uint64_be, "[uint64]", "mcbe.uint64", UINT64, DEC)
         DEFINE_HF(hf_hint64_be, "[uint64]", "mcbe.hint64", UINT64, HEX)
-        DEFINE_HF(hf_varlong_be, "[var long]", "mcbe.varlong", INT64, DEC)
+        DEFINE_HF(hf_varint_be, "[var int]", "mcbe.varint", UINT32, DEC)
+        DEFINE_HF(hf_varlong_be, "[var long]", "mcbe.varlong", UINT64, DEC)
+        DEFINE_HF(hf_zigzag32_be, "[zigzag32]", "mcbe.zigzag32", INT32, DEC)
+        DEFINE_HF(hf_zigzag64_be, "[zigzag64]", "mcbe.zigzag64", INT64, DEC)
         DEFINE_HF(hf_float_be, "[f32]", "mcbe.float", FLOAT, DEC)
         DEFINE_HF(hf_double_be, "[f64]", "mcbe.double", DOUBLE, DEC)
         DEFINE_HF(hf_bytes_be, "[buffer]", "mcbe.bytes", BYTES, NONE)
@@ -86,8 +90,8 @@ void proto_register_mcbe() {
         // BE dissector data types
         DEFINE_HF(hf_packet_length_be, "Packet Length", "mcbe.packet_length", UINT32, DEC)
         DEFINE_HF(hf_packet_data_length_be, "Packet Data Length", "mcbe.packet_data_length", UINT32, DEC)
-        DEFINE_HF(hf_packet_id_be, "Packet ID", "mcbebe.packet_id", UINT8, HEX)
-        DEFINE_HF(hf_packet_name_be, "Packet Name", "mcbebe.packet_name", STRING, NONE)
+        DEFINE_HF(hf_packet_id_be, "Packet ID", "mcbe.packet_id", UINT8, HEX)
+        DEFINE_HF(hf_packet_name_be, "Packet Name", "mcbe.packet_name", STRING, NONE)
         DEFINE_HF(hf_unknown_packet_be, "Unknown Packet", "mcbe.unknown_packet", STRING, NONE)
     };
     proto_register_field_array(proto_mcbe, hf_be, array_length(hf_be));
@@ -122,11 +126,13 @@ void init_storage_be() {
     settings_be->hf_indexes[hf_int32] = hf_int32_be;
     settings_be->hf_indexes[hf_uint32] = hf_uint32_be;
     settings_be->hf_indexes[hf_hint32] = hf_hint32_be;
-    settings_be->hf_indexes[hf_varint] = hf_varint_be;
     settings_be->hf_indexes[hf_int64] = hf_int64_be;
     settings_be->hf_indexes[hf_uint64] = hf_uint64_be;
     settings_be->hf_indexes[hf_hint64] = hf_hint64_be;
+    settings_be->hf_indexes[hf_varint] = hf_varint_be;
     settings_be->hf_indexes[hf_varlong] = hf_varlong_be;
+    settings_be->hf_indexes[hf_zigzag32] = hf_zigzag32_be;
+    settings_be->hf_indexes[hf_zigzag64] = hf_zigzag64_be;
     settings_be->hf_indexes[hf_float] = hf_float_be;
     settings_be->hf_indexes[hf_double] = hf_double_be;
     settings_be->hf_indexes[hf_bytes] = hf_bytes_be;
@@ -138,6 +144,7 @@ void init_storage_be() {
     settings_be->hf_indexes[hf_parsing_error] = hf_parsing_error_be;
     settings_be->hf_indexes[hf_ignored_packet] = hf_ignored_packet_be;
     settings_be->endian = ENC_LITTLE_ENDIAN;
+    settings_be->signed_varint = false;
     settings_be->total_states = 2;
     settings_be->state_names = BE_PROTOCOL_STATES;
 

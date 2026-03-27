@@ -10,7 +10,7 @@
 // NO FORMAT: Keep alignment
 char *JE_PROTOCOL_STATES[] = {
     "handshaking_server", "play_server", "status_server", "login_server", "configuration_server", "", "", "",
-    "",                   "play_client", "status_client", "login_client", "configuration_client", "", "", "",
+    "", "play_client", "status_client", "login_client", "configuration_client", "", "", "",
 };
 
 // ett
@@ -28,11 +28,13 @@ int hf_hint16_je = -1;
 int hf_int32_je = -1;
 int hf_uint32_je = -1;
 int hf_hint32_je = -1;
-int hf_varint_je = -1;
 int hf_int64_je = -1;
 int hf_uint64_je = -1;
 int hf_hint64_je = -1;
+int hf_varint_je = -1;
 int hf_varlong_je = -1;
+int hf_zigzag32_je = -1;
+int hf_zigzag64_je = -1;
 int hf_float_je = -1;
 int hf_double_je = -1;
 int hf_bytes_je = -1;
@@ -74,11 +76,13 @@ void proto_register_mcje() {
         DEFINE_HF(hf_int32_je, "[int32]", "mcje.int32", INT32, DEC)
         DEFINE_HF(hf_uint32_je, "[uint32]", "mcje.uint32", UINT32, DEC)
         DEFINE_HF(hf_hint32_je, "[uint32]", "mcje.hint32", UINT32, HEX)
-        DEFINE_HF(hf_varint_je, "[var int]", "mcje.varint", INT32, DEC)
         DEFINE_HF(hf_int64_je, "[int64]", "mcje.int64", INT64, DEC)
         DEFINE_HF(hf_uint64_je, "[uint64]", "mcje.uint64", UINT64, DEC)
         DEFINE_HF(hf_hint64_je, "[uint64]", "mcje.hint64", UINT64, HEX)
+        DEFINE_HF(hf_varint_je, "[var int]", "mcje.varint", INT32, DEC)
         DEFINE_HF(hf_varlong_je, "[var long]", "mcje.varlong", INT64, DEC)
+        DEFINE_HF(hf_zigzag32_je, "[zigzag32]", "mcje.zigzag32", INT32, DEC)
+        DEFINE_HF(hf_zigzag64_je, "[zigzag64]", "mcje.zigzag64", INT64, DEC)
         DEFINE_HF(hf_float_je, "[f32]", "mcje.float", FLOAT, DEC)
         DEFINE_HF(hf_double_je, "[f64]", "mcje.double", DOUBLE, DEC)
         DEFINE_HF(hf_bytes_je, "[buffer]", "mcje.bytes", BYTES, NONE)
@@ -136,11 +140,13 @@ void init_storage_je() {
     settings_je->hf_indexes[hf_int32] = hf_int32_je;
     settings_je->hf_indexes[hf_uint32] = hf_uint32_je;
     settings_je->hf_indexes[hf_hint32] = hf_hint32_je;
-    settings_je->hf_indexes[hf_varint] = hf_varint_je;
     settings_je->hf_indexes[hf_int64] = hf_int64_je;
     settings_je->hf_indexes[hf_uint64] = hf_uint64_je;
     settings_je->hf_indexes[hf_hint64] = hf_hint64_je;
+    settings_je->hf_indexes[hf_varint] = hf_varint_je;
     settings_je->hf_indexes[hf_varlong] = hf_varlong_je;
+    settings_je->hf_indexes[hf_zigzag32] = hf_zigzag32_je;
+    settings_je->hf_indexes[hf_zigzag64] = hf_zigzag64_je;
     settings_je->hf_indexes[hf_float] = hf_float_je;
     settings_je->hf_indexes[hf_double] = hf_double_je;
     settings_je->hf_indexes[hf_bytes] = hf_bytes_je;
@@ -152,6 +158,7 @@ void init_storage_je() {
     settings_je->hf_indexes[hf_parsing_error] = hf_parsing_error_je;
     settings_je->hf_indexes[hf_ignored_packet] = hf_ignored_packet_je;
     settings_je->endian = ENC_BIG_ENDIAN;
+    settings_je->signed_varint = true;
     settings_je->total_states = 16;
     settings_je->state_names = JE_PROTOCOL_STATES;
 

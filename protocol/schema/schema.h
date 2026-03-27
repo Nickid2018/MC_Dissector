@@ -18,11 +18,13 @@ enum FieldsIndex {
     hf_int32,
     hf_uint32,
     hf_hint32,
-    hf_varint,
     hf_int64,
     hf_uint64,
     hf_hint64,
+    hf_varint,
     hf_varlong,
+    hf_zigzag32,
+    hf_zigzag64,
     hf_float,
     hf_double,
     hf_bytes,
@@ -70,6 +72,7 @@ struct protocol_dissector_settings_struct {
     int hf_indexes[hf_ignored_packet + 1];
     int ett_tree;
     int endian;
+    bool signed_varint;
 
     // Abstract states
     int total_states;

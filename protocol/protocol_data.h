@@ -53,6 +53,8 @@ int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator
 
 uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len);
 
-int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset);
+int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result);
+
+int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

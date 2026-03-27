@@ -14,16 +14,16 @@ void be_tag_parse_to_string(
             break;
         case TAG_SHORT:
             *length = 2;
-            *text = wmem_strdup_printf(pinfo->pool, "<s>: %d", tvb_get_int16(tvb, offset_g, ENC_LITTLE_ENDIAN));
+            *text = wmem_strdup_printf(pinfo->pool, "<s>: %d", tvb_get_int16(tvb, offset_g, ENC_BIG_ENDIAN));
             break;
         case TAG_INT:
             int32_t result_i;
-            *length = read_var_int(tvb, offset_g, &result_i);
+            *length = read_zigzag_int(tvb, offset_g, &result_i);
             *text = wmem_strdup_printf(pinfo->pool, "<i>: %d", result_i);
             break;
         case TAG_LONG:
             int64_t result_l;
-            *length = read_var_long(tvb, offset_g, &result_l);
+            *length = read_zigzag_int64(tvb, offset_g, &result_l);
             *text = wmem_strdup_printf(pinfo->pool, "<l>: %ld", result_l);
             break;
         case TAG_FLOAT:
@@ -50,10 +50,12 @@ void be_tag_parse_to_string(
                             g_strdup_printf("%d", tvb_get_int8(tvb, offset_g + *length))
                         );
                 } else {
-                    int32_t data;
-                    *length += read_var_int(tvb, offset_g + *length, &data);
+                    *length += 4;
                     if (i < record_length)
-                        g_ptr_array_add(array,g_strdup_printf("%d", data));
+                        g_ptr_array_add(
+                            array,
+                            g_strdup_printf("%d", tvb_get_int32(tvb, offset_g + *length, ENC_BIG_ENDIAN))
+                        );
                 }
             }
             char *el_type = type == TAG_BYTE_ARRAY ? "<ba>" : type == TAG_INT_ARRAY ? "<ia>" : "<la>";
@@ -115,7 +117,7 @@ int32_t add_be_list_type(
     int32_t length = 1;
     uint32_t sub_type = tvb_get_uint8(tvb, offset_global);
     int32_t sub_length;
-    length += read_var_int(tvb, offset_global + 1, &sub_length);
+    length += read_zigzag_int(tvb, offset_global + 1, &sub_length);
 
     proto_tree *subtree;
     if (sup_name == NULL)
@@ -237,15 +239,15 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
         return 8;
     if (type == TAG_INT) {
         int32_t uncare;
-        int32_t length = read_var_int(tvb, offset, &uncare);
+        int32_t length = read_zigzag_int(tvb, offset, &uncare);
         return length;
     }
     if (type == TAG_LONG) {
         int64_t uncare;
-        int32_t length = read_var_long(tvb, offset, &uncare);
+        int32_t length = read_zigzag_int64(tvb, offset, &uncare);
         return length;
     }
-    if (type == TAG_BYTE_ARRAY || type == TAG_STRING) {
+    if (type == TAG_STRING) {
         int32_t len;
         int32_t length = read_var_int(tvb, offset, &len);
         return length + len;
@@ -253,7 +255,7 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
     if (type == TAG_LIST) {
         uint32_t sub_type = tvb_get_uint8(tvb, offset);
         int32_t len;
-        int32_t length = read_var_int(tvb, offset, &len);
+        int32_t length = read_zigzag_int(tvb, offset + 1, &len);
         if (sub_type == TAG_END)
             return 1 + length;
         int32_t sub_length = 0;
@@ -266,20 +268,21 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
         uint32_t sub_type;
         while ((sub_type = tvb_get_uint8(tvb, offset + sub_length)) != TAG_END) {
             int32_t name_length;
-            int32_t length = read_var_int(tvb, offset, &name_length);
+            int32_t length = read_var_int(tvb, offset + 1, &name_length);
             sub_length += 1 + length + name_length;
             sub_length += count_be_nbt_length_with_type(tvb, offset + sub_length, sub_type);
         }
         return sub_length + 1;
     }
+    if (type == TAG_BYTE_ARRAY) {
+        int32_t len;
+        int32_t length = read_zigzag_int(tvb, offset, &len);
+        return 1 + length;
+    }
     if (type == TAG_INT_ARRAY) {
         int32_t len;
-        int32_t length = read_var_int(tvb, offset, &len);
-        for (uint32_t i = 0; i < len; i++) {
-            int32_t uncare;
-            length += read_var_int(tvb, offset + 1 + length, &uncare);
-        }
-        return 1 + length;
+        int32_t length = read_zigzag_int(tvb, offset, &len);
+        return 1 + length * 4;
     }
     return 0;
 }
@@ -287,6 +290,6 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
 int32_t count_be_nbt_length(tvbuff_t *tvb, int32_t offset) {
     uint8_t type = tvb_get_uint8(tvb, offset);
     int32_t name_length;
-    int32_t length = read_var_int(tvb, offset, &name_length);
+    int32_t length = read_var_int(tvb, offset + 1, &name_length);
     return count_be_nbt_length_with_type(tvb, offset + 1 + length + name_length, type) + 1 + length + name_length;
 }

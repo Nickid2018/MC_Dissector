@@ -77,7 +77,16 @@ uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
     return tvb_get_string_enc(wmem_file_scope(), tvb, offset + 2, str_len * 2, ENC_UTF_16);
 }
 
-int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset) {
-    uint32_t read = tvb_get_uint32(tvb, offset, ENC_LITTLE_ENDIAN);
-    return (int32_t) (read >> 1) ^ -(int32_t) (read & 1);
+int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
+    uint32_t read;
+    int32_t len = read_var_int(tvb, offset, (int32_t *) &read);
+    *result = (int32_t) (read >> 1 ^ -(read & 1));
+    return len;
+}
+
+int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result) {
+    uint64_t read;
+    int32_t len = read_var_long(tvb, offset, (int64_t *) &read);
+    *result = (int64_t) (read >> 1 ^ -(read & 1));
+    return len;
 }
