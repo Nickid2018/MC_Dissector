@@ -9,6 +9,8 @@
 #include "protocol/protocol_data.h"
 #include "protocol/storage/storage.h"
 #include "schema.h"
+
+#include "utils/easy_expr.h"
 #include "utils/nbt.h"
 
 void destroy_protocol(protocol_dissector_set *dissector_set) {
@@ -416,7 +418,7 @@ DISSECT_PROTOCOL(nbt) {
     if (!present) {
         if (tree) {
             proto_item *text = proto_tree_add_boolean(
-                tree, dissector->settings->hf_indexes[hf_boolean], tvb, offset, 1,false
+                tree, dissector->settings->hf_indexes[hf_boolean], tvb, offset, 1, false
             );
             proto_item_set_text(text, "%s [optional nbt]: Not present", name);
         }
@@ -457,6 +459,17 @@ DISSECT_PROTOCOL(bnbt) {
 }
 
 // COMPOSITE SUB-DISSECTORS --------------------------------------------------------------------------------------------
+
+char *packet_save_fetcher(char *name, void *user_data, int64_t *value) {
+    char *searched_value = wmem_map_lookup(user_data, name);
+    if (!searched_value) searched_value = name;
+    char *end;
+    errno = 0;
+    *value = strtoll(searched_value, &end, 10);
+    if (errno == ERANGE) return "Number is too large";
+    if (searched_value == end) return "Invalid number string";
+    return NULL;
+}
 
 DISSECT_PROTOCOL(error) {
     char *error_message = wmem_map_lookup(dissector->dissect_arguments, "e");
@@ -499,20 +512,16 @@ DISSECT_PROTOCOL(container) {
 
 DISSECT_PROTOCOL(array) {
     protocol_dissector *sub_dissector = wmem_map_lookup(dissector->dissect_arguments, "d");
-    char *search_key = wmem_map_lookup(dissector->dissect_arguments, "k");
+    char *expr = wmem_map_lookup(dissector->dissect_arguments, "k");
     protocol_dissector *get_count_dissector = wmem_map_lookup(dissector->dissect_arguments, "c");
 
     int64_t parsed_count = 0;
     int32_t total = 0;
-    if (search_key) {
-        char *searched_value = wmem_map_lookup(packet_saves, search_key);
-        if (!searched_value) searched_value = search_key;
-        char *end;
-        errno = 0;
-        parsed_count = strtoll(searched_value, &end, 10);
-        if (errno == ERANGE) return add_invalid_data(dissector, tree, tvb, offset, name, "Array size is too large");
-        if (searched_value == end)
-            return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid array size string");
+    if (expr) {
+        char **expr_list = g_strsplit(expr, " ", 100);
+        char *error = calculate_expr(expr_list, packet_alloc, packet_save_fetcher, packet_saves, &parsed_count);
+        g_strfreev(expr_list);
+        if (error) return add_invalid_data(dissector, tree, tvb, offset, name, error);
     } else {
         char *saved_value;
         int32_t len = get_count_dissector->dissect_protocol(
@@ -604,12 +613,33 @@ DISSECT_PROTOCOL(mapper) {
     return len;
 }
 
+typedef struct switch_number_range_struct {
+    double from;
+    double to;
+    protocol_dissector *dissector;
+} switch_number_range;
+
 DISSECT_PROTOCOL(switch) {
     char *key = wmem_map_lookup(dissector->dissect_arguments, "k");
     char *searched_value = wmem_map_lookup(packet_saves, key);
     if (!searched_value) return add_invalid_data(dissector, tree, tvb, offset, name, "Context has no specific key");
+    protocol_dissector *mapped = NULL;
     wmem_map_t *mapper = wmem_map_lookup(dissector->dissect_arguments, "m");
-    protocol_dissector *mapped = wmem_map_lookup(mapper, searched_value);
+    if (mapper) mapped = wmem_map_lookup(mapper, searched_value);
+    wmem_list_t *ranges = wmem_map_lookup(dissector->dissect_arguments, "r");
+    if (!mapped && ranges) {
+        wmem_list_frame_t *now = wmem_list_head(ranges);
+        while (now) {
+            switch_number_range *range = wmem_list_frame_data(now);
+            char *end;
+            double number = strtod(searched_value, &end);
+            if (number > range->from && number < range->to) {
+                mapped = range->dissector;
+                break;
+            }
+            now = wmem_list_frame_next(now);
+        }
+    }
     if (!mapped) mapped = wmem_map_lookup(dissector->dissect_arguments, "d");
     if (!mapped) return add_invalid_data(dissector, tree, tvb, offset, name, "No compatible dissector found");
     return mapped->dissect_protocol(tree, pinfo, tvb, offset, packet_alloc, mapped, name, packet_saves, value);
@@ -945,8 +975,7 @@ COMPOSITE_PROTOCOL_DEFINE(array) {
     cJSON *count_type = cJSON_GetObjectItem(object, "countType");
     cJSON *count = cJSON_GetObjectItem(object, "count");
     if (count == NULL && count_type == NULL)
-        return make_error(allocator, "Lack of count/countType for array object",
-                          settings);
+        return make_error(allocator, "Lack of count/countType for array object", settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *sub_dissector = make_protocol_dissector(
@@ -1075,22 +1104,58 @@ COMPOSITE_PROTOCOL_DEFINE(switch) {
     cJSON *key = cJSON_GetObjectItem(object, "compareTo");
     if (key == NULL) return make_error(allocator, "Lack of compareTo for switch object", settings);
     if (!cJSON_IsString(key)) return make_error(allocator, "Invalid compareTo for switch object", settings);
-    cJSON *fields = cJSON_GetObjectItem(object, "fields");
-    if (fields == NULL) return make_error(allocator, "Lack of fields for switch object", settings);
-    if (!cJSON_IsObject(fields)) return make_error(allocator, "Invalid fields for switch object", settings);
+
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
-    wmem_map_t *map = wmem_map_new(allocator, g_str_hash, g_str_equal);
-    cJSON *node = fields->child;
-    while (node != NULL) {
-        protocol_dissector *sub_dissector = make_protocol_dissector(
-            settings, allocator, node, dissectors, protocol_version, RECURSIVE_ROOT
-        );
-        wmem_map_insert(map, wmem_strdup(allocator, node->string), sub_dissector);
-        node = node->next;
-    }
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     wmem_map_insert(this_dissector->dissect_arguments, "k", wmem_strdup(allocator, key->valuestring));
-    wmem_map_insert(this_dissector->dissect_arguments, "m", map);
+
+    cJSON *ranges = cJSON_GetObjectItem(object, "ranges");
+    if (ranges != NULL) {
+        if (!cJSON_IsObject(ranges)) return make_error(allocator, "Invalid ranges for switch object", settings);
+        wmem_list_t *range_list = wmem_list_new(allocator);
+        cJSON *node = ranges->child;
+        while (node != NULL) {
+            char **split_range = g_strsplit(node->string, "~", 2);
+            if (split_range[0] == NULL || split_range[1] == NULL) {
+                g_strfreev(split_range);
+                wmem_destroy_list(range_list);
+                wmem_map_destroy(this_dissector->dissect_arguments, false, true);
+                wmem_free(allocator, this_dissector);
+                return make_error(allocator, "Invalid range key for switch object", settings);
+            }
+
+            switch_number_range *range = wmem_alloc(allocator, sizeof(switch_number_range));
+            range->from = strlen(split_range[0]) > 0 ? strtod(split_range[0], NULL) : -INFINITY;
+            range->to = strlen(split_range[1]) > 0 ? strtod(split_range[1], NULL) : INFINITY;
+            range->dissector = make_protocol_dissector(
+                settings, allocator, node, dissectors, protocol_version, RECURSIVE_ROOT
+            );
+            wmem_list_append(range_list, range);
+            g_strfreev(split_range);
+
+            node = node->next;
+        }
+        wmem_map_insert(this_dissector->dissect_arguments, "r", range_list);
+    }
+
+    cJSON *fields = cJSON_GetObjectItem(object, "fields");
+    if (fields != NULL) {
+        if (!cJSON_IsObject(fields)) return make_error(allocator, "Invalid fields for switch object", settings);
+        wmem_map_t *fields_map = wmem_map_new(allocator, g_str_hash, g_str_equal);
+        cJSON *node = fields->child;
+        while (node != NULL) {
+            protocol_dissector *sub_dissector = make_protocol_dissector(
+                settings, allocator, node, dissectors, protocol_version, RECURSIVE_ROOT
+            );
+            wmem_map_insert(fields_map, wmem_strdup(allocator, node->string), sub_dissector);
+            node = node->next;
+        }
+        wmem_map_insert(this_dissector->dissect_arguments, "m", fields_map);
+    }
+
+    if (fields == NULL && ranges == NULL)
+        return make_error(allocator, "Lack of fields or ranges for switch object", settings);
+
     if (cJSON_HasObjectItem(object, "default")) {
         cJSON *def = cJSON_GetObjectItem(object, "default");
         protocol_dissector *sub_dissector = make_protocol_dissector(
