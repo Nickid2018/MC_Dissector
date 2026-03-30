@@ -269,7 +269,6 @@ DISSECT_PROTOCOL(zigzag32) {
     int32_t result;
     int32_t length = read_zigzag_int(tvb, offset, &result);
     if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid Zigzag32");
-    result = result >> 1 & ~(1 << 31) ^ -(result & 1);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%d", result);
     if (tree)
         add_name(

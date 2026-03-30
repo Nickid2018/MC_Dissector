@@ -6,20 +6,7 @@
 #include "protocol_data.h"
 #include "mc_dissector.h"
 
-int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
-    uint8_t read;
-    int32_t p = 0;
-    *result = 0;
-    do {
-        if (p == 5)
-            return INVALID_DATA;
-        read = tvb_get_uint8(tvb, offset + p);
-        *result |= (read & 0x7F) << (7 * p++);
-    } while ((read & 0x80) != 0);
-    return p;
-}
-
-int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_length, int32_t *result) {
+int32_t read_unsigned_var_int(tvbuff_t *tvb, int32_t offset, int32_t max_length, uint32_t *result) {
     uint8_t read;
     int32_t p = 0;
     *result = 0;
@@ -32,10 +19,24 @@ int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_lengt
     return p;
 }
 
-int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result) {
+int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_length, int32_t *result) {
+    uint32_t unsigned_result;
+    int32_t len = read_unsigned_var_int(tvb, offset, max_length, &unsigned_result);
+    *result = *(int32_t *) &unsigned_result;
+    return len;
+}
+
+int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
+    uint32_t unsigned_result;
+    int32_t len = read_unsigned_var_int(tvb, offset, 5, &unsigned_result);
+    *result = *(int32_t *) &unsigned_result;
+    return len;
+}
+
+int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result) {
+    uint8_t read;
     int32_t p = 0;
     *result = 0;
-    uint8_t read;
     do {
         if (p == 10)
             return INVALID_DATA;
@@ -43,6 +44,13 @@ int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result) {
         *result |= (read & 0x7F) << (7 * p++);
     } while ((read & 0x80) != 0);
     return p;
+}
+
+int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result) {
+    uint64_t unsigned_result;
+    int32_t len = read_unsigned_var_long(tvb, offset, &unsigned_result);
+    *result = *(int64_t *) &unsigned_result;
+    return len;
 }
 
 int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **result, wmem_allocator_t *allocator) {
@@ -78,15 +86,15 @@ uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
 }
 
 int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
-    uint64_t read;
-    int32_t len = tvb_get_varint(tvb, offset, 5, &read, ENC_VARINT_ZIGZAG);
-    *result = (int32_t) (read & 0xFFFFFFFFL);
+    uint32_t unsigned_result;
+    int32_t len = read_unsigned_var_int(tvb, offset, 5, &unsigned_result);
+    *result = (int32_t) (unsigned_result >> 1) ^ -(int32_t) (unsigned_result & 1);
     return len;
 }
 
 int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result) {
-    uint64_t read;
-    int32_t len = tvb_get_varint(tvb, offset, 10, &read, ENC_VARINT_ZIGZAG);
-    *result = (int64_t) read;
+    uint64_t unsigned_result;
+    int32_t len = read_unsigned_var_long(tvb, offset, &unsigned_result);
+    *result = (int64_t) (unsigned_result >> 1) ^ -(int64_t) (unsigned_result & 1);
     return len;
 }
