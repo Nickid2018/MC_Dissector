@@ -869,11 +869,14 @@ protocol_dissector *make_void(wmem_allocator_t *allocator) {
     return simple_dissector;
 }
 
-protocol_dissector *make_error(wmem_allocator_t *allocator, char *error_message) {
+protocol_dissector *make_error(
+    wmem_allocator_t *allocator, char *error_message, protocol_dissector_settings *settings
+) {
     protocol_dissector *error_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     error_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     wmem_map_insert(error_dissector->dissect_arguments, "e", error_message);
     error_dissector->dissect_protocol = dissect_error;
+    error_dissector->settings = settings;
     return error_dissector;
 }
 
@@ -906,18 +909,18 @@ if (strcmp(type, #name) == 0 && args == count && composite_type) { \
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(container) {
     cJSON *list = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsArray(list)) return make_error(allocator, "Container param needs to be a list");
+    if (!cJSON_IsArray(list)) return make_error(allocator, "Container param needs to be a list", settings);
     int count = cJSON_GetArraySize(list);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     name_and_dissector **sub_dissectors = wmem_alloc(allocator, sizeof(name_and_dissector *) * count);
     for (int i = 0; i < count; i++) {
         cJSON *node = cJSON_GetArrayItem(list, i);
         cJSON *name_node = cJSON_GetObjectItem(node, "name");
-        if (name_node == NULL) return make_error(allocator, "Lack of name for container object");
-        if (!cJSON_IsString(name_node)) return make_error(allocator, "Invalid name for container object");
+        if (name_node == NULL) return make_error(allocator, "Lack of name for container object", settings);
+        if (!cJSON_IsString(name_node)) return make_error(allocator, "Invalid name for container object", settings);
         char *name = wmem_strdup(allocator, name_node->valuestring);
         cJSON *type = cJSON_GetObjectItem(node, "type");
-        if (type == NULL) return make_error(allocator, "Lack of type for container object");
+        if (type == NULL) return make_error(allocator, "Lack of type for container object", settings);
         protocol_dissector *sub_dissector = make_protocol_dissector(
             settings, allocator, type, dissectors, protocol_version, RECURSIVE_ROOT
         );
@@ -936,12 +939,14 @@ COMPOSITE_PROTOCOL_DEFINE(container) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(array) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsObject(object)) return make_error(allocator, "Array param needs to be a object");
+    if (!cJSON_IsObject(object)) return make_error(allocator, "Array param needs to be a object", settings);
     cJSON *type = cJSON_GetObjectItem(object, "type");
-    if (type == NULL) return make_error(allocator, "Lack of type for array object");
+    if (type == NULL) return make_error(allocator, "Lack of type for array object", settings);
     cJSON *count_type = cJSON_GetObjectItem(object, "countType");
     cJSON *count = cJSON_GetObjectItem(object, "count");
-    if (count == NULL && count_type == NULL) return make_error(allocator, "Lack of count/countType for array object");
+    if (count == NULL && count_type == NULL)
+        return make_error(allocator, "Lack of count/countType for array object",
+                          settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *sub_dissector = make_protocol_dissector(
@@ -956,7 +961,7 @@ COMPOSITE_PROTOCOL_DEFINE(array) {
     } else {
         bool is_string = cJSON_IsString(count);
         bool is_number = cJSON_IsNumber(count);
-        if (!is_string && !is_number) return make_error(allocator, "Invalid count for array object");
+        if (!is_string && !is_number) return make_error(allocator, "Invalid count for array object", settings);
         if (is_string)
             wmem_map_insert(this_dissector->dissect_arguments, "k", count->valuestring);
         if (is_number)
@@ -967,7 +972,7 @@ COMPOSITE_PROTOCOL_DEFINE(array) {
     }
     if (cJSON_HasObjectItem(object, "offset")) {
         cJSON *offset = cJSON_GetObjectItem(object, "offset");
-        if (!cJSON_IsString(offset)) return make_error(allocator, "Array offset needs to be a string");
+        if (!cJSON_IsString(offset)) return make_error(allocator, "Array offset needs to be a string", settings);
         wmem_map_insert(this_dissector->dissect_arguments, "o", wmem_strdup(allocator, offset->valuestring));
     }
     this_dissector->dissect_protocol = dissect_array;
@@ -990,28 +995,28 @@ COMPOSITE_PROTOCOL_DEFINE(option) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(mapper) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsObject(object)) return make_error(allocator, "Mapper param needs to be a object");
+    if (!cJSON_IsObject(object)) return make_error(allocator, "Mapper param needs to be a object", settings);
     cJSON *type = cJSON_GetObjectItem(object, "type");
     cJSON *var = cJSON_GetObjectItem(object, "var");
-    if (type == NULL && var == NULL) return make_error(allocator, "Lack of type and var for mapper object");
+    if (type == NULL && var == NULL) return make_error(allocator, "Lack of type and var for mapper object", settings);
     cJSON *mappings = cJSON_GetObjectItem(object, "mappings");
     cJSON *source = cJSON_GetObjectItem(object, "source");
     if (mappings == NULL && source == NULL)
-        return make_error(allocator, "Lack of mappings and source for mapper object");
+        return make_error(allocator, "Lack of mappings and source for mapper object", settings);
     wmem_map_t *map = wmem_map_new(allocator, g_str_hash, g_str_equal);
     if (mappings != NULL) {
-        if (!cJSON_IsObject(mappings)) return make_error(allocator, "Invalid mappings for mapper object");
+        if (!cJSON_IsObject(mappings)) return make_error(allocator, "Invalid mappings for mapper object", settings);
         cJSON *node = mappings->child;
         while (node != NULL) {
             if (!cJSON_IsString(node)) {
                 wmem_free(allocator, map);
-                return make_error(allocator, "Invalid mapping entry for mapper object");
+                return make_error(allocator, "Invalid mapping entry for mapper object", settings);
             }
             wmem_map_insert(map, wmem_strdup(allocator, node->string), wmem_strdup(allocator, node->valuestring));
             node = node->next;
         }
     } else {
-        if (!cJSON_IsString(source)) return make_error(allocator, "Invalid source for mapper object");
+        if (!cJSON_IsString(source)) return make_error(allocator, "Invalid source for mapper object", settings);
         char *file = build_indexed_file_name(settings->storage, "mappings", source->valuestring,
                                              protocol_version);
         char *content = NULL;
@@ -1019,7 +1024,7 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
             g_free(file);
             wmem_free(allocator, map);
-            return make_error(allocator, "Cannot read mapping file");
+            return make_error(allocator, "Cannot read mapping file", settings);
         }
         cJSON *json = cJSON_Parse(content);
         g_free(content);
@@ -1028,19 +1033,20 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, error);
             g_free(file);
             wmem_free(allocator, map);
-            return make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse mapping file: %s", error));
+            return make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse mapping file: %s", error),
+                              settings);
         }
         g_free(file);
         if (!cJSON_IsObject(json)) {
             cJSON_free(json);
             wmem_free(allocator, map);
-            return make_error(allocator, "Mapping file is not an object");
+            return make_error(allocator, "Mapping file is not an object", settings);
         }
         cJSON *now = json->child;
         while (now != NULL) {
             if (!cJSON_IsString(now)) {
                 wmem_free(allocator, map);
-                return make_error(allocator, "Invalid mapping");
+                return make_error(allocator, "Invalid mapping", settings);
             }
             wmem_map_insert(map, wmem_strdup(allocator, now->string), wmem_strdup(allocator, now->valuestring));
             now = now->next;
@@ -1065,13 +1071,13 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(switch) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsObject(object)) return make_error(allocator, "Switch param needs to be a object");
+    if (!cJSON_IsObject(object)) return make_error(allocator, "Switch param needs to be a object", settings);
     cJSON *key = cJSON_GetObjectItem(object, "compareTo");
-    if (key == NULL) return make_error(allocator, "Lack of compareTo for switch object");
-    if (!cJSON_IsString(key)) return make_error(allocator, "Invalid compareTo for switch object");
+    if (key == NULL) return make_error(allocator, "Lack of compareTo for switch object", settings);
+    if (!cJSON_IsString(key)) return make_error(allocator, "Invalid compareTo for switch object", settings);
     cJSON *fields = cJSON_GetObjectItem(object, "fields");
-    if (fields == NULL) return make_error(allocator, "Lack of fields for switch object");
-    if (!cJSON_IsObject(fields)) return make_error(allocator, "Invalid fields for switch object");
+    if (fields == NULL) return make_error(allocator, "Lack of fields for switch object", settings);
+    if (!cJSON_IsObject(fields)) return make_error(allocator, "Invalid fields for switch object", settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     wmem_map_t *map = wmem_map_new(allocator, g_str_hash, g_str_equal);
     cJSON *node = fields->child;
@@ -1099,27 +1105,27 @@ COMPOSITE_PROTOCOL_DEFINE(switch) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(bitfield) {
     cJSON *list = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsArray(list)) return make_error(allocator, "Bitfield param needs to be a list");
+    if (!cJSON_IsArray(list)) return make_error(allocator, "Bitfield param needs to be a list", settings);
     int count = cJSON_GetArraySize(list);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     bit_field **bit_fields = wmem_alloc(allocator, sizeof(bit_field *) * count);
     for (int i = 0; i < count; i++) {
         cJSON *node = cJSON_GetArrayItem(list, i);
         cJSON *name_node = cJSON_GetObjectItem(node, "name");
-        if (name_node == NULL) return make_error(allocator, "Lack of name for bitfield object");
-        if (!cJSON_IsString(name_node)) return make_error(allocator, "Invalid name for bitfield object");
+        if (name_node == NULL) return make_error(allocator, "Lack of name for bitfield object", settings);
+        if (!cJSON_IsString(name_node)) return make_error(allocator, "Invalid name for bitfield object", settings);
         char *name = wmem_strdup(allocator, name_node->valuestring);
         cJSON *size_node = cJSON_GetObjectItem(node, "size");
-        if (size_node == NULL) return make_error(allocator, "Lack of size for bitfield object");
-        if (!cJSON_IsNumber(size_node)) return make_error(allocator, "Invalid size for bitfield object");
+        if (size_node == NULL) return make_error(allocator, "Lack of size for bitfield object", settings);
+        if (!cJSON_IsNumber(size_node)) return make_error(allocator, "Invalid size for bitfield object", settings);
         int size = (int) size_node->valuedouble;
         cJSON *signed_node = cJSON_GetObjectItem(node, "signed");
         if (signed_node != NULL && !cJSON_IsBool(signed_node))
-            return make_error(allocator, "Invalid signed for bitfield object");
+            return make_error(allocator, "Invalid signed for bitfield object", settings);
         bool signed_num = signed_node == NULL || cJSON_IsTrue(signed_node);
         cJSON *save_name = cJSON_GetObjectItem(node, "saveName");
         if (save_name != NULL && !cJSON_IsString(save_name))
-            return make_error(allocator, "Invalid saveName for bitfield object");
+            return make_error(allocator, "Invalid saveName for bitfield object", settings);
         char *save = save_name == NULL ? NULL : wmem_strdup(allocator, save_name->valuestring);
         bit_field *field = wmem_alloc(allocator, sizeof(bit_field));
         field->name = name;
@@ -1139,7 +1145,7 @@ COMPOSITE_PROTOCOL_DEFINE(bitfield) {
 COMPOSITE_PROTOCOL_DEFINE(save) {
     cJSON *type = cJSON_GetArrayItem(params, 1);
     cJSON *name_node = cJSON_GetArrayItem(params, 2);
-    if (!cJSON_IsString(name_node)) return make_error(allocator, "Save param 2 needs to be a string");
+    if (!cJSON_IsString(name_node)) return make_error(allocator, "Save param 2 needs to be a string", settings);
     char *name = wmem_strdup(allocator, name_node->valuestring);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
@@ -1156,7 +1162,7 @@ COMPOSITE_PROTOCOL_DEFINE(save) {
 COMPOSITE_PROTOCOL_DEFINE(global_save) {
     cJSON *type = cJSON_GetArrayItem(params, 1);
     cJSON *name_node = cJSON_GetArrayItem(params, 2);
-    if (!cJSON_IsString(name_node)) return make_error(allocator, "Global Save param 2 needs to be a string");
+    if (!cJSON_IsString(name_node)) return make_error(allocator, "Global Save param 2 needs to be a string", settings);
     char *name = wmem_strdup(allocator, name_node->valuestring);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
@@ -1172,7 +1178,7 @@ COMPOSITE_PROTOCOL_DEFINE(global_save) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(registry) {
     cJSON *name_node = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsString(name_node)) return make_error(allocator, "Registry param needs to be a string");
+    if (!cJSON_IsString(name_node)) return make_error(allocator, "Registry param needs to be a string", settings);
     char *name = wmem_strdup(allocator, name_node->valuestring);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
@@ -1180,7 +1186,7 @@ COMPOSITE_PROTOCOL_DEFINE(registry) {
     this_dissector->dissect_protocol = dissect_registry;
     if (cJSON_GetArrayItem(params, 2) != NULL) {
         cJSON *offset = cJSON_GetArrayItem(params, 2);
-        if (!cJSON_IsString(offset)) return make_error(allocator, "Registry offset needs to be a string");
+        if (!cJSON_IsString(offset)) return make_error(allocator, "Registry offset needs to be a string", settings);
         wmem_map_insert(this_dissector->dissect_arguments, "o", wmem_strdup(allocator, offset->valuestring));
     }
     return this_dissector;
@@ -1189,7 +1195,7 @@ COMPOSITE_PROTOCOL_DEFINE(registry) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(reference) {
     cJSON *ref_node = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Reference param needs to be a string");
+    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Reference param needs to be a string", settings);
     char *ref = ref_node->valuestring;
 
     char *cache_ref = wmem_strdup_printf(allocator, "ref_%s", ref);
@@ -1200,7 +1206,7 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
         if (!g_file_get_contents(file, &content, NULL, NULL)) {
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
             g_free(file);
-            return make_error(allocator, "Cannot read referenced file");
+            return make_error(allocator, "Cannot read referenced file", settings);
         }
 
         cJSON *json = cJSON_Parse(content);
@@ -1209,7 +1215,8 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
             const char *error = cJSON_GetErrorPtr();
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, error);
             g_free(file);
-            return make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse referenced file: %s", error));
+            return make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse referenced file: %s", error),
+                              settings);
         }
         g_free(file);
 
@@ -1229,16 +1236,16 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(codec) {
     cJSON *ref_node = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Codec param 1 needs to be a string");
+    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Codec param 1 needs to be a string", settings);
     char *ref = ref_node->valuestring;
     cJSON *key_node = cJSON_GetArrayItem(params, 2);
-    if (!cJSON_IsString(key_node)) return make_error(allocator, "Codec param 2 needs to be a string");
+    if (!cJSON_IsString(key_node)) return make_error(allocator, "Codec param 2 needs to be a string", settings);
     char *key = key_node->valuestring;
 
     char *cache_ref = wmem_strdup_printf(allocator, "codec_%s", ref);
     if (!wmem_map_contains(dissectors, cache_ref)) {
         cJSON *registry = get_registry(settings->storage, protocol_version, ref);
-        if (registry == NULL) return make_error(allocator, "Invalid registry");
+        if (registry == NULL) return make_error(allocator, "Invalid registry", settings);
         int entry_count = cJSON_GetArraySize(registry);
         wmem_map_t *map = wmem_map_new(allocator, g_str_hash, g_str_equal);
         protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
@@ -1259,7 +1266,7 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
             if (!g_file_get_contents(file, &content, NULL, NULL)) {
                 ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read file %s", file);
                 g_free(file);
-                wmem_map_insert(map, codec_name, make_error(allocator, "Cannot read codec file"));
+                wmem_map_insert(map, codec_name, make_error(allocator, "Cannot read codec file", settings));
                 continue;
             }
             cJSON *json = cJSON_Parse(content);
@@ -1270,7 +1277,7 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
                 g_free(file);
                 wmem_map_insert(
                     map, codec_name,
-                    make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse codec file: %s", error))
+                    make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse codec file: %s", error), settings)
                 );
                 continue;
             }
@@ -1294,7 +1301,7 @@ COMPOSITE_PROTOCOL_DEFINE(codec) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(fix_buffer) {
     cJSON *ref_node = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsNumber(ref_node)) return make_error(allocator, "fix_buffer param needs to be a number");
+    if (!cJSON_IsNumber(ref_node)) return make_error(allocator, "fix_buffer param needs to be a number", settings);
     int32_t len = (int32_t) ref_node->valuedouble;
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
@@ -1308,7 +1315,7 @@ COMPOSITE_PROTOCOL_DEFINE(fix_buffer) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(func) {
     cJSON *ref_node = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Func name needs to be a string");
+    if (!cJSON_IsString(ref_node)) return make_error(allocator, "Func name needs to be a string", settings);
     char *ref = ref_node->valuestring;
 
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
@@ -1325,13 +1332,13 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
 
     if (this_dissector->dissect_protocol == NULL) {
         wmem_free(allocator, this_dissector);
-        return make_error(allocator, "Unknown func type");
+        return make_error(allocator, "Unknown func type", settings);
     }
 
     int count = cJSON_GetArraySize(params);
     for (int i = 2; i < count; i++) {
         cJSON *node = cJSON_GetArrayItem(params, i);
-        if (!cJSON_IsString(node)) return make_error(allocator, "Invalid func parameter");
+        if (!cJSON_IsString(node)) return make_error(allocator, "Invalid func parameter", settings);
         wmem_map_insert(
             this_dissector->dissect_arguments, (void *) (uint64_t) (i - 2),
             wmem_strdup(allocator, node->valuestring)
@@ -1344,7 +1351,7 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(top_bit_set_terminated_array) {
     cJSON *type = cJSON_GetArrayItem(params, 1);
-    if (type == NULL) return make_error(allocator, "Lack of type for top_bit_set_terminated_array");
+    if (type == NULL) return make_error(allocator, "Lack of type for top_bit_set_terminated_array", settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *sub = make_protocol_dissector(settings, allocator, type, dissectors, protocol_version,
@@ -1357,12 +1364,16 @@ COMPOSITE_PROTOCOL_DEFINE(top_bit_set_terminated_array) {
 // NOLINTNEXTLINE
 COMPOSITE_PROTOCOL_DEFINE(entity_metadata_loop) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
-    if (!cJSON_IsObject(object)) return make_error(allocator, "entity_metadata_loop param needs to be a object");
+    if (!cJSON_IsObject(object))
+        return make_error(allocator, "entity_metadata_loop param needs to be a object",
+                          settings);
     cJSON *type = cJSON_GetObjectItem(object, "type");
-    if (type == NULL) return make_error(allocator, "Lack of type for entity_metadata_loop object");
+    if (type == NULL) return make_error(allocator, "Lack of type for entity_metadata_loop object", settings);
     cJSON *end_val = cJSON_GetObjectItem(object, "endVal");
-    if (end_val == NULL) return make_error(allocator, "Lack of endVal for entity_metadata_loop object");
-    if (!cJSON_IsNumber(end_val)) return make_error(allocator, "Invalid endVal for entity_metadata_loop object");
+    if (end_val == NULL) return make_error(allocator, "Lack of endVal for entity_metadata_loop object", settings);
+    if (!cJSON_IsNumber(end_val))
+        return make_error(allocator, "Invalid endVal for entity_metadata_loop object",
+                          settings);
     uint8_t end = (uint8_t) end_val->valuedouble;
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
@@ -1397,7 +1408,7 @@ COMPOSITE_PROTOCOL_DEFINE(either) {
 COMPOSITE_PROTOCOL_DEFINE(direct_holder) {
     cJSON *registry = cJSON_GetArrayItem(params, 1);
     cJSON *sub = cJSON_GetArrayItem(params, 2);
-    if (!cJSON_IsString(registry)) return make_error(allocator, "Invalid direct holder registry");
+    if (!cJSON_IsString(registry)) return make_error(allocator, "Invalid direct holder registry", settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *holder = make_protocol_dissector(
@@ -1417,11 +1428,13 @@ protocol_dissector *make_protocol_dissector(
     uint32_t protocol_version, protocol_dissector *recursive_root
 ) {
     bool composite_type = cJSON_IsArray(root);
-    if (!composite_type && !cJSON_IsString(root)) return make_error(allocator, "Invalid protocol dissector type");
+    if (!composite_type && !cJSON_IsString(root))
+        return make_error(allocator, "Invalid protocol dissector type",
+                          settings);
     if (composite_type && cJSON_GetArraySize(root) == 0)
-        return make_error(allocator, "Invalid protocol composite dissector type");
+        return make_error(allocator, "Invalid protocol composite dissector type", settings);
     char *type = composite_type ? cJSON_GetArrayItem(root, 0)->valuestring : root->valuestring;
-    if (type == NULL) return make_error(allocator, "Protocol dissector type is not a string");
+    if (type == NULL) return make_error(allocator, "Protocol dissector type is not a string", settings);
     int args = composite_type ? cJSON_GetArraySize(root) - 1 : 0;
 
     SIMPLE_PROTOCOL(i8, dissect_i8)
@@ -1497,7 +1510,8 @@ protocol_dissector *make_protocol_dissector(
         allocator,
         wmem_strdup_printf(
             allocator, "Invalid protocol dissector type: %s%s", type, composite_type ? " (composite)" : ""
-        )
+        ),
+        settings
     );
 }
 
@@ -1596,7 +1610,7 @@ void make_state_protocol(cJSON *root, protocol_dissector_set *set, uint32_t stat
             g_free(key_replaced);
         }
         if (type == NULL)
-            dissector = make_error(set->allocator, "Cannot find packet file");
+            dissector = make_error(set->allocator, "Cannot find packet file", set->settings);
         else
             dissector = make_protocol_dissector(
                 set->settings, set->allocator, type, set->dissectors_by_name, set->protocol_version, NULL
