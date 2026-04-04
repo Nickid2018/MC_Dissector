@@ -1,52 +1,102 @@
-#include "MinHook.h"
-#include "libhat.hpp" // IWYU pragma: keep
-#include <cstdio>
+#include <Windows.h>
+#include <blook/blook.h>
+#include <cassert>
+#include <string>
 
 struct EVP_CIPHER_CTX;
-struct EVP_CIPHER;
 struct ENGINE;
+struct EVP_CIPHER {
+  int nid;
+  /*other members...*/
+};
 
-int (*ORIGINAL_EVP_EncryptInit_ex)(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
-                                   ENGINE *impl, const unsigned char *key,
-                                   const unsigned char *iv, int enc);
+namespace {
 
-int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
-                       ENGINE *impl, const unsigned char *key,
-                       const unsigned char *iv, int enc) {
-  if (key) {
-    for (auto i = 0uz; i < 32; i++) {
-      std::printf("%s ", std::to_string(key[i]).c_str());
-    }
-    std::puts("");
-  } else {
-    std::puts("key is NULL");
+constexpr int NID_AES_256_GCM = 901;
+constexpr int NID_AES_256_CFB8 = 655;
+constexpr char kAssertNeedle[] =
+    "assertion failed: ctx->cipher->block_size == 1 || ctx->cipher->block_size "
+    "== 8 || ctx->cipher->block_size == 16";
+
+void EnsureConsole() {
+  if (!GetConsoleWindow()) {
+    AllocConsole();
+    SetConsoleCP(65001);
+    SetConsoleOutputCP(65001);
   }
-
-  return ORIGINAL_EVP_EncryptInit_ex(ctx, type, impl, key, iv, enc);
 }
+
+void LogKeyIfInteresting(const EVP_CIPHER *type, const unsigned char *key) {
+  if (!type || !key)
+    return;
+  if (type->nid != NID_AES_256_GCM && type->nid != NID_AES_256_CFB8)
+    return;
+
+  HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+  std::string out;
+  out += "nid: " + std::to_string(type->nid) + "\n";
+  for (size_t i = 0; i < 32; ++i) {
+    out += std::to_string(static_cast<int>(key[i]));
+    out += (i + 1 == 32) ? '\n' : ' ';
+  }
+  WriteConsoleA(h, out.c_str(), static_cast<DWORD>(out.size()), nullptr,
+                nullptr);
+}
+
+} // namespace
 
 void init() {
-  using namespace hat::literals::signature_literals;
-  auto mc = hat::process::get_process_module();
-  MH_Initialize();
-  if (auto target =
-          hat::find_pattern(
-              mc.get_module_data(),
-              "48 89 6C 24 ? 48 89 74 24 ? 48 89 7C 24 ? 41 54 41 56 41 57 B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 8B 44 24"_sig)
-              .get()) {
-    MH_CreateHook(target, reinterpret_cast<void *>(&EVP_EncryptInit_ex),
-                  reinterpret_cast<void **>(&ORIGINAL_EVP_EncryptInit_ex));
-    std::printf("hooked EVP_EncryptInit_ex() at %p\n", target);
-  } else {
-    std::puts("fail to look up pattern for EVP_EncryptInit_ex()");
+  EnsureConsole();
+
+  auto mod = blook::Process::self()->process_module();
+  if (!mod) {
+    assert(false && "fail to get process module");
+    return;
   }
-  MH_EnableHook(MH_ALL_HOOKS);
+
+  auto rdata = (*mod)->section(".rdata");
+  if (!rdata) {
+    assert(false && "fail to get section .rdata");
+    return;
+  }
+
+  auto ptr = (*rdata).find_one(kAssertNeedle);
+  if (!ptr) {
+    assert(false && "fail to find string");
+    return;
+  }
+
+  auto text = (*mod)->section(".text");
+  if (!text) {
+    assert(false && "fail to get section .text");
+    return;
+  }
+
+  auto xref = (*text).find_xref(*ptr);
+  if (!xref) {
+    assert(false && "fail to find xref");
+    return;
+  }
+
+  if (auto func = (*xref).guess_function()) {
+    auto hooked = (*func).inline_hook();
+    hooked->install([hooked](EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
+                             ENGINE *impl, const unsigned char *key,
+                             const unsigned char *iv, int enc) -> int {
+      LogKeyIfInteresting(type, key);
+      return hooked->call_trampoline<int>(ctx, type, impl, key, iv, enc);
+    });
+  } else {
+    assert(false && "fail to guess function");
+  }
 }
 
-BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID) {
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID) {
   switch (reason) {
   case DLL_PROCESS_ATTACH:
     init();
+    break;
+  default:
     break;
   }
   return TRUE;
