@@ -42,6 +42,8 @@ For Arch Linux, you can directly use package `wireshark-minecraft-dissector` in 
   * `TCP Port(s)`: To change TCP ports used by MCJE protocol to identify protocol.
 * For `MCBE` (WIP):
   * `NBT Decoding`: To decode NBT data.
+  * `Secret Key`: To realize encrypted connection among keys for decrypting data.
+    The format is in hexadecimal strings with a length of 32.
 
 Please note that if you want to use `MCBE` dissector, you must set the `MCPE` port provided by Wireshark to a value other than 0-65535.
 Otherwise, the dissector will lose the first packet data due to the conflict.
@@ -101,6 +103,29 @@ The vast majority of the time, these injection points are **stable**, meaning th
 so this injection can work in most cases, including vanilla clients,
 clients with unknown obfuscation mappings, and mod loaders like Fabric/Forge/NeoForge.
 
+## Encrypted Connection (Bedrock Edition)
+
+For Bedrock Edition, all connections are encrypted. Therefore, a DLL injection or a mod is required to get the symmetric encryption key between the client and server.
+
+This repository currently provides two methods to get the key:
+* Load the mod `encryption-helper-bedrock-ll.zip` using [LeviLamina](https://github.com/LiteLDev/LeviLamina).
+  You can install it according to the LeviLamina documentation.
+* Inject the game using a generic DLL `encryption-helper.dll`.
+  This repository does not provide a DLL injector, so other injectors are required for injection operations.
+
+Using LeviLamina can accurately get the key for each connection, which can be found in the game log.
+While this method is efficient, it's incompatible with older versions because LeviLamina only supports bedrock client since `1.21.124.2`. In such cases, please use generic DLL injection.
+
+Using generic DLL injection will generate multiple key records because the functions hooked by the program are not only used by encrypted connections.
+To use this method, you should:
+1. Inject the DLL into the bedrock client using a DLL injector.
+2. Check the console output. All information before entering the server can be ignored; only check the console output at the start of entering the server.
+3. All output should be in the following format: `[Key Candidate] [GCM/CFB8] <hexadecimal string>`.
+   For versions with a protocol version no greater than 431 (`1.16.221`), only check the `CFB8` line; otherwise, only check the `GCM` line.
+4. Try each key into the `Secret Key` field until packets filtered as `MCBE` no longer show `Invalid`.
+
+Currently, the method requires manually searching and verifying key correctness. Future versions may add a key log file similar to Java Edition.
+
 ## Parsing Errors
 
 Parsing error exists under 2 circumstances as follows:
@@ -125,12 +150,17 @@ Building this project requires Wireshark source code with configured dependencie
 
 ## How To Build Projects (Linux)
 
-It is much easier to build on Linux, read ci.yml for details. (Too lazy to write here.)
+You need to install the corresponding libraries in the system package manager, and ensure that the `cmake` build tool is available so that you can directly use cmake to compile.
 
-## Current Plans
+## License
 
-- [x] Almost complete! (Crash free, at least!）
-- [x] Linux support by @xtexChooser
-- [x] Support encryption. (It should be OK!)
-- [x] Version compatibility.
-- [ ] Support bedrock edition. (WIP)
+The MC_Dissector project is mainly under the GPL-2.0 License.
+Generic Encryption Helper for Bedrock Edition (`encryption-helper/bedrock`) is under the GPL-3.0 License.
+
+Please refer to [LICENSE](./LICENSE) and [LICENSE.GPL-3.0](./LICENSE.GPL-3.0) for more information.
+
+## Thanks
+
+* Linux support by @xtexChooser
+* Generic Encryption Helper for Bedrock Edition by @killcerr
+* Translation by @123Duo3 and @ArchieMackenzie
