@@ -32,15 +32,20 @@ void LogKeyIfInteresting(const EVP_CIPHER *type, const unsigned char *key) {
   if (type->nid != NID_AES_256_GCM && type->nid != NID_AES_256_CFB8)
     return;
 
-  HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-  std::string out;
-  out += "nid: " + std::to_string(type->nid) + "\n";
+  std::stringstream stream;
+  stream << (type->nid == NID_AES_256_GCM ? "[Key Candidate] [GCM] " : "[Key Candidate] [CFB8] ");
   for (size_t i = 0; i < 32; ++i) {
-    out += std::to_string(static_cast<int>(key[i]));
-    out += (i + 1 == 32) ? '\n' : ' ';
+    stream << std::setfill('0') 
+           << std::setw(2)
+           << std::uppercase
+           << std::hex
+           << static_cast<int>(key[i]);
   }
-  WriteConsoleA(h, out.c_str(), static_cast<DWORD>(out.size()), nullptr,
-                nullptr);
+  std::string out = stream.str();
+  out += "\n";
+
+  HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+  WriteConsoleA(h, out.c_str(), static_cast<DWORD>(out.size()), nullptr, nullptr);
 }
 
 } // namespace
