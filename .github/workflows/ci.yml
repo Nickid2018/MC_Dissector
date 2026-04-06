@@ -134,7 +134,7 @@ jobs:
           xmake repo -u
           xmake f -a x64 -m release -p windows -v -y
           xmake -v -y
-        working-directory: encryption-helper/bedrock-ll
+        working-directory: encryption-helper/bedrock
       - name: Build Bedrock Encryption Helper (LeviLamina)
         run: |
           xmake repo -u
