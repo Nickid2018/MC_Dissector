@@ -127,14 +127,25 @@ jobs:
       - uses: actions/cache@v5
         with:
           path: ~/AppData/Local/.xmake
-          key: xmake-${{ hashFiles('encryption-helper/bedrock-ll/xmake.lua') }}
-          restore-keys: xmake-
+          key: xmake-${{ hashFiles('encryption-helper/bedrock-ll/xmake.lua', 'encryption-helper/bedrock/xmake.lua') }}
+          restore-keys: xmake-${{ hashFiles('encryption-helper/bedrock-ll/xmake.lua', 'encryption-helper/bedrock/xmake.lua') }}
+      - name: Build Bedrock Encryption Helper (Generic)
+        run: |
+          xmake repo -u
+          xmake f -a x64 -m release -p windows -v -y
+          xmake -v -y
+        working-directory: encryption-helper/bedrock-ll
       - name: Build Bedrock Encryption Helper (LeviLamina)
         run: |
           xmake repo -u
           xmake f -a x64 -m release -p windows -v --target_type=client -y
           xmake -v -y
         working-directory: encryption-helper/bedrock-ll
+      - name: Upload Bedrock Encryption Helper (Generic)
+        uses: actions/upload-artifact@v4
+        with:
+          name: encryption-helper-bedrock
+          path: encryption-helper/bedrock/build/windows/x64/release/encryption-helper.dll
       - name: Upload Bedrock Encryption Helper (LeviLamina)
         uses: actions/upload-artifact@v4
         with:
@@ -167,6 +178,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: encryption-helper-java
+      - name: Download encryption-helper-bedrock artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: encryption-helper-bedrock
       - name: Download encryption-helper-bedrock-ll artifact
         uses: actions/download-artifact@v4
         with:
@@ -187,5 +202,6 @@ jobs:
           files: |
             mcdissector.dll
             mcdissector.so
+            encryption-helper.dll
             encryption-helper-java.jar
             encryption-helper-bedrock-ll.zip
