@@ -23,6 +23,7 @@ typedef enum {
 typedef struct {
     int32_t compression_threshold;
     compression_algorithm compression_algorithm;
+    bool compression_in_header;
     int64_t client_counter;
     int64_t server_counter;
 } mcbe_context;
@@ -31,6 +32,7 @@ typedef struct {
     uint8_t *decrypted_data;
     int32_t compression_threshold;
     compression_algorithm compression_algorithm;
+    bool compression_in_header;
     char *expect_checksum;
 } mcbe_frame_data;
 

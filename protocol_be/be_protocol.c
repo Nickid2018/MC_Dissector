@@ -56,10 +56,6 @@ int try_change_state(
         char *mark = wmem_map_lookup(special_mark, (void *) (uint64_t) packet_id);
 
         if (strcmp(mark, "login") == 0) {
-            int32_t protocol_version = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
-            ctx->protocol_version = protocol_version;
-            wmem_map_insert(ctx->global_data, "protocol_version", (void *) (uint64_t) protocol_version);
-            ctx->dissector_set = get_protocol_set(storage_be, protocol_version);
             if (ctx->dissector_set == NULL)
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
             else
@@ -90,11 +86,21 @@ int try_change_state(
             }
         }
 
+        if (strcmp(mark, "request_network_settings") == 0) {
+            int32_t protocol_version = tvb_get_int32(tvb, offset, ENC_BIG_ENDIAN);
+            ctx->protocol_version = protocol_version;
+            wmem_map_insert(ctx->global_data, "protocol_version", (void *) (uint64_t) protocol_version);
+            ctx->dissector_set = get_protocol_set(storage_be, protocol_version);
+        }
+
         if (strcmp(mark, "network_settings") == 0) {
             uint16_t compress_threshold = tvb_get_uint16(tvb, offset, ENC_LITTLE_ENDIAN);
             uint16_t compress_algorithm = tvb_get_uint16(tvb, offset + 2, ENC_LITTLE_ENDIAN);
             ((mcbe_context *) ctx->protocol_data)->compression_threshold = compress_threshold;
             ((mcbe_context *) ctx->protocol_data)->compression_algorithm = compress_algorithm;
+            if (compress_algorithm != NONE) {
+                ((mcbe_context *) ctx->protocol_data)->compression_in_header = ctx->protocol_version >= 649;
+            }
         }
     }
 
@@ -107,7 +113,7 @@ void handle_packet(
 ) {
     protocol_dissector_set *set = state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
     if (ctx->dissector_set == NULL) {
-        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, 0, "No protocol data found");
+        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, offset, 0, "No protocol data found");
         return;
     }
 
@@ -117,20 +123,20 @@ void handle_packet(
 
     int32_t packet_id;
     len = read_var_int(tvb, offset, &packet_id);
-    offset += len;
+    proto_tree_add_uint(tree, hf_packet_id_be, tvb, offset, len, packet_id);
 
-    proto_tree_add_uint(tree, hf_packet_id_be, tvb, 0, len, packet_id);
     uint32_t count = (uint64_t) wmem_map_lookup(set->count_by_state, (void *) (uint64_t) state);
     if (packet_id >= count) {
-        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, 1, "Unknown Packet ID");
+        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, offset, len, "Unknown Packet ID");
         return;
     }
 
+    offset += len;
     char **key = wmem_map_lookup(set->registry_keys, (void *) (uint64_t) state);
     char **name = wmem_map_lookup(set->readable_names, (void *) (uint64_t) state);
     protocol_dissector **d = wmem_map_lookup(set->dissectors_by_state, (void *) (uint64_t) state);
     proto_tree_add_string_format_value(
-        tree, hf_packet_name_be, tvb, 0, len, key[packet_id],
+        tree, hf_packet_name_be, tvb, offset, len, key[packet_id],
         "%s (%s)", name[packet_id], key[packet_id]
     );
 

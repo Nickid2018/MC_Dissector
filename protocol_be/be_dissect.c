@@ -36,7 +36,7 @@ void mark_session_invalid_be(packet_info *pinfo) {
 
 char *bytes_to_hex(wmem_allocator_t *allocator, const uint8_t *bytes, const uint32_t len) {
     wmem_strbuf_t *buf = wmem_strbuf_new(allocator, "");
-    for (uint32_t i = 0; i < len; i++){
+    for (uint32_t i = 0; i < len; i++) {
         wmem_strbuf_append_printf(buf, "%02X", bytes[i] & 0xFF);
     }
     return wmem_strbuf_finalize(buf);
@@ -99,20 +99,23 @@ int32_t dissect_be_core(
 }
 
 int32_t dissect_be_uncompress(
-    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx, mc_frame_data *frame_data
+    tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx,
+    mc_frame_data *frame_data, mcbe_frame_data *protocol_frame
 ) {
     int32_t report_len = tvb_reported_length(tvb);
     tvbuff_t *new_tvb = NULL;
-    switch (tvb_get_uint8(tvb, 0)) {
+    int32_t decomp_offset = protocol_frame->compression_in_header ? 1 : 0;
+    switch (protocol_frame->compression_in_header ? tvb_get_uint8(tvb, 0) : protocol_frame->compression_algorithm) {
         case ZLIB:
-            new_tvb = tvb_child_uncompress_zlib(tvb, tvb, 1, report_len - 1);
+            new_tvb = tvb_child_uncompress_zlib(tvb, tvb, decomp_offset, report_len - decomp_offset);
             break;
         case SNAPPY:
-            new_tvb = tvb_child_uncompress_snappy(tvb, tvb, 1, report_len - 1);
+            new_tvb = tvb_child_uncompress_snappy(tvb, tvb, decomp_offset, report_len - decomp_offset);
             break;
+        case NONE:
         case 255:
-            new_tvb = tvb_new_subset_length(tvb, 1, report_len - 1);
-            return dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data) + 1;
+            new_tvb = tvb_new_subset_length(tvb, decomp_offset, report_len - decomp_offset);
+            return dissect_be_core(new_tvb, pinfo, tree, ctx, frame_data) + decomp_offset;
         default:
             col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Invalid Compression Algorithm");
             mark_session_invalid_be(pinfo);
@@ -151,12 +154,15 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
     }
 
-    mcbe_frame_data *protocol_frame = wmem_map_lookup(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num));
+    mcbe_frame_data *protocol_frame = wmem_map_lookup(
+        frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num)
+    );
     if (!protocol_frame) {
         protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
         protocol_frame->decrypted_data = NULL;
         protocol_frame->compression_threshold = protocol_ctx->compression_threshold;
         protocol_frame->compression_algorithm = protocol_ctx->compression_algorithm;
+        protocol_frame->compression_in_header = protocol_ctx->compression_in_header;
         protocol_frame->expect_checksum = NULL;
         wmem_map_insert(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num), protocol_frame);
     }
@@ -252,7 +258,7 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     }
 
     if (protocol_frame->compression_threshold > 0 && protocol_frame->compression_algorithm != NONE) {
-        return dissect_be_uncompress(tvb, pinfo, tree, ctx, frame_data) + 1;
+        return dissect_be_uncompress(tvb, pinfo, tree, ctx, frame_data, protocol_frame) + 1;
     }
 
     return dissect_be_core(tvb, pinfo, tree, ctx, frame_data) + 1;
@@ -280,6 +286,7 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         mcbe_context *protocol_ctx = wmem_alloc(wmem_file_scope(), sizeof(mcbe_context));
         protocol_ctx->compression_threshold = -1;
         protocol_ctx->compression_algorithm = NONE;
+        protocol_ctx->compression_in_header = false;
         protocol_ctx->client_counter = 0;
         protocol_ctx->server_counter = 0;
         ctx->protocol_data = protocol_ctx;
@@ -298,6 +305,7 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         protocol_frame->decrypted_data = NULL;
         protocol_frame->compression_threshold = -1;
         protocol_frame->compression_algorithm = NONE;
+        protocol_frame->compression_in_header = false;
         wmem_map_insert(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num), protocol_frame);
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
     }
