@@ -245,26 +245,29 @@ DISSECT_PROTOCOL(h64r) {
 }
 
 DISSECT_PROTOCOL(varint) {
-    int32_t result;
-    int32_t length = read_var_int(tvb, offset, &result);
-    if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarInt");
     if (dissector->settings->signed_varint) {
+        int32_t result;
+        int32_t length = read_var_int(tvb, offset, &result);
+        if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarInt");
         if (value) *value = wmem_strdup_printf(packet_alloc, "%d", result);
         if (tree)
             add_name(
                 proto_tree_add_int(tree, dissector->settings->hf_indexes[hf_varint], tvb, offset, length, result),
                 name
             );
-
+        return length;
     } else {
+        uint32_t result;
+        int32_t length = read_unsigned_var_int(tvb, offset, 5, &result);
+        if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarInt");
         if (value) *value = wmem_strdup_printf(packet_alloc, "%u", result);
         if (tree)
             add_name(
                 proto_tree_add_uint(tree, dissector->settings->hf_indexes[hf_varint], tvb, offset, length, result),
                 name
             );
+        return length;
     }
-    return length;
 }
 
 DISSECT_PROTOCOL(zigzag32) {
@@ -281,26 +284,29 @@ DISSECT_PROTOCOL(zigzag32) {
 }
 
 DISSECT_PROTOCOL(varlong) {
-    int64_t result;
-    int32_t length = read_var_long(tvb, offset, &result);
-    if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarLong");
     if (dissector->settings->signed_varint) {
-        if (value) *value = wmem_strdup_printf(packet_alloc, "%ld", result);
+        int64_t result;
+        int32_t length = read_var_long(tvb, offset, &result);
+        if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarLong");
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%lld", result);
         if (tree)
             add_name(
                 proto_tree_add_int64(tree, dissector->settings->hf_indexes[hf_varlong], tvb, offset, length, result),
                 name
             );
-
+        return length;
     } else {
-        if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", result);
+        uint64_t result;
+        int32_t length = read_unsigned_var_long(tvb, offset, &result);
+        if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid VarLong");
+        if (value) *value = wmem_strdup_printf(packet_alloc, "%llu", result);
         if (tree)
             add_name(
                 proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_varlong], tvb, offset, length, result),
                 name
             );
+        return length;
     }
-    return length;
 }
 
 DISSECT_PROTOCOL(zigzag64) {
@@ -883,6 +889,29 @@ DISSECT_PROTOCOL(direct_holder) {
     return length;
 }
 
+DISSECT_PROTOCOL(bitflags) {
+    protocol_dissector *sub = wmem_map_lookup(dissector->dissect_arguments, "d");
+    uint32_t count = GPOINTER_TO_UINT(wmem_map_lookup(dissector->dissect_arguments, "c"));
+    char **flag_array = wmem_map_lookup(dissector->dissect_arguments, "a");
+    char *sub_value;
+    int32_t len = sub->dissect_protocol(tree, pinfo, tvb, offset, packet_alloc, sub, name, packet_saves, &sub_value);
+    if (len == DISSECT_ERROR) return DISSECT_ERROR;
+    if (tree) tree = proto_tree_add_subtree(tree, tvb, offset, len, dissector->settings->ett_tree, NULL, name);
+    uint64_t flag_data = strtoull(sub_value, NULL, 10);
+    for (uint64_t i = 0; i < count; i++) {
+        bool flag = (flag_data & 1ull << i) == 1ull << i;
+        wmem_map_insert(packet_saves, flag_array[i], flag ? "true" : "false");
+        if (tree)
+            add_name(
+                proto_tree_add_string(
+                    tree, dissector->settings->hf_indexes[hf_string], tvb, offset, len, flag ? "true" : "false"
+                ),
+                flag_array[i]
+            );
+    }
+    return len;
+}
+
 // PARSING PROTOCOL SCHEMA ---------------------------------------------------------------------------------------------
 
 protocol_dissector *make_protocol_dissector(
@@ -1280,8 +1309,9 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
             const char *error = cJSON_GetErrorPtr();
             ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot parse file %s: %s", file, error);
             g_free(file);
-            return make_error(allocator, wmem_strdup_printf(allocator, "Cannot parse referenced file: %s", error),
-                              settings);
+            return make_error(
+                allocator, wmem_strdup_printf(allocator, "Cannot parse referenced file: %s", error), settings
+            );
         }
         g_free(file);
 
@@ -1419,8 +1449,9 @@ COMPOSITE_PROTOCOL_DEFINE(top_bit_set_terminated_array) {
     if (type == NULL) return make_error(allocator, "Lack of type for top_bit_set_terminated_array", settings);
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
-    protocol_dissector *sub = make_protocol_dissector(settings, allocator, type, dissectors, protocol_version,
-                                                      RECURSIVE_ROOT);
+    protocol_dissector *sub = make_protocol_dissector(
+        settings, allocator, type, dissectors, protocol_version, RECURSIVE_ROOT
+    );
     wmem_map_insert(this_dissector->dissect_arguments, "d", sub);
     this_dissector->dissect_protocol = dissect_top_bit_set_terminated_array;
     return this_dissector;
@@ -1430,20 +1461,18 @@ COMPOSITE_PROTOCOL_DEFINE(top_bit_set_terminated_array) {
 COMPOSITE_PROTOCOL_DEFINE(entity_metadata_loop) {
     cJSON *object = cJSON_GetArrayItem(params, 1);
     if (!cJSON_IsObject(object))
-        return make_error(allocator, "entity_metadata_loop param needs to be a object",
-                          settings);
+        return make_error(allocator, "entity_metadata_loop param needs to be a object", settings);
     cJSON *type = cJSON_GetObjectItem(object, "type");
     if (type == NULL) return make_error(allocator, "Lack of type for entity_metadata_loop object", settings);
     cJSON *end_val = cJSON_GetObjectItem(object, "endVal");
     if (end_val == NULL) return make_error(allocator, "Lack of endVal for entity_metadata_loop object", settings);
     if (!cJSON_IsNumber(end_val))
-        return make_error(allocator, "Invalid endVal for entity_metadata_loop object",
-                          settings);
+        return make_error(allocator, "Invalid endVal for entity_metadata_loop object", settings);
     uint8_t end = (uint8_t) end_val->valuedouble;
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *sub = make_protocol_dissector(
-        settings, allocator, type, dissectors, protocol_version,RECURSIVE_ROOT
+        settings, allocator, type, dissectors, protocol_version, RECURSIVE_ROOT
     );
     wmem_map_insert(this_dissector->dissect_arguments, "d", sub);
     wmem_map_insert(this_dissector->dissect_arguments, "e", (void *) (uint64_t) end);
@@ -1458,10 +1487,10 @@ COMPOSITE_PROTOCOL_DEFINE(either) {
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
     protocol_dissector *subt = make_protocol_dissector(
-        settings, allocator, t, dissectors, protocol_version,RECURSIVE_ROOT
+        settings, allocator, t, dissectors, protocol_version, RECURSIVE_ROOT
     );
     protocol_dissector *subf = make_protocol_dissector(
-        settings, allocator, f, dissectors, protocol_version,RECURSIVE_ROOT
+        settings, allocator, f, dissectors, protocol_version, RECURSIVE_ROOT
     );
     wmem_map_insert(this_dissector->dissect_arguments, "t", subt);
     wmem_map_insert(this_dissector->dissect_arguments, "f", subf);
@@ -1482,6 +1511,30 @@ COMPOSITE_PROTOCOL_DEFINE(direct_holder) {
     wmem_map_insert(this_dissector->dissect_arguments, "h", holder);
     wmem_map_insert(this_dissector->dissect_arguments, "r", wmem_strdup(allocator, registry->valuestring));
     this_dissector->dissect_protocol = dissect_direct_holder;
+    return this_dissector;
+}
+
+// NOLINTNEXTLINE
+COMPOSITE_PROTOCOL_DEFINE(bitflags) {
+    cJSON *object = cJSON_GetArrayItem(params, 1);
+    if (!cJSON_IsObject(object)) return make_error(allocator, "BitFlags param needs to be a object", settings);
+    cJSON *flags = cJSON_GetObjectItem(object, "flags");
+    if (!cJSON_IsArray(flags)) return make_error(allocator, "BitFlags flags needs to be a array", settings);
+    uint32_t flags_count = cJSON_GetArraySize(flags);
+    char **flag_array = wmem_alloc(allocator, flags_count * sizeof(char *));
+    for (int32_t i = 0; i < flags_count; i++) {
+        flag_array[i] = wmem_strdup(allocator, cJSON_GetArrayItem(flags, i)->valuestring);
+    }
+    cJSON *type = cJSON_GetObjectItem(object, "type");
+    protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
+    this_dissector->dissect_arguments = wmem_map_new(allocator, g_str_hash, g_str_equal);
+    protocol_dissector *number_type = make_protocol_dissector(
+        settings, allocator, type, dissectors, protocol_version, RECURSIVE_ROOT
+    );
+    wmem_map_insert(this_dissector->dissect_arguments, "d", number_type);
+    wmem_map_insert(this_dissector->dissect_arguments, "c", GUINT_TO_POINTER(flags_count));
+    wmem_map_insert(this_dissector->dissect_arguments, "a", flag_array);
+    this_dissector->dissect_protocol = dissect_bitflags;
     return this_dissector;
 }
 
@@ -1555,6 +1608,7 @@ protocol_dissector *make_protocol_dissector(
     COMPOSITE_PROTOCOL(codec, 2)
     COMPOSITE_PROTOCOL(either, 2)
     COMPOSITE_PROTOCOL(direct_holder, 2)
+    COMPOSITE_PROTOCOL(bitflags, 1)
 
     if (get_settings_flag("registries")) {
         COMPOSITE_PROTOCOL(registry, 1)

@@ -41,9 +41,13 @@ typedef struct {
 
 wmem_map_t *get_global_data(packet_info *pinfo);
 
+int32_t read_unsigned_var_int(tvbuff_t *tvb, int32_t offset, int32_t max_length, uint32_t *result);
+
 int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result);
 
 int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_length, int32_t *result);
+
+int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result);
 
 int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
