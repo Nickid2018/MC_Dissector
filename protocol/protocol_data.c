@@ -41,7 +41,7 @@ int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result) 
         if (p == 10)
             return INVALID_DATA;
         read = tvb_get_uint8(tvb, offset + p);
-        *result |= (read & 0x7F) << (7 * p++);
+        *result |= (read & 0x7FL) << (7L * p++);
     } while ((read & 0x80) != 0);
     return p;
 }
