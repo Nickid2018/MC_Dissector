@@ -19,31 +19,20 @@ char *BE_STATE_NAME[] = {
     "Invalid", "Not Compatible", "Protocol Not Found", "Secret Key Not Found"
 };
 
-int32_t read_packet_len(tvbuff_t *tvb, int32_t offset) {
+int32_t read_packet_len(tvbuff_t *tvb, int32_t offset, int32_t *head_len) {
     int32_t packet_len;
-    int32_t len = read_var_int(tvb, offset, &packet_len);
-    if (is_invalid(len)) return INVALID_DATA;
-    return packet_len + len;
+    *head_len = read_var_int(tvb, offset, &packet_len);
+    return packet_len;
 }
 
-int try_change_state(
-    tvbuff_t *tvb, int32_t offset, packet_info *pinfo,
-    mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client
-) {
+bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data) {
     be_state now_state = frame_data->client_state;
     protocol_dissector_set *set = now_state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
-    if (set == NULL) return INVALID_DATA;
-
-    int32_t packet_len;
-    int32_t len = read_var_int(tvb, offset, &packet_len);
-    if (is_invalid(len)) return INVALID_DATA;
-    offset += len;
-    if (packet_len + offset > tvb_reported_length(tvb)) return INVALID_DATA;
+    if (set == NULL) return false;
 
     int32_t packet_id;
-    len = read_var_int(tvb, offset, &packet_id);
-    if (is_invalid(len)) return INVALID_DATA;
-    offset += len;
+    int32_t offset = read_var_int(tvb, 0, &packet_id);
+    if (is_invalid(offset)) return false;
 
     wmem_map_t *state_to_next = wmem_map_lookup(set->state_to_next, (void *) (uint64_t) now_state);
     wmem_map_t *special_mark = wmem_map_lookup(set->special_mark, (void *) (uint64_t) now_state);
@@ -104,39 +93,32 @@ int try_change_state(
         }
     }
 
-    return packet_len + len;
+    return true;
 }
 
-void handle_packet(
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset,
-    mc_protocol_context *ctx, be_state state, bool is_client
-) {
+void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, be_state state) {
     protocol_dissector_set *set = state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
     if (ctx->dissector_set == NULL) {
-        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, offset, 0, "No protocol data found");
+        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, -1, "No protocol data found");
         return;
     }
 
-    int32_t packet_len;
-    int32_t len = read_var_int(tvb, offset, &packet_len);
-    offset += len;
-
     int32_t packet_id;
-    len = read_var_int(tvb, offset, &packet_id);
-    proto_tree_add_uint(tree, hf_packet_id_be, tvb, offset, len, packet_id);
+    int32_t offset = read_var_int(tvb, 0, &packet_id);
+    proto_tree_add_uint(tree, hf_packet_id_be, tvb, 0, offset, packet_id);
+    int32_t packet_should_len = tvb_reported_length(tvb) - offset;
 
     uint32_t count = (uint64_t) wmem_map_lookup(set->count_by_state, (void *) (uint64_t) state);
     if (packet_id >= count) {
-        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, offset, len, "Unknown Packet ID");
+        proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, offset, "Unknown Packet ID");
         return;
     }
 
-    offset += len;
     char **key = wmem_map_lookup(set->registry_keys, (void *) (uint64_t) state);
     char **name = wmem_map_lookup(set->readable_names, (void *) (uint64_t) state);
     protocol_dissector **d = wmem_map_lookup(set->dissectors_by_state, (void *) (uint64_t) state);
     proto_tree_add_string_format_value(
-        tree, hf_packet_name_be, tvb, offset, len, key[packet_id],
+        tree, hf_packet_name_be, tvb, 0, offset, key[packet_id],
         "%s (%s)", name[packet_id], key[packet_id]
     );
 
@@ -144,10 +126,10 @@ void handle_packet(
     int32_t sub_len = d[packet_id]->dissect_protocol(
         tree, pinfo, tvb, offset, pinfo->pool, d[packet_id], "Packet Data", packet_save, NULL
     );
-    if (sub_len + len != packet_len && sub_len != DISSECT_ERROR)
+    if (sub_len != packet_should_len && sub_len != DISSECT_ERROR)
         proto_tree_add_string_format_value(
-            tree, hf_invalid_data_be, tvb, offset, packet_len - len,
-            "length mismatch", "Packet length mismatch, expected %d, got %d", packet_len - len,
-            sub_len
+            tree, hf_invalid_data_be, tvb, offset, packet_should_len,
+            "length mismatch", "Packet length mismatch, expected %d, got %d",
+            packet_should_len, sub_len
         );
 }

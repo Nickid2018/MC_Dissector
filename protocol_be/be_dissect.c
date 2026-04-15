@@ -51,36 +51,38 @@ int32_t dissect_be_core(
     int32_t offset = 0;
     int32_t packets = 0;
     while (offset < tvb_reported_length(tvb)) {
-        int32_t len = read_packet_len(tvb, offset);
-        if (is_invalid(len)) {
+        int32_t head_len;
+        int32_t packet_len = read_packet_len(tvb, offset, &head_len);
+        if (is_invalid(head_len)) {
             col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s), malformed]", packets);
             return tvb_reported_length(tvb);
         }
-        if (!pinfo->fd->visited && is_invalid(try_change_state(tvb, offset, pinfo, ctx, frame_data, !is_server))) {
+        tvbuff_t *limited = tvb_new_subset_length(tvb, offset + head_len, packet_len);
+        if (!pinfo->fd->visited && !try_change_state(limited, ctx, frame_data)) {
             col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s), state error]", packets);
             return tvb_reported_length(tvb);
         }
         if (tree) {
-            proto_item *ti = proto_tree_add_item(tree, proto_mcbe, tvb, offset, len, FALSE);
+            proto_item *ti = proto_tree_add_item(tree, proto_mcbe, tvb, offset, head_len + packet_len, FALSE);
             proto_tree *sub_tree = proto_item_add_subtree(ti, ett_mc_be);
             TRY {
-                    handle_packet(sub_tree, pinfo, tvb, offset, ctx, state, !is_server);
+                    handle_packet(sub_tree, pinfo, limited, ctx, state);
                 }
                 CATCH_BOUNDS_ERRORS {
                     proto_tree_add_string_format_value(
-                        tree, hf_invalid_data_be, tvb, 0, -1, "DISSECT_ERROR",
+                        tree, hf_invalid_data_be, limited, 0, -1, "DISSECT_ERROR",
                         "Packet dissecting error: Bound Error (%s)", GET_MESSAGE
                     );
                 }
                 CATCH_BOUNDS_AND_DISSECTOR_ERRORS {
                     proto_tree_add_string_format_value(
-                        tree, hf_invalid_data_be, tvb, 0, -1, "DISSECT_ERROR",
+                        tree, hf_invalid_data_be, limited, 0, -1, "DISSECT_ERROR",
                         "Packet dissecting error: Dissector Error (%s)", GET_MESSAGE
                     );
                 }
                 CATCH_ALL {
                     proto_tree_add_string_format_value(
-                        tree, hf_invalid_data_be, tvb, 0, -1, "DISSECT_ERROR",
+                        tree, hf_invalid_data_be, limited, 0, -1, "DISSECT_ERROR",
                         "Packet dissecting error: Other Error (%s)", GET_MESSAGE
                     );
                 }
@@ -90,7 +92,7 @@ int32_t dissect_be_core(
                 BE_STATE_NAME[frame_data->client_state], BE_STATE_NAME[frame_data->server_state]
             );
         }
-        offset += len;
+        offset += packet_len + head_len;
         packets++;
     }
 
