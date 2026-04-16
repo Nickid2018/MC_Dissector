@@ -464,6 +464,45 @@ DISSECT_PROTOCOL(bnbt) {
     return len_nbt;
 }
 
+DISSECT_PROTOCOL(bnbt_loop) {
+    if (tree) {
+        int32_t inner_len = 0;
+        tree = proto_tree_add_subtree(tree, tvb, offset, 0, dissector->settings->ett_tree, NULL, "");
+        int32_t id = 0;
+        // FIXME:
+        while (tvb_reported_length(tvb) > offset + inner_len && tvb_get_uint8(tvb, offset + inner_len)) {
+            char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, id++);
+            if (pref_do_nbt_decode_be) {
+                int32_t len = do_be_nbt_tree(tree, pinfo, tvb, offset + inner_len, nbt_name);
+                if (len == DISSECT_ERROR) return DISSECT_ERROR;
+                inner_len += len;
+            } else {
+                int32_t len = count_be_nbt_length(tvb, offset + inner_len);
+                if (len == DISSECT_ERROR) return DISSECT_ERROR;
+                add_name(
+                    proto_tree_add_bytes(
+                        tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset + inner_len, len,
+                        tvb_memdup(pinfo->pool, tvb, offset + inner_len, len > 200 ? 200 : len)
+                    ),
+                    nbt_name
+                );
+                inner_len += len;
+            }
+        }
+        proto_item_set_len(tree, inner_len + 1);
+        proto_item_set_text(tree, "%s (%d entries)", name, id);
+        return inner_len + 1;
+    } else {
+        int32_t inner_len = 0;
+        while (tvb_reported_length(tvb) > offset + inner_len && tvb_get_uint8(tvb, offset + inner_len)) {
+            int32_t len = count_be_nbt_length(tvb, offset + inner_len);
+            if (len == DISSECT_ERROR) return DISSECT_ERROR;
+            inner_len += len;
+        }
+        return inner_len + 1;
+    }
+}
+
 // COMPOSITE SUB-DISSECTORS --------------------------------------------------------------------------------------------
 
 char *packet_save_fetcher(char *name, void *user_data, int64_t *value) {
@@ -1590,6 +1629,7 @@ protocol_dissector *make_protocol_dissector(
     SIMPLE_PROTOCOL(uuid, dissect_uuid)
     SIMPLE_PROTOCOL(nbt, dissect_nbt)
     SIMPLE_PROTOCOL(bnbt, dissect_bnbt)
+    SIMPLE_PROTOCOL(bnbt_loop, dissect_bnbt_loop)
 
     if (strcmp(type, "recursive") == 0 && !composite_type && recursive_root) return recursive_root;
 
