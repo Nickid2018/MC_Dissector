@@ -451,7 +451,7 @@ DISSECT_PROTOCOL(nbt) {
 DISSECT_PROTOCOL(bnbt) {
     int32_t len_nbt = count_be_nbt_length(tvb, offset);
 
-    if (tree && pref_do_nbt_decode_be) return do_be_nbt_tree(tree, pinfo, tvb, offset, name);
+    if (tree && pref_do_nbt_decode_be) return do_be_nbt_tree(tree, pinfo, tvb, offset, name, false);
     if (tree)
         add_name(
             proto_tree_add_bytes(
@@ -471,12 +471,13 @@ DISSECT_PROTOCOL(bnbt_loop) {
         int32_t id = 0;
         // FIXME:
         while (tvb_reported_length(tvb) > offset + inner_len && tvb_get_uint8(tvb, offset + inner_len)) {
-            char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, id++);
             if (pref_do_nbt_decode_be) {
-                int32_t len = do_be_nbt_tree(tree, pinfo, tvb, offset + inner_len, nbt_name);
+                char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d] (%%s)", name, id++);
+                int32_t len = do_be_nbt_tree(tree, pinfo, tvb, offset + inner_len, nbt_name, true);
                 if (len == DISSECT_ERROR) return DISSECT_ERROR;
                 inner_len += len;
             } else {
+                char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, id++);
                 int32_t len = count_be_nbt_length(tvb, offset + inner_len);
                 if (len == DISSECT_ERROR) return DISSECT_ERROR;
                 add_name(

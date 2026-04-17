@@ -200,11 +200,14 @@ int32_t add_be_compound_type(
     return length;
 }
 
-int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name) {
+int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool format) {
     uint32_t type = tvb_get_uint8(tvb, offset);
     int32_t origin_offset = offset;
     int32_t name_len;
     offset += 1 + read_var_int(tvb, offset + 1, &name_len);
+    if (format) {
+        name = wmem_strdup_printf(pinfo->pool, name, tvb_format_text(pinfo->pool, tvb, offset, name_len));
+    }
     offset += name_len;
 
     if (is_primitive_type(type)) {
@@ -268,7 +271,7 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
         uint32_t sub_type;
         while ((sub_type = tvb_get_uint8(tvb, offset + sub_length)) != TAG_END) {
             int32_t name_length;
-            int32_t length = read_var_int(tvb, offset + 1, &name_length);
+            int32_t length = read_var_int(tvb, offset + sub_length + 1, &name_length);
             sub_length += 1 + length + name_length;
             sub_length += count_be_nbt_length_with_type(tvb, offset + sub_length, sub_type);
         }
