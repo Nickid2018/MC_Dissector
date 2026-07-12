@@ -34,7 +34,7 @@ void reinit() {
 }
 
 void proto_register() {
-    pref_protocol_data_dir = get_datafile_path("minecraft-protocol");
+    pref_protocol_data_dir = get_datafile_dir("minecraft-protocol");
 
     // Preference ------------------------------------------------------------------------------------------------------
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
