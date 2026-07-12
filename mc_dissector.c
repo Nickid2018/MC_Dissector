@@ -35,7 +35,7 @@ void reinit() {
 
 void proto_register() {
 #if WIRESHARK_VERSION_MAJOR <= 4 && WIRESHARK_VERSION_MINOR < 7
-    pref_protocol_data_dir = get_datafile_dir()
+    pref_protocol_data_dir = get_datafile_dir();
 #else
     pref_protocol_data_dir = get_datafile_dir("DIR_MINECRAFT_PROTOCOL");
 #endif
