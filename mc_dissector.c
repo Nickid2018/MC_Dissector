@@ -34,7 +34,11 @@ void reinit() {
 }
 
 void proto_register() {
-    pref_protocol_data_dir = get_datafile_dir("minecraft-protocol");
+#if WIRESHARK_VERSION_MAJOR <= 4 && WIRESHARK_VERSION_MINOR < 7
+    pref_protocol_data_dir = get_datafile_dir()
+#else
+    pref_protocol_data_dir = get_datafile_dir("DIR_MINECRAFT_PROTOCOL");
+#endif
 
     // Preference ------------------------------------------------------------------------------------------------------
     proto_mc = proto_register_protocol("Minecraft", "Minecraft", "Minecraft");
