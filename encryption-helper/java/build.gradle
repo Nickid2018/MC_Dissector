@@ -17,8 +17,8 @@ compileJava {
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm-tree:9.5")
-    implementation("org.ow2.asm:asm-commons:9.5")
+    implementation("org.ow2.asm:asm-tree:9.10.1")
+    implementation("org.ow2.asm:asm-commons:9.10.1")
 
     compileOnlyApi("org.projectlombok:lombok:1.18.32")
     annotationProcessor("org.projectlombok:lombok:1.18.32")
