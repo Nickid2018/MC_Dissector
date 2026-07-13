@@ -74,7 +74,7 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
     FetchContent_Declare(
             cJSON
             GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
-            PATCH_COMMAND "git apply ${CMAKE_CURRENT_SOURCE_DIR}/patches/fix_cmake_version.patch"
+            PATCH_COMMAND git apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/fix_cmake_version.patch"
             GIT_TAG v1.7.19
             UPDATE_DISCONNECTED 1
             EXCLUDE_FROM_ALL
