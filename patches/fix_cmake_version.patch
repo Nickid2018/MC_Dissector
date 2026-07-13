@@ -7,8 +7,11 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 --- a/CMakeLists.txt	(revision c859b25da02955fef659d658b8f324b5cde87be3)
-+++ b/CMakeLists.txt	(revision 005f810034caeed2a6e423e35477e5c4a6f491e3)
++++ b/CMakeLists.txt	(revision 7e821aa3afea91d1a391fe45704e3f76e2c2d991)
 @@ -1,5 +1,5 @@
  set(CMAKE_LEGACY_CYGWIN_WIN32 0)
 -cmake_minimum_required(VERSION 3.0)
 +cmake_minimum_required(VERSION 3.10)
+ 
+ project(cJSON
+     VERSION 1.7.19
