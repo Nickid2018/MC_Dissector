@@ -51,7 +51,8 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
         endif ()
         string(FIND ${LIB} "libgcrypt" IS_LIB_GCRYPT)
         string(FIND ${LIB} "vcpkg-export" IS_LIB_GLIB)
-        if (NOT IS_LIB_GLIB EQUAL -1)
+        string(FIND ${LIB} "glib-bundle" IS_LIB_GLIB_BUNDLE)
+        if (NOT IS_LIB_GLIB EQUAL -1 OR NOT IS_LIB_GLIB_BUNDLE EQUAL -1)
             message(STATUS "Found glib: ${LIB}")
             include_directories(
                     ${LIB}/installed/x64-windows/include/glib-2.0
@@ -70,10 +71,14 @@ if (DEFINED ENV{WIRESHARK_LIB_DIR})
         endif ()
     endforeach ()
     include(FetchContent)
+    find_package(Patch REQUIRED)
     FetchContent_Declare(
             cJSON
             GIT_REPOSITORY https://github.com/DaveGamble/cJSON.git
+            PATCH_COMMAND "${Patch_EXECUTABLE}" -p1 < ${CMAKE_CURRENT_SOURCE_DIR}/patches/fix_cmake_version.patch
             GIT_TAG v1.7.19
+            UPDATE_DISCONNECTED 1
+            EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(cJSON)
     include_directories(${cJSON_SOURCE_DIR})
