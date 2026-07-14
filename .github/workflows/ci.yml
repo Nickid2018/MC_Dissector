@@ -188,7 +188,7 @@ jobs:
           name: encryption-helper-bedrock-ll
           path: encryption-helper-bedrock-ll
       - name: Zip Bedrock Encryption Helper (LeviLamina)
-        run: zip -j encryption-helper-bedrock-ll.zip encryption-helper-bedrock-ll/*
+        run: zip -r encryption-helper-bedrock-ll.zip encryption-helper-bedrock-ll
       - id: process-name
         env:
           REF: ${{ github.ref }}
