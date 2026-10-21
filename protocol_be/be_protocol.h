@@ -38,8 +38,8 @@ typedef struct {
 
 int32_t read_packet_len(tvbuff_t *tvb, int32_t offset, int32_t *head_len);
 
-bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data);
+bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, const mc_frame_data *frame_data);
 
-void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, be_state state);
+void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, const mc_protocol_context *ctx, be_state state);
 
 #endif //MC_DISSECTOR_BE_PROTOCOL_H

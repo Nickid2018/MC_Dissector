@@ -13,6 +13,7 @@
 #include "protocol/protocol_data.h"
 #include "protocol/storage/storage.h"
 #include "utils/endian.h"
+#include "utils/key.h"
 
 dissector_handle_t mcbe_handle;
 
@@ -28,21 +29,13 @@ void proto_reg_handoff_mcbe() {
     heur_dissector_add("raknet", dissect_be_core_heuristic, MCBE_NAME, MCBE_FILTER, proto_mcbe, true);
 }
 
-void mark_session_invalid_be(packet_info *pinfo) {
+static void mark_session_invalid_be(const packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcbe);
     ctx->client_state = ctx->server_state = INVALID;
 }
 
-char *bytes_to_hex(wmem_allocator_t *allocator, const uint8_t *bytes, const uint32_t len) {
-    wmem_strbuf_t *buf = wmem_strbuf_new(allocator, "");
-    for (uint32_t i = 0; i < len; i++) {
-        wmem_strbuf_append_printf(buf, "%02X", bytes[i] & 0xFF);
-    }
-    return wmem_strbuf_finalize(buf);
-}
-
-int32_t dissect_be_core(
+static int32_t dissect_be_core(
     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx, mc_frame_data *frame_data
 ) {
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
@@ -55,12 +48,12 @@ int32_t dissect_be_core(
         int32_t packet_len = read_packet_len(tvb, offset, &head_len);
         if (is_invalid(head_len)) {
             col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s), malformed]", packets);
-            return tvb_reported_length(tvb);
+            return (int32_t) tvb_reported_length(tvb);
         }
         tvbuff_t *limited = tvb_new_subset_length(tvb, offset + head_len, packet_len);
         if (!pinfo->fd->visited && !try_change_state(limited, ctx, frame_data)) {
             col_append_fstr(pinfo->cinfo, COL_INFO, "[%d packet(s), state error]", packets);
-            return tvb_reported_length(tvb);
+            return (int32_t) tvb_reported_length(tvb);
         }
         if (tree) {
             proto_item *ti = proto_tree_add_item(tree, proto_mcbe, tvb, offset, head_len + packet_len, FALSE);
@@ -100,12 +93,12 @@ int32_t dissect_be_core(
     return offset;
 }
 
-int32_t dissect_be_uncompress(
+static int32_t dissect_be_uncompress(
     tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx,
-    mc_frame_data *frame_data, mcbe_frame_data *protocol_frame
+    mc_frame_data *frame_data, const mcbe_frame_data *protocol_frame
 ) {
-    int32_t report_len = tvb_reported_length(tvb);
-    tvbuff_t *new_tvb = NULL;
+    int32_t report_len = (int32_t) tvb_reported_length(tvb);
+    tvbuff_t *new_tvb = nullptr;
     int32_t decomp_offset = protocol_frame->compression_in_header ? 1 : 0;
     switch (protocol_frame->compression_in_header ? tvb_get_uint8(tvb, 0) : protocol_frame->compression_algorithm) {
         case ZLIB:
@@ -123,7 +116,7 @@ int32_t dissect_be_uncompress(
             mark_session_invalid_be(pinfo);
             return report_len;
     }
-    if (new_tvb == NULL) {
+    if (new_tvb == nullptr) {
         col_set_str(pinfo->cinfo, COL_INFO, "[Invalid] Uncompression failed");
         return report_len;
     }
@@ -136,7 +129,7 @@ int32_t dissect_be_uncompress(
 int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
     if (tree) tree = proto_tree_get_root(tree);
 
-    int32_t report_len = tvb_reported_length(tvb);
+    int32_t report_len = (int32_t) tvb_reported_length(tvb);
     if (tvb_get_uint8(tvb, 0) != MSG_GAME) {
         return report_len;
     }
@@ -151,7 +144,7 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         frame_data = wmem_alloc(wmem_file_scope(), sizeof(mc_frame_data));
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
-        frame_data->encrypted = ctx->encrypted;
+        frame_data->encrypted = ctx->server_encrypted;
         frame_data->protocol_data = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
         p_add_proto_data(wmem_file_scope(), pinfo, proto_mcbe, 0, frame_data);
     }
@@ -161,11 +154,11 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     );
     if (!protocol_frame) {
         protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
-        protocol_frame->decrypted_data = NULL;
+        protocol_frame->decrypted_data = nullptr;
         protocol_frame->compression_threshold = protocol_ctx->compression_threshold;
         protocol_frame->compression_algorithm = protocol_ctx->compression_algorithm;
         protocol_frame->compression_in_header = protocol_ctx->compression_in_header;
-        protocol_frame->expect_checksum = NULL;
+        protocol_frame->expect_checksum = nullptr;
         wmem_map_insert(frame_data->protocol_data, GUINT_TO_POINTER(pinfo->curr_proto_layer_num), protocol_frame);
     }
 
@@ -198,7 +191,7 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
         gcry_cipher_hd_t *cipher = is_server ? &ctx->server_cipher : &ctx->client_cipher;
 
-        if (*cipher == NULL) {
+        if (*cipher == nullptr) {
             if (ctx->protocol_version <= 431) {
                 gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB8, 0);
                 gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
@@ -233,8 +226,8 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             memcpy(checksum_buffer + length, ctx->secret_key, 32);
             uint8_t *hash_buffer = wmem_alloc(pinfo->pool, 32);
             gcry_md_hash_buffer(GCRY_MD_SHA256, hash_buffer, checksum_buffer, length + 32);
-            char *got = bytes_to_hex(pinfo->pool, protocol_frame->decrypted_data + length - 8, 8);
-            char *expect = bytes_to_hex(pinfo->pool, hash_buffer, 8);
+            char *got = bytes_to_hex(pinfo->pool, protocol_frame->decrypted_data + length - 8, 8, true);
+            char *expect = bytes_to_hex(pinfo->pool, hash_buffer, 8, true);
             if (strcmp(got, expect) != 0) {
                 protocol_frame->expect_checksum = wmem_strdup(wmem_file_scope(), expect);
             }
@@ -246,17 +239,17 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         add_new_data_source(pinfo, tvb, "Decrypted packet");
 
         if (protocol_frame->expect_checksum && tree) {
-            proto_item *ti = proto_tree_add_item(tree, proto_mcbe, tvb, length - 8, 8, FALSE);
+            proto_item *ti = proto_tree_add_item(tree, proto_mcbe, tvb, (int32_t) length - 8, 8, FALSE);
             proto_tree *sub_tree = proto_item_add_subtree(ti, ett_mc_be);
             proto_tree_add_string_format_value(
-                sub_tree, hf_invalid_data_be, tvb, length - 8, 8, "invalid_hash",
+                sub_tree, hf_invalid_data_be, tvb, (int32_t) length - 8, 8, "invalid_hash",
                 "Packet Hash mismatch: expect %s, got %s",
                 protocol_frame->expect_checksum,
-                bytes_to_hex(pinfo->pool, protocol_frame->decrypted_data + length - 8, 8)
+                bytes_to_hex(pinfo->pool, protocol_frame->decrypted_data + length - 8, 8, true)
             );
         }
 
-        tvb = tvb_new_subset_length(tvb, 0, length - 8);
+        tvb = tvb_new_subset_length(tvb, 0, (int32_t) length - 8);
     }
 
     if (protocol_frame->compression_threshold > 0 && protocol_frame->compression_algorithm != NONE) {
@@ -281,10 +274,10 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         ctx->server_state = is_compatible_protocol_data() ? INITIAL : NOT_COMPATIBLE;
         ctx->server_port = pinfo->destport;
         copy_address(&ctx->server_address, &pinfo->dst);
-        ctx->encrypted = false;
-        ctx->secret_key = NULL;
-        ctx->server_cipher = NULL;
-        ctx->client_cipher = NULL;
+        ctx->server_encrypted = false;
+        ctx->secret_key = nullptr;
+        ctx->server_cipher = nullptr;
+        ctx->client_cipher = nullptr;
         mcbe_context *protocol_ctx = wmem_alloc(wmem_file_scope(), sizeof(mcbe_context));
         protocol_ctx->compression_threshold = -1;
         protocol_ctx->compression_algorithm = NONE;
@@ -301,10 +294,10 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         frame_data = wmem_alloc(wmem_file_scope(), sizeof(mc_frame_data));
         frame_data->client_state = ctx->client_state;
         frame_data->server_state = ctx->server_state;
-        frame_data->encrypted = ctx->encrypted;
+        frame_data->encrypted = ctx->server_encrypted;
         frame_data->protocol_data = wmem_map_new(wmem_file_scope(), g_direct_hash, g_direct_equal);
         mcbe_frame_data *protocol_frame = wmem_alloc(wmem_file_scope(), sizeof(mcbe_frame_data));
-        protocol_frame->decrypted_data = NULL;
+        protocol_frame->decrypted_data = nullptr;
         protocol_frame->compression_threshold = -1;
         protocol_frame->compression_algorithm = NONE;
         protocol_frame->compression_in_header = false;
@@ -314,7 +307,10 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, MCBE_SHORT_NAME);
     col_set_str(pinfo->cinfo, COL_INFO, "[C => S] ");
-    dissect_be_core(tvb_new_subset_length(tvb, 1, tvb_reported_length(tvb) - 1), pinfo, tree, ctx, frame_data);
+    dissect_be_core(
+        tvb_new_subset_length(tvb, 1, (int32_t) tvb_reported_length(tvb) - 1),
+        pinfo, tree, ctx, frame_data
+    );
 
     return true;
 }

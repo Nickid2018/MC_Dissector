@@ -8,6 +8,7 @@
 #include "cJSON.h"
 #include "protocol/schema/schema.h"
 
+struct protocol_storage_struct;
 typedef struct protocol_storage_struct protocol_storage;
 
 protocol_storage *create_storage(char *root, protocol_dissector_settings *settings);
@@ -16,9 +17,9 @@ void clear_storage(protocol_storage *storage);
 
 char **get_mapped_readable_versions(protocol_storage *storage, uint32_t protocol_version);
 
-int32_t get_data_version(protocol_storage *storage, char *version);
+int32_t get_data_version(protocol_storage *storage, const char *version);
 
-char *get_index(protocol_storage *storage, uint32_t protocol_version, char *item);
+char *get_index(protocol_storage *storage, uint32_t protocol_version, const char *item);
 
 char *build_indexed_file_name(protocol_storage *storage, char *root, char *item, uint32_t protocol_version);
 
@@ -28,7 +29,9 @@ cJSON *get_protocol_source(protocol_storage *storage, uint32_t protocol_version)
 
 cJSON *get_packet_source(protocol_storage *storage, uint32_t protocol_version, char *packet);
 
-char *get_entity_sync_data_name(protocol_storage *storage, uint32_t protocol_version, char *entity_id, uint32_t index);
+char *get_entity_sync_data_name(
+    protocol_storage *storage, uint32_t protocol_version, const char *entity_id, uint32_t index
+);
 
 cJSON *get_registry(protocol_storage *storage, uint32_t protocol_version, char *registry);
 
@@ -40,7 +43,7 @@ protocol_dissector_set *get_protocol_set(protocol_storage *storage, uint32_t pro
 
 // Global storage
 
-bool get_settings_flag(char *name);
+bool get_settings_flag(const char *name);
 
 bool is_compatible_protocol_data();
 

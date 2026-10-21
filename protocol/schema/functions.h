@@ -27,4 +27,8 @@ DISSECT_PROTOCOL(display_protocol_version);
 
 DISSECT_PROTOCOL(legacy_registry_holder);
 
+DISSECT_PROTOCOL(find_encryption_key);
+
+DISSECT_PROTOCOL(update_compression);
+
 #endif //MC_DISSECTOR_FUNCTIONS_H

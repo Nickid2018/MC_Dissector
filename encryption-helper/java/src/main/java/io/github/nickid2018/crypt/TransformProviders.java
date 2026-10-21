@@ -7,13 +7,43 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.*;
 
+import java.io.IOException;
+
 public class TransformProviders {
 
     public static final String KEY_LOG_FILE_MANAGER_CLASS = "io/github/nickid2018/crypt/KeyLogFileManager";
     public static final String KEY_LOG_INJECTION_DESC = "(Ljavax/crypto/SecretKey;Ljava/security/PublicKey;[B)V";
+    public static final String KEY_LOG_INJECTION2_DESC = "(Ljava/security/Key;[B)[B";
     public static final String RANDOM_SUFFIX = "$$KeyLog$$" + Long.toHexString(System.nanoTime());
 
-    public static final TransformProvider KEY_LOG_TRANSFORM = (classNode, className) -> {
+    private static void injectKeyLogFileManager(String className, ClassWriter cw) throws IOException {
+        ClassReader injectClassReader = new ClassReader(KEY_LOG_FILE_MANAGER_CLASS);
+        ClassNode injectNode = new ClassNode();
+        ClassRemapper classMapper = new ClassRemapper(
+            injectNode,
+            new Remapper(Opcodes.ASM9) {
+                @Override
+                public String map(String typeName) {
+                    return typeName.equals(KEY_LOG_FILE_MANAGER_CLASS) ? className : typeName;
+                }
+
+                @Override
+                public String mapMethodName(String owner, String name, String desc) {
+                    return owner.equals(KEY_LOG_FILE_MANAGER_CLASS) ? name + RANDOM_SUFFIX : name;
+                }
+
+                @Override
+                public String mapFieldName(String owner, String name, String desc) {
+                    return owner.equals(KEY_LOG_FILE_MANAGER_CLASS) ? name + RANDOM_SUFFIX : name;
+                }
+            }
+        );
+        injectClassReader.accept(classMapper, 0);
+        injectNode.methods.removeIf(m -> m.name.startsWith("<"));
+        injectNode.accept(cw);
+    }
+
+    public static final TransformProvider KEY_LOG_TRANSFORM_V1 = (classNode, className) -> {
         for (MethodNode methodNode : classNode.methods) {
             if (!methodNode.name.equals("<init>"))
                 return null;
@@ -22,43 +52,32 @@ public class TransformProviders {
                 list.add(new VarInsnNode(Opcodes.ALOAD, 1)); // SecretKey
                 list.add(new VarInsnNode(Opcodes.ALOAD, 3)); // byte[]
                 list.add(new MethodInsnNode(
-                        Opcodes.INVOKESTATIC,
-                        className,
-                        "pushKeyInfo" + RANDOM_SUFFIX,
-                        "(Ljavax/crypto/SecretKey;[B)V",
-                        false
+                    Opcodes.INVOKESTATIC,
+                    className,
+                    "pushKeyInfo" + RANDOM_SUFFIX,
+                    "(Ljavax/crypto/SecretKey;[B)V",
+                    false
                 ));
                 methodNode.instructions.insert(list);
-
                 ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-
-                ClassReader injectClassReader = new ClassReader(KEY_LOG_FILE_MANAGER_CLASS);
-                ClassNode injectNode = new ClassNode();
-                ClassRemapper classMapper = new ClassRemapper(
-                        injectNode,
-                        new Remapper() {
-                            @Override
-                            public String map(String typeName) {
-                                return typeName.equals(KEY_LOG_FILE_MANAGER_CLASS) ? className : typeName;
-                            }
-
-                            @Override
-                            public String mapMethodName(String owner, String name, String desc) {
-                                return owner.equals(KEY_LOG_FILE_MANAGER_CLASS) ? name + RANDOM_SUFFIX : name;
-                            }
-
-                            @Override
-                            public String mapFieldName(String owner, String name, String desc) {
-                                return owner.equals(KEY_LOG_FILE_MANAGER_CLASS) ? name + RANDOM_SUFFIX : name;
-                            }
-                        }
-                );
-                injectClassReader.accept(classMapper, 0);
-                injectNode.methods.removeIf(m -> m.name.startsWith("<"));
-
-                injectNode.accept(cw);
+                injectKeyLogFileManager(className, cw);
                 classNode.accept(cw);
+                return cw.toByteArray();
+            }
+        }
+        return null;
+    };
 
+    public static final TransformProvider KEY_LOG_TRANSFORM_V2 = (classNode, className) -> {
+        for (MethodNode methodNode : classNode.methods) {
+            if (methodNode.name.equals("encryptUsingKey") && methodNode.desc.equals(KEY_LOG_INJECTION2_DESC)) {
+                InsnList list = new InsnList();
+                list.add(new VarInsnNode(Opcodes.ALOAD, 1)); // [B
+                list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, className, "push" + RANDOM_SUFFIX, "([B)V", false));
+                methodNode.instructions.insert(list);
+                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                injectKeyLogFileManager(className, cw);
+                classNode.accept(cw);
                 return cw.toByteArray();
             }
         }
@@ -92,10 +111,10 @@ public class TransformProviders {
                 if (methodNode.desc.equals("()Ljavax/crypto/SecretKey;") && methodNode.localVariables.get(0).desc.equals("Ljavax/crypto/KeyGenerator;")) {
                     InsnList list = new InsnList();
                     list.add(new FieldInsnNode(Opcodes.GETSTATIC, "java/lang/System", "out",
-                            "Ljava/io/PrintStream;"));
+                        "Ljava/io/PrintStream;"));
                     list.add(new LdcInsnNode("Override Secret Key!"));
                     list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                            "(Ljava/lang/String;)V"));
+                        "(Ljava/lang/String;)V"));
                     list.add(new TypeInsnNode(Opcodes.NEW, "javax/crypto/spec/SecretKeySpec"));
                     list.add(new InsnNode(Opcodes.DUP));
                     list.add(new IntInsnNode(Opcodes.BIPUSH, 16));

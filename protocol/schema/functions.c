@@ -4,8 +4,10 @@
 
 #include <epan/conversation.h>
 #include "functions.h"
+
 #include "protocol/storage/storage.h"
 #include "protocol/protocol_data.h"
+#include "utils/key.h"
 #include "utils/nbt.h"
 
 extern int hf_generated_je;
@@ -182,5 +184,37 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
         // TAG_END
         offset += 1;
     }
+    return 0;
+}
+
+DISSECT_PROTOCOL(find_encryption_key) {
+    const gchar *found_key = wmem_map_lookup(get_global_data(pinfo), "#key_encryption");
+    if (!found_key) {
+        char *challenge = wmem_map_lookup(get_global_data(pinfo), "#key_challenge");
+        if (!challenge) return 0;
+        found_key = find_encryption_key(challenge);
+        wmem_map_insert(get_global_data(pinfo), "#key_encryption", (void *) found_key);
+    }
+    if (tree) {
+        proto_item *item = nullptr;
+        if (found_key) {
+            item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_key);
+        } else {
+            item = proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 0, "No invalid key found");
+        }
+        proto_item_set_generated(item);
+        proto_item_prepend_text(item, "Encryption Key ");
+    }
+    return 0;
+}
+
+DISSECT_PROTOCOL(update_compression) {
+    gchar *limit = wmem_map_lookup(get_global_data(pinfo), "#compression");
+    errno = 0;
+    int32_t compression = (int32_t) strtol(limit, nullptr, 10);
+    if (errno != 0) {
+        return 0;
+    }
+    wmem_map_insert(get_global_data(pinfo), "#compression", GINT_TO_POINTER(compression));
     return 0;
 }

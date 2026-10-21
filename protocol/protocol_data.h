@@ -25,7 +25,8 @@ typedef struct {
     protocol_dissector_set *dissector_set;
     uint32_t protocol_version;
 
-    bool encrypted;
+    bool server_encrypted;
+    bool client_encrypted;
     uint8_t *secret_key;
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
@@ -39,7 +40,7 @@ typedef struct {
     void *protocol_data;
 } mc_frame_data;
 
-wmem_map_t *get_global_data(packet_info *pinfo);
+wmem_map_t *get_global_data(const packet_info *pinfo);
 
 int32_t read_unsigned_var_int(tvbuff_t *tvb, int32_t offset, int32_t max_length, uint32_t *result);
 
@@ -51,7 +52,7 @@ int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result);
 
 int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
-int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **resul, wmem_allocator_t *allocator);
+int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **result, int32_t *buf_len, wmem_allocator_t *allocator);
 
 int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator_t *allocator);
 

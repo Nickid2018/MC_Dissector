@@ -2,6 +2,7 @@
 // Created by nickid2018 on 24-7-15.
 //
 
+// ReSharper disable once CppUnusedIncludeDirective
 #include <ws_version.h>
 
 #define VALUE_TO_STRING(x) #x

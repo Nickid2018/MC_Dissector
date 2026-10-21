@@ -1,6 +1,8 @@
 //
 // Created by Nickid2018 on 2023/7/12.
 //
+// ReSharper disable CppUseInternalLinkage
+// ReSharper disable CppVariableCanBeMadeConstexpr
 #include <ws_version.h>
 #include <wsutil/plugins.h>
 #include <wsutil/filesystem.h>
@@ -21,12 +23,11 @@ int proto_mc = -1;
 int proto_mcje = -1;
 int proto_mcbe = -1;
 
-module_t *pref_mc = NULL;
-gchar *pref_protocol_data_dir;
+static module_t *pref_mc = nullptr;
+const gchar *pref_protocol_data_dir;
 
-module_t *pref_mcje = NULL;
-
-module_t *pref_mcbe = NULL;
+module_t *pref_mcje = nullptr;
+module_t *pref_mcbe = nullptr;
 
 void reinit() {
     init_storage_je();
@@ -45,7 +46,7 @@ void proto_register() {
     pref_mc = prefs_register_protocol(proto_mc, reinit);
     prefs_register_directory_preference(
         pref_mc, "protocol_data_dir", "Protocol Data Directory",
-        "Directory for protocol data", (const char **) &pref_protocol_data_dir
+        "Directory for protocol data", &pref_protocol_data_dir
     );
 
     proto_register_mcje();

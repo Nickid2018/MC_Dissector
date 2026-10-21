@@ -4,8 +4,8 @@
 extern int hf_string_be;
 extern int ett_sub_be;
 
-void be_tag_parse_to_string(
-    tvbuff_t *tvb, packet_info *pinfo, int32_t offset_g, uint32_t type, int32_t *length, char **text
+static void be_tag_parse_to_string(
+    tvbuff_t *tvb, const packet_info *pinfo, const int32_t offset_g, const uint32_t type, int32_t *length, char **text
 ) {
     switch (type) {
         case TAG_BYTE:
@@ -59,8 +59,8 @@ void be_tag_parse_to_string(
                 }
             }
             char *el_type = type == TAG_BYTE_ARRAY ? "<ba>" : type == TAG_INT_ARRAY ? "<ia>" : "<la>";
-            g_ptr_array_add(array, NULL);
-            char **built = (char **) g_ptr_array_steal(array, NULL);
+            g_ptr_array_add(array, nullptr);
+            auto built = (char **) g_ptr_array_steal(array, nullptr);
             char *elements_text = g_strjoinv(", ", built);
             g_strfreev(built);
             *text = wmem_strdup_printf(
@@ -86,9 +86,9 @@ void be_tag_parse_to_string(
     }
 }
 
-int32_t add_be_primitive_type(
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb,
-    int offset_global, uint32_t type, char *sup_name
+static int32_t add_be_primitive_type(
+    proto_tree *tree, const packet_info *pinfo, tvbuff_t *tvb,
+    const int offset_global, const uint32_t type, char *sup_name
 ) {
     int32_t length;
     char *text;
@@ -99,20 +99,19 @@ int32_t add_be_primitive_type(
     return length;
 }
 
-int32_t add_be_list_type(
+static int32_t add_be_list_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 );
 
-int32_t add_be_compound_type(
+static int32_t add_be_compound_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
     tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
 );
 
-// NOLINTNEXTLINE
 int32_t add_be_list_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
-    tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
+    tvbuff_t *tvb, const int32_t ett, const int32_t offset_global, char *sup_name
 ) {
     int32_t length = 1;
     uint32_t sub_type = tvb_get_uint8(tvb, offset_global);
@@ -120,7 +119,7 @@ int32_t add_be_list_type(
     length += read_zigzag_int(tvb, offset_global + 1, &sub_length);
 
     proto_tree *subtree;
-    if (sup_name == NULL)
+    if (sup_name == nullptr)
         subtree = tree;
     else {
         item = proto_tree_add_item(tree, hf_string_be, tvb, offset_global, 0, ENC_NA);
@@ -139,14 +138,14 @@ int32_t add_be_list_type(
     } else if (sub_type == TAG_LIST) {
         for (uint32_t i = 0; i < sub_length; i++)
             length += add_be_list_type(
-                NULL, pinfo, subtree, tvb, ett,
+                nullptr, pinfo, subtree, tvb, ett,
                 offset_global + length,
                 wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
     } else if (sub_type == TAG_COMPOUND) {
         for (uint32_t i = 0; i < sub_length; i++)
             length += add_be_compound_type(
-                NULL, pinfo, subtree, tvb, ett,
+                nullptr, pinfo, subtree, tvb, ett,
                 offset_global + length,
                 wmem_strdup_printf(pinfo->pool, "%s[%d]", sup_name, i)
             );
@@ -156,14 +155,13 @@ int32_t add_be_list_type(
     return length;
 }
 
-// NOLINTNEXTLINE
 int32_t add_be_compound_type(
     proto_item *item, packet_info *pinfo, proto_tree *tree,
-    tvbuff_t *tvb, int32_t ett, int32_t offset_global, char *sup_name
+    tvbuff_t *tvb, const int32_t ett, const int32_t offset_global, char *sup_name
 ) {
     int32_t length = 1;
     proto_tree *subtree;
-    if (sup_name == NULL)
+    if (sup_name == nullptr)
         subtree = tree;
     else {
         item = proto_tree_add_item(tree, hf_string_be, tvb, offset_global, 0, ENC_NA);
@@ -184,12 +182,12 @@ int32_t add_be_compound_type(
             );
         } else if (sub_type == TAG_LIST) {
             length += add_be_list_type(
-                NULL, pinfo, subtree, tvb, ett,
+                nullptr, pinfo, subtree, tvb, ett,
                 offset_global + length, name
             );
         } else if (sub_type == TAG_COMPOUND) {
             length += add_be_compound_type(
-                NULL, pinfo, subtree, tvb, ett,
+                nullptr, pinfo, subtree, tvb, ett,
                 offset_global + length, name
             );
         }
@@ -200,7 +198,9 @@ int32_t add_be_compound_type(
     return length;
 }
 
-int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, bool format) {
+int32_t do_be_nbt_tree(
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int32_t offset, char *name, const bool format
+) {
     uint32_t type = tvb_get_uint8(tvb, offset);
     int32_t origin_offset = offset;
     int32_t name_len;
@@ -219,9 +219,9 @@ int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int3
 
         int32_t length = 0;
         if (type == TAG_LIST)
-            length = add_be_list_type(item, pinfo, subtree, tvb, ett_sub_be, offset, NULL);
+            length = add_be_list_type(item, pinfo, subtree, tvb, ett_sub_be, offset, nullptr);
         else if (type == TAG_COMPOUND)
-            length = add_be_compound_type(item, pinfo, subtree, tvb, ett_sub_be, offset, NULL);
+            length = add_be_compound_type(item, pinfo, subtree, tvb, ett_sub_be, offset, nullptr);
         offset += length;
 
         proto_item_set_len(item, length);
@@ -229,7 +229,7 @@ int32_t do_be_nbt_tree(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, int3
     return offset - origin_offset;
 }
 
-int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t type) {
+static int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, const int32_t offset, const uint32_t type) {
     if (type == TAG_END)
         return 0;
     if (type == TAG_BYTE)
@@ -290,7 +290,7 @@ int32_t count_be_nbt_length_with_type(tvbuff_t *tvb, int32_t offset, uint32_t ty
     return 0;
 }
 
-int32_t count_be_nbt_length(tvbuff_t *tvb, int32_t offset) {
+int32_t count_be_nbt_length(tvbuff_t *tvb, const int32_t offset) {
     uint8_t type = tvb_get_uint8(tvb, offset);
     int32_t name_length;
     int32_t length = read_var_int(tvb, offset + 1, &name_length);

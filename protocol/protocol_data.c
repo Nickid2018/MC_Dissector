@@ -6,7 +6,7 @@
 #include "protocol_data.h"
 #include "mc_dissector.h"
 
-int32_t read_unsigned_var_int(tvbuff_t *tvb, int32_t offset, int32_t max_length, uint32_t *result) {
+int32_t read_unsigned_var_int(tvbuff_t *tvb, const int32_t offset, const int32_t max_length, uint32_t *result) {
     uint8_t read;
     int32_t p = 0;
     *result = 0;
@@ -19,21 +19,21 @@ int32_t read_unsigned_var_int(tvbuff_t *tvb, int32_t offset, int32_t max_length,
     return p;
 }
 
-int32_t read_var_int_with_limit(tvbuff_t *tvb, int32_t offset, int32_t max_length, int32_t *result) {
+int32_t read_var_int_with_limit(tvbuff_t *tvb, const int32_t offset, const int32_t max_length, int32_t *result) {
     uint32_t unsigned_result;
     int32_t len = read_unsigned_var_int(tvb, offset, max_length, &unsigned_result);
     *result = *(int32_t *) &unsigned_result;
     return len;
 }
 
-int32_t read_var_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
+int32_t read_var_int(tvbuff_t *tvb, const int32_t offset, int32_t *result) {
     uint32_t unsigned_result;
     int32_t len = read_unsigned_var_int(tvb, offset, 5, &unsigned_result);
     *result = *(int32_t *) &unsigned_result;
     return len;
 }
 
-int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result) {
+int32_t read_unsigned_var_long(tvbuff_t *tvb, const int32_t offset, uint64_t *result) {
     uint8_t read;
     int32_t p = 0;
     *result = 0;
@@ -46,24 +46,25 @@ int32_t read_unsigned_var_long(tvbuff_t *tvb, int32_t offset, uint64_t *result) 
     return p;
 }
 
-int32_t read_var_long(tvbuff_t *tvb, int32_t offset, int64_t *result) {
+int32_t read_var_long(tvbuff_t *tvb, const int32_t offset, int64_t *result) {
     uint64_t unsigned_result;
     int32_t len = read_unsigned_var_long(tvb, offset, &unsigned_result);
     *result = *(int64_t *) &unsigned_result;
     return len;
 }
 
-int32_t read_buffer(tvbuff_t *tvb, int32_t offset, uint8_t **result, wmem_allocator_t *allocator) {
+int32_t read_buffer(tvbuff_t *tvb, const int32_t offset, uint8_t **result, int32_t *buf_len, wmem_allocator_t *allocator) {
     int32_t length;
     int32_t read = read_var_int(tvb, offset, &length);
     if (is_invalid(read))
         return INVALID_DATA;
     if (result && allocator)
         *result = tvb_memdup(allocator, tvb, offset + read, length);
+    if (buf_len) *buf_len = length;
     return read + length;
 }
 
-int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator_t *allocator) {
+int32_t read_string(tvbuff_t *tvb, const int32_t offset, char **result, wmem_allocator_t *allocator) {
     int32_t len;
     int32_t length = read_var_int(tvb, offset, &len);
     if (is_invalid(length)) return INVALID_DATA;
@@ -71,28 +72,28 @@ int32_t read_string(tvbuff_t *tvb, int32_t offset, char **result, wmem_allocator
     return length + len;
 }
 
-wmem_map_t *get_global_data(packet_info *pinfo) {
+wmem_map_t *get_global_data(const packet_info *pinfo) {
     conversation_t *conv = find_or_create_conversation(pinfo);
     mc_protocol_context *ctx = conversation_get_proto_data(conv, proto_mcje);
     return ctx->global_data;
 }
 
-uint8_t *read_legacy_string(tvbuff_t *tvb, int32_t offset, int32_t *len) {
+uint8_t *read_legacy_string(tvbuff_t *tvb, const int32_t offset, int32_t *len) {
     int16_t str_len = tvb_get_int16(tvb, offset, ENC_BIG_ENDIAN);
-    if (str_len < 0) return NULL;
-    if (tvb_reported_length_remaining(tvb, offset + 2) < str_len * 2) return NULL;
+    if (str_len < 0) return nullptr;
+    if (tvb_reported_length_remaining(tvb, offset + 2) < str_len * 2) return nullptr;
     *len = str_len * 2 + 2;
     return tvb_get_string_enc(wmem_file_scope(), tvb, offset + 2, str_len * 2, ENC_UTF_16);
 }
 
-int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result) {
+int32_t read_zigzag_int(tvbuff_t *tvb, const int32_t offset, int32_t *result) {
     uint32_t unsigned_result;
     int32_t len = read_unsigned_var_int(tvb, offset, 5, &unsigned_result);
     *result = (int32_t) (unsigned_result >> 1) ^ -(int32_t) (unsigned_result & 1);
     return len;
 }
 
-int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result) {
+int32_t read_zigzag_int64(tvbuff_t *tvb, const int32_t offset, int64_t *result) {
     uint64_t unsigned_result;
     int32_t len = read_unsigned_var_long(tvb, offset, &unsigned_result);
     *result = (int64_t) (unsigned_result >> 1) ^ -(int64_t) (unsigned_result & 1);

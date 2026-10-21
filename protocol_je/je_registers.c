@@ -1,6 +1,7 @@
 //
 // Created by Nickid2018 on 2023/7/16.
 //
+// ReSharper disable CppUseInternalLinkage
 
 #include <epan/packet.h>
 #include "mc_dissector.h"
@@ -10,7 +11,7 @@
 // NO FORMAT: Keep alignment
 char *JE_PROTOCOL_STATES[] = {
     "handshaking_server", "play_server", "status_server", "login_server", "configuration_server", "", "", "",
-    "", "play_client", "status_client", "login_client", "configuration_client", "", "", "",
+    ""                  , "play_client", "status_client", "login_client", "configuration_client", "", "", "",
 };
 
 // ett
@@ -52,15 +53,16 @@ int hf_packet_id_je = -1;
 int hf_packet_name_je = -1;
 int hf_unknown_packet_je = -1;
 
-gchar *pref_ignore_packets_je = "";
-gchar *pref_secret_key_je = NULL;
-gchar *pref_key_log_filepath_je = NULL;
+// ReSharper disable once CppUseAuto
+const gchar *pref_ignore_packets_je = "";
+const gchar *pref_secret_key_je = nullptr;
+const gchar *pref_key_log_filepath_je = nullptr;
 bool pref_do_nbt_decode_je = false;
 
-protocol_dissector_settings *settings_je = NULL;
-protocol_storage *storage_je = NULL;
+protocol_dissector_settings *settings_je = nullptr;
+protocol_storage *storage_je = nullptr;
 
-#define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, NULL, 0x0, NULL, HFILL}},
+#define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_##type, BASE_##dis, nullptr, 0x0, nullptr, HFILL}},
 
 void proto_register_mcje() {
     proto_mcje = proto_register_protocol(MCJE_NAME, MCJE_SHORT_NAME, MCJE_FILTER);
@@ -109,15 +111,15 @@ void proto_register_mcje() {
 void pref_register_mcje() {
     prefs_register_string_preference(
         pref_mcje, "ignore_packets", "Ignore Packets",
-        "Ignore packets with the given names", (const char **) &pref_ignore_packets_je
+        "Ignore packets with the given names", &pref_ignore_packets_je
     );
     prefs_register_string_preference(
         pref_mcje, "secret_key", "Secret Key",
-        "Secret key for decryption", (const char **) &pref_secret_key_je
+        "Secret key for decryption", &pref_secret_key_je
     );
     prefs_register_filename_preference(
         pref_mcje, "key_log_filepath", "Key Log File",
-        "", (const char **) &pref_key_log_filepath_je, false
+        "", &pref_key_log_filepath_je, false
     );
     prefs_register_bool_preference(
         pref_mcje, "do_nbt_decode", "NBT Decoding",
@@ -126,7 +128,7 @@ void pref_register_mcje() {
 }
 
 void init_storage_je() {
-    if (settings_je != NULL) {
+    if (settings_je != nullptr) {
         wmem_free(wmem_epan_scope(), settings_je);
     }
     settings_je = wmem_new(wmem_epan_scope(), protocol_dissector_settings);
@@ -162,7 +164,7 @@ void init_storage_je() {
     settings_je->total_states = 16;
     settings_je->state_names = JE_PROTOCOL_STATES;
 
-    if (storage_je != NULL) {
+    if (storage_je != nullptr) {
         clear_storage(storage_je);
         wmem_free(wmem_epan_scope(), storage_je);
     }

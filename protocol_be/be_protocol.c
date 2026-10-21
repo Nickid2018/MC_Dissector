@@ -19,13 +19,13 @@ char *BE_STATE_NAME[] = {
     "Invalid", "Not Compatible", "Protocol Not Found", "Secret Key Not Found"
 };
 
-int32_t read_packet_len(tvbuff_t *tvb, int32_t offset, int32_t *head_len) {
+int32_t read_packet_len(tvbuff_t *tvb, const int32_t offset, int32_t *head_len) {
     int32_t packet_len;
     *head_len = read_var_int(tvb, offset, &packet_len);
     return packet_len;
 }
 
-bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *frame_data) {
+bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, const mc_frame_data *frame_data) {
     be_state now_state = frame_data->client_state;
     protocol_dissector_set *set = now_state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
     if (set == NULL) return false;
@@ -52,7 +52,7 @@ bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fr
         }
 
         if (strcmp(mark, "encrypt") == 0) {
-            ctx->encrypted = true;
+            ctx->server_encrypted = true;
             if (pref_secret_key_be == NULL || strlen(pref_secret_key_be) != 64) {
                 ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
             } else {
@@ -61,7 +61,7 @@ bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fr
                 for (int i = 0; i < 32; i++) {
                     gchar hex[3] = {pref_secret_key_be[i * 2], pref_secret_key_be[i * 2 + 1], '\0'};
                     errno = 0;
-                    secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
+                    secret_key[i] = (uint8_t) strtol(hex, nullptr, 16);
                     if (errno != 0) {
                         failed = true;
                         break;
@@ -96,7 +96,9 @@ bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, mc_frame_data *fr
     return true;
 }
 
-void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, be_state state) {
+void handle_packet(
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, const mc_protocol_context *ctx, const be_state state
+) {
     protocol_dissector_set *set = state == INITIAL ? get_initial_protocol(storage_be) : ctx->dissector_set;
     if (ctx->dissector_set == NULL) {
         proto_tree_add_string(tree, hf_unknown_packet_be, tvb, 0, -1, "No protocol data found");
@@ -106,7 +108,7 @@ void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_proto
     int32_t packet_id;
     int32_t offset = read_var_int(tvb, 0, &packet_id);
     proto_tree_add_uint(tree, hf_packet_id_be, tvb, 0, offset, packet_id);
-    int32_t packet_should_len = tvb_reported_length(tvb) - offset;
+    int32_t packet_should_len = (int32_t) tvb_reported_length(tvb) - offset;
 
     uint32_t count = (uint64_t) wmem_map_lookup(set->count_by_state, (void *) (uint64_t) state);
     if (packet_id >= count) {
@@ -124,7 +126,7 @@ void handle_packet(proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_proto
 
     wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
     int32_t sub_len = d[packet_id]->dissect_protocol(
-        tree, pinfo, tvb, offset, pinfo->pool, d[packet_id], "Packet Data", packet_save, NULL
+        tree, pinfo, tvb, offset, pinfo->pool, d[packet_id], "Packet Data", packet_save, nullptr
     );
     if (sub_len != packet_should_len && sub_len != DISSECT_ERROR)
         proto_tree_add_string_format_value(

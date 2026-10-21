@@ -6,7 +6,7 @@
 
 #include <wsutil/wmem/wmem_stack.h>
 
-operand_t *create_operand(int64_t value, wmem_allocator_t *allocator) {
+static operand_t *create_operand(const int64_t value, wmem_allocator_t *allocator) {
     operand_t *operand = wmem_alloc(allocator, sizeof(operand_t));
     operand->value = value;
     return operand;
@@ -65,5 +65,5 @@ char *calculate_expr(
 
     if (wmem_stack_count(stack) != 1) return "Invalid expression: Too many operands";
     *result = ((operand_t *) wmem_stack_pop(stack))->value;
-    return NULL;
+    return nullptr;
 }

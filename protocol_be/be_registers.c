@@ -1,6 +1,7 @@
 //
 // Created by Nickid2018 on 2023/7/16.
 //
+// ReSharper disable CppUseInternalLinkage
 
 #include <epan/packet.h>
 #include "be_dissect.h"
@@ -49,10 +50,10 @@ int hf_packet_name_be = -1;
 int hf_unknown_packet_be = -1;
 
 bool pref_do_nbt_decode_be = false;
-gchar *pref_secret_key_be = NULL;
+const gchar *pref_secret_key_be = nullptr;
 
-protocol_dissector_settings *settings_be = NULL;
-protocol_storage *storage_be = NULL;
+static protocol_dissector_settings *settings_be = nullptr;
+protocol_storage *storage_be = nullptr;
 
 #define DEFINE_HF(name, desc, key, type, dis) {&name, {desc, key, FT_## type, BASE_## dis, NULL, 0x0, NULL, HFILL}},
 
@@ -107,7 +108,7 @@ void pref_register_mcbe() {
         );
     prefs_register_string_preference(
         pref_mcbe, "secret_key", "Secret Key",
-        "Secret key for decryption", (const char **) &pref_secret_key_be
+        "Secret key for decryption", &pref_secret_key_be
     );
 }
 

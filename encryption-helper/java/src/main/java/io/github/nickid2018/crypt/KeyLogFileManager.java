@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -88,6 +89,19 @@ public class KeyLogFileManager {
             );
         } catch (IOException e) {
             getLogger().error("Failed to operate key file", e);
+        }
+    }
+
+    // V2
+    private static SecretKey savedKey;
+    private static void push(byte[] data) {
+        if (disabled)
+            return;
+        if (savedKey == null) {
+            savedKey = new SecretKeySpec(data, "AES");
+        } else {
+            pushKeyInfo(savedKey, data);
+            savedKey = null;
         }
     }
 }

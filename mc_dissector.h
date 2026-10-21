@@ -29,13 +29,13 @@ extern int proto_mcje;
 extern int proto_mcbe;
 
 extern module_t *pref_mcje;
-extern gchar *pref_ignore_packets_je;
-extern gchar *pref_secret_key_je;
-extern gchar *pref_key_log_filepath_je;
+extern const gchar *pref_ignore_packets_je;
+extern const gchar *pref_secret_key_je;
+extern const gchar *pref_key_log_filepath_je;
 extern bool pref_do_nbt_decode_je;
 
 extern module_t *pref_mcbe;
 extern bool pref_do_nbt_decode_be;
-extern gchar *pref_secret_key_be;
+extern const gchar *pref_secret_key_be;
 
 #endif //MC_DISSECTOR_MC_DISSECTOR_H

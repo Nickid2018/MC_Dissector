@@ -85,7 +85,7 @@ struct protocol_dissector_settings_struct {
 #define DISSECT_ERROR (1 << 31)
 
 protocol_dissector_set *create_protocol_with_json(
-    cJSON *protocol_source, protocol_dissector_settings *settings, uint32_t protocol_version
+    const cJSON *protocol_source, protocol_dissector_settings *settings, uint32_t protocol_version
 );
 
 protocol_dissector_set *create_protocol(uint32_t protocol_version, protocol_dissector_settings *settings);

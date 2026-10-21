@@ -29,7 +29,8 @@ enum je_protocol_state {
 
 typedef struct {
     uint32_t data_version;
-    int32_t compression_threshold;
+    int32_t server_compression_threshold;
+    int32_t client_compression_threshold;
     int32_t server_last_segment_remaining;
     int32_t client_last_segment_remaining;
     uint8_t *server_last_remains;
@@ -57,6 +58,6 @@ void handle_protocol(
     proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
 );
 
-void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx);
+void handle_legacy_query(tvbuff_t *tvb, const packet_info *pinfo, proto_tree *tree, const mc_protocol_context *ctx);
 
 #endif //MC_DISSECTOR_JE_PROTOCOL_H

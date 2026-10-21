@@ -4,11 +4,11 @@
 
 #include <epan/proto.h>
 #include <epan/conversation.h>
-#include <errno.h>
 #include "mc_dissector.h"
 #include "je_dissect.h"
 #include "je_protocol.h"
 #include "protocol/storage/storage.h"
+#include "utils/key.h"
 #include "utils/nbt.h"
 
 extern int hf_invalid_data_je;
@@ -30,7 +30,7 @@ char *JE_STATE_NAME[] = {
     "Invalid", "Not Compatible", "Protocol Not Found", "Secret Key Not Found"
 };
 
-uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
+static uint32_t je_state_to_protocol_set_state(const je_state state, const bool is_client) {
     uint32_t base_state = 0;
     switch (state) {
         case PLAY:
@@ -52,7 +52,7 @@ uint32_t je_state_to_protocol_set_state(je_state state, bool is_client) {
     return is_client ? 8 + base_state : base_state;
 }
 
-je_state protocol_set_state_to_je_state(uint32_t base_state) {
+static je_state protocol_set_state_to_je_state(const uint32_t base_state) {
     switch (base_state) {
         case PLAY_SERVER:
             return PLAY;
@@ -67,8 +67,9 @@ je_state protocol_set_state_to_je_state(uint32_t base_state) {
     }
 }
 
-void handle_with_set(
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, protocol_dissector_set *set, je_state state, bool is_client
+static void handle_with_set(
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, const protocol_dissector_set *set,
+    const je_state state, const bool is_client
 ) {
     uint32_t now_state = je_state_to_protocol_set_state(state, is_client);
     int32_t packet_id;
@@ -97,7 +98,7 @@ void handle_with_set(
     if (strlen(pref_ignore_packets_je) != 0) {
         char *search_name = wmem_strdup_printf(pinfo->pool, "%s:%s", is_client ? "c" : "s", key[packet_id]);
         GList *list = prefs_get_string_list(pref_ignore_packets_je);
-        ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != NULL;
+        ignore = g_list_find_custom(list, search_name, (GCompareFunc) g_strcmp0) != nullptr;
         wmem_free(pinfo->pool, search_name);
     }
 
@@ -107,7 +108,7 @@ void handle_with_set(
     else {
         wmem_map_t *packet_save = wmem_map_new(pinfo->pool, g_str_hash, g_str_equal);
         int32_t sub_len = d[packet_id]->dissect_protocol(
-            tree, pinfo, tvb, len, pinfo->pool, d[packet_id], "Packet Data", packet_save, NULL
+            tree, pinfo, tvb, len, pinfo->pool, d[packet_id], "Packet Data", packet_save, nullptr
         );
         if (sub_len + len != length && sub_len != DISSECT_ERROR)
             proto_tree_add_string_format_value(
@@ -119,10 +120,11 @@ void handle_with_set(
 }
 
 void handle_initial(
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, const je_state state,
+    const bool is_client
 ) {
     protocol_dissector_set *initial_set = get_initial_protocol(storage_je);
-    if (initial_set == NULL) {
+    if (initial_set == nullptr) {
         proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Can't find initial protocol set");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return;
@@ -131,9 +133,10 @@ void handle_initial(
 }
 
 void handle_protocol(
-    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, je_state state, bool is_client
+    proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, mc_protocol_context *ctx, const je_state state,
+    const bool is_client
 ) {
-    if (ctx->dissector_set == NULL) {
+    if (ctx->dissector_set == nullptr) {
         proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 1, "Can't find protocol set for this version");
         ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         return;
@@ -147,9 +150,9 @@ void handle_protocol(
     handle_with_set(tree, pinfo, tvb, ctx->dissector_set, state, is_client);
 }
 
-int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, bool is_client) {
+int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, const bool is_client) {
     protocol_dissector_set *initial_set = get_initial_protocol(storage_je);
-    if (initial_set == NULL) return INVALID_DATA;
+    if (initial_set == nullptr) return INVALID_DATA;
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
     if (is_invalid(len)) return INVALID_DATA;
@@ -162,7 +165,7 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
             wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
             wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
             int32_t sub_len = d[packet_id]->dissect_protocol(
-                NULL, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, NULL
+                nullptr, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, nullptr
             );
             if (sub_len + len != tvb_reported_length(tvb) && sub_len != DISSECT_ERROR) {
                 wmem_destroy_allocator(temp_alloc);
@@ -170,7 +173,7 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
             }
             char *protocol_version_str = wmem_map_lookup(packet_save, "protocol_version");
             char *intention_str = wmem_map_lookup(packet_save, "intention");
-            if (intention_str == NULL || protocol_version_str == NULL) {
+            if (intention_str == nullptr || protocol_version_str == nullptr) {
                 wmem_destroy_allocator(temp_alloc);
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
                 return INVALID_DATA;
@@ -190,7 +193,7 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
             }
             ctx->client_state = ctx->server_state = next_state;
             char **java_versions = get_mapped_readable_versions(storage_je, protocol_version);
-            if (java_versions == NULL || java_versions[0] == NULL) {
+            if (java_versions == nullptr || java_versions[0] == nullptr) {
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
                 return INVALID_DATA;
             }
@@ -203,49 +206,24 @@ int try_switch_initial(tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *c
             if (next_state == STATUS)
                 return 0;
             ctx->dissector_set = get_protocol_set(storage_je, protocol_version);
-            if (ctx->dissector_set == NULL)
+            if (ctx->dissector_set == nullptr)
                 ctx->client_state = ctx->server_state = PROTOCOL_NOT_FOUND;
         }
     }
     return 0;
 }
 
-gchar *match_secret_key(gchar *challenge, gchar *content) {
-    char **split = g_strsplit(content, " ", 2);
-    if (split[1] == NULL) return NULL;
-    char **split_key = g_strsplit(split[1], "\n", 2);
-    if (strlen(split_key[0]) != 32) return NULL;
-    if (strcmp(split[0], challenge) == 0) return split_key[0];
-    return NULL;
-}
-
-gchar *find_encryption_key(gchar *challenge_str) {
-    if (!challenge_str) return NULL;
-    if (!pref_key_log_filepath_je) return pref_secret_key_je;
-    char *content = NULL;
-    if (!g_file_get_contents(pref_key_log_filepath_je, &content, NULL, NULL)) {
-        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read key file %s", pref_key_log_filepath_je);
-        return pref_secret_key_je;
-    }
-    gchar *matched = match_secret_key(challenge_str, content);
-    if (matched) return matched;
-    while ((content = g_utf8_strchr(content, -1, '\n'))) {
-        content++;
-        if (content[0] == '\0') break;
-        matched = match_secret_key(challenge_str, content);
-        if (matched) return matched;
-    }
-    return pref_secret_key_je;
-}
-
 int try_switch_state(
-    tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, mc_frame_data *frame_data, bool is_client
+    tvbuff_t *tvb, packet_info *pinfo, mc_protocol_context *ctx, mc_frame_data *frame_data, const bool is_client
 ) {
-    if (ctx->dissector_set == NULL) return INVALID_DATA;
+    if (ctx->dissector_set == nullptr) return INVALID_DATA;
     uint32_t now_state = je_state_to_protocol_set_state(is_client ? ctx->client_state : ctx->server_state, is_client);
     int32_t packet_id;
     int32_t len = read_var_int(tvb, 0, &packet_id);
     if (is_invalid(len)) return INVALID_DATA;
+    auto casted_frame_data = (mcje_frame_data *) frame_data->protocol_data;
+    auto casted_protocol_data = (mcje_context *) ctx->protocol_data;
+
     wmem_map_t *state_to_next = wmem_map_lookup(ctx->dissector_set->state_to_next, (void *) (uint64_t) now_state);
     wmem_map_t *state_side = wmem_map_lookup(ctx->dissector_set->state_to_next_side, (void *) (uint64_t) now_state);
     wmem_map_t *special_mark = wmem_map_lookup(ctx->dissector_set->special_mark, (void *) (uint64_t) now_state);
@@ -264,38 +242,22 @@ int try_switch_state(
             int32_t str_len;
             len += read_var_int(tvb, len, &str_len);
             len += str_len;
-            len += read_buffer(tvb, len, NULL, NULL);
+            len += read_buffer(tvb, len, nullptr, nullptr, nullptr);
             uint8_t *challenge;
-            read_buffer(tvb, len, &challenge, pinfo->pool);
-            gchar *challenge_str = wmem_strdup_printf(
-                wmem_file_scope(), "%02x%02x%02x%02x",
-                challenge[0], challenge[1], challenge[2], challenge[3]
-            );
+            int32_t challenge_len;
+            read_buffer(tvb, len, &challenge, &challenge_len, pinfo->pool);
+            gchar *challenge_str = bytes_to_hex(wmem_file_scope(), challenge, challenge_len, false);
             wmem_map_insert(ctx->global_data, "#key_challenge", challenge_str);
         }
 
         if (strcmp(mark, "encrypt") == 0) {
-            ctx->encrypted = true;
-            gchar *encryption_key = find_encryption_key(wmem_map_lookup(ctx->global_data, "#key_challenge"));
-            if (encryption_key == NULL || strlen(encryption_key) != 32) {
+            const gchar *encryption_key = find_encryption_key(wmem_map_lookup(ctx->global_data, "#key_challenge"));
+            uint8_t *secret_key = make_key(encryption_key);
+            if (!secret_key) {
                 ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
             } else {
-                uint8_t *secret_key = wmem_alloc(wmem_file_scope(), 16);
-                bool failed = false;
-                for (int i = 0; i < 16; i++) {
-                    gchar hex[3] = {encryption_key[i * 2], encryption_key[i * 2 + 1], '\0'};
-                    errno = 0;
-                    secret_key[i] = (uint8_t) strtol(hex, NULL, 16);
-                    if (errno != 0) {
-                        failed = true;
-                        break;
-                    }
-                }
-                if (failed) {
-                    ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
-                } else {
-                    ctx->secret_key = secret_key;
-                }
+                ctx->secret_key = secret_key;
+                ctx->server_encrypted = ctx->client_encrypted = true;
             }
         }
 
@@ -303,19 +265,87 @@ int try_switch_state(
             int32_t threshold;
             len = read_var_int(tvb, len, &threshold);
             if (is_invalid(len)) return INVALID_DATA;
-            ((mcje_context *) ctx->protocol_data)->compression_threshold = threshold;
-            ((mcje_frame_data *) frame_data->protocol_data)->first_compression_packet = true;
-            ((mcje_frame_data *) frame_data->protocol_data)->compression_threshold = threshold;
+            casted_protocol_data->server_compression_threshold = threshold;
+            casted_protocol_data->client_compression_threshold = threshold;
+            casted_frame_data->first_compression_packet = true;
+            casted_frame_data->compression_threshold = threshold;
+        }
+
+        if (strcmp(mark, "apply_options") == 0) {
+            protocol_dissector **d = wmem_map_lookup(
+                ctx->dissector_set->dissectors_by_state, (void *) (uint64_t) now_state
+            );
+            wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
+            wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
+            int32_t sub_len = d[packet_id]->dissect_protocol(
+                nullptr, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, nullptr
+            );
+            if (sub_len + len != tvb_reported_length(tvb) && sub_len != DISSECT_ERROR) {
+                wmem_destroy_allocator(temp_alloc);
+                return INVALID_DATA;
+            }
+            if (
+                wmem_map_contains(packet_save, "compression") &&
+                strcmp(wmem_map_lookup(packet_save, "compression"), "1") == 0
+            ) {
+                int32_t compression = GPOINTER_TO_INT(wmem_map_lookup(ctx->global_data, "#compression"));
+                if (compression <= 0) {
+                    col_set_str(pinfo->cinfo, COL_INFO, "[Apply Option Failed] Invalid Compression Option");
+                    return INVALID_DATA;
+                }
+                casted_frame_data->first_compression_packet = true;
+                casted_frame_data->compression_threshold = compression;
+                casted_protocol_data->client_compression_threshold = compression;
+            }
+            if (
+                wmem_map_contains(packet_save, "encryption") &&
+                strcmp(wmem_map_lookup(packet_save, "encryption"), "1") == 0
+            ) {
+                if (ctx->secret_key == nullptr) {
+                    gchar *encryption_key = wmem_map_lookup(ctx->global_data, "#key_encryption");
+                    uint8_t *secret_key = make_key(encryption_key);
+                    if (!secret_key) {
+                        ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                    } else {
+                        ctx->secret_key = secret_key;
+                        ctx->client_encrypted = true;
+                    }
+                }
+            }
+        }
+
+        if (strcmp(mark, "apply_response") == 0) {
+            if (casted_protocol_data->client_compression_threshold > 0) {
+                casted_protocol_data->server_compression_threshold = casted_protocol_data->client_compression_threshold;
+                casted_frame_data->first_compression_packet = true;
+                casted_frame_data->compression_threshold = casted_protocol_data->client_compression_threshold;
+            }
+            if (ctx->secret_key) ctx->server_encrypted = true;
+        }
+
+        if (strcmp(mark, "require_preload") == 0) {
+            protocol_dissector **d = wmem_map_lookup(
+                ctx->dissector_set->dissectors_by_state, (void *) (uint64_t) now_state
+            );
+            wmem_allocator_t *temp_alloc = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
+            wmem_map_t *packet_save = wmem_map_new(temp_alloc, g_str_hash, g_str_equal);
+            int32_t sub_len = d[packet_id]->dissect_protocol(
+                nullptr, pinfo, tvb, len, temp_alloc, d[packet_id], "Packet Data", packet_save, nullptr
+            );
+            if (sub_len + len != tvb_reported_length(tvb) && sub_len != DISSECT_ERROR) {
+                wmem_destroy_allocator(temp_alloc);
+                return INVALID_DATA;
+            }
         }
 
         if (strcmp(mark, "registry") == 0) {
             wmem_map_t *writable_registry = wmem_map_lookup(ctx->global_data, "#writable_registry");
-            if (writable_registry == NULL) {
+            if (writable_registry == nullptr) {
                 writable_registry = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
                 wmem_map_insert(ctx->global_data, "#writable_registry", writable_registry);
             }
             wmem_map_t *writable_registry_size = wmem_map_lookup(ctx->global_data, "#writable_registry_size");
-            if (writable_registry_size == NULL) {
+            if (writable_registry_size == nullptr) {
                 writable_registry_size = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
                 wmem_map_insert(ctx->global_data, "#writable_registry_size", writable_registry_size);
             }
@@ -325,13 +355,13 @@ int try_switch_state(
             if (is_invalid(len)) return INVALID_DATA;
 
             char **splits = g_strsplit(registry_name, ":", 10);
-            char *last_split = "";
-            for (int i = 0; splits[i] != NULL; i++) {
+            auto last_split = "";
+            for (int i = 0; splits[i] != nullptr; i++) {
                 last_split = splits[i];
             }
             char **second_splits = g_strsplit(last_split, "/", 10);
-            char *real_name = "";
-            for (int i = 0; second_splits[i] != NULL; i++) {
+            auto real_name = "";
+            for (int i = 0; second_splits[i] != nullptr; i++) {
                 real_name = second_splits[i];
             }
             wmem_free(wmem_file_scope(), registry_name);
@@ -372,7 +402,7 @@ int try_switch_state(
     return 0;
 }
 
-void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc_protocol_context *ctx) {
+void handle_legacy_query(tvbuff_t *tvb, const packet_info *pinfo, proto_tree *tree, const mc_protocol_context *ctx) {
     bool is_server = addresses_equal(&pinfo->dst, &ctx->server_address) && pinfo->destport == ctx->server_port;
     if (is_server) {
         col_set_str(pinfo->cinfo, COL_INFO, "[C => S] Legacy Query");
@@ -400,7 +430,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                     int32_t len;
                     if (valid) {
                         uint8_t *str = read_legacy_string(tvb, offset, &len);
-                        if (str != NULL) {
+                        if (str != nullptr) {
                             if (strcmp((char *) str, "MC|PingHost") != 0) valid = false;
                             else offset += len;
                         } else valid = false;
@@ -425,7 +455,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
                     }
                     if (valid) {
                         uint8_t *str = read_legacy_string(tvb, offset, &len);
-                        if (str != NULL) {
+                        if (str != nullptr) {
                             proto_item *payload =
                                 proto_tree_add_string(tree, hf_string_je, tvb, offset, len, (char *) str);
                             proto_item_prepend_text(payload, "Host Name ");
@@ -476,7 +506,7 @@ void handle_legacy_query(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, mc
             }
             int32_t len;
             uint8_t *str = read_legacy_string(tvb, 1, &len);
-            if (str != NULL) {
+            if (str != nullptr) {
                 if (is_version1) {
                     int32_t start = 7;
                     int32_t offset = 7;
