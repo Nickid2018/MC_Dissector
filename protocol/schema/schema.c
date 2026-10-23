@@ -34,7 +34,8 @@ static void add_name(proto_item *item, char *name) {
 }
 
 static int32_t add_invalid_data(
-    const protocol_dissector *dissector, proto_tree *tree, tvbuff_t *tvb, const int offset, char *name, const char *value
+    const protocol_dissector *dissector, proto_tree *tree, tvbuff_t *tvb,
+    const int offset, char *name, const char *value
 ) {
     if (tree)
         add_name(
@@ -111,8 +112,10 @@ DISSECT_PROTOCOL(u64) {
     uint64_t u64 = tvb_get_uint64(tvb, offset, dissector->settings->endian);
     if (value) *value = wmem_strdup_printf(packet_alloc, "%lu", u64);
     if (tree)
-        add_name(proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_uint64], tvb, offset, 8, u64),
-                 name);
+        add_name(
+            proto_tree_add_uint64(tree, dissector->settings->hf_indexes[hf_uint64], tvb, offset, 8, u64),
+            name
+        );
     return 8;
 }
 
@@ -370,8 +373,8 @@ DISSECT_PROTOCOL(string) {
     int32_t len;
     int32_t length = read_var_int(tvb, offset, &len);
     if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid String");
-    char *print = tvb_format_text(pinfo->pool, tvb, offset + length, len);
-    if (value) *value = wmem_strdup(packet_alloc, print);
+    char *print = tvb_format_text(packet_alloc, tvb, offset + length, len);
+    if (value) *value = print;
     if (tree)
         add_name(
             proto_tree_add_string(tree, dissector->settings->hf_indexes[hf_string], tvb, offset, len + length, print),
@@ -384,9 +387,12 @@ DISSECT_PROTOCOL(buffer) {
     int32_t buffer_len;
     int32_t length = read_var_int(tvb, offset, &buffer_len);
     if (length < 0) return add_invalid_data(dissector, tree, tvb, offset, name, "Invalid Buffer");
-    if (value) *value = bytes_to_hex(pinfo->pool, tvb_memdup(pinfo->pool, tvb, offset + length, buffer_len), buffer_len, false);
+    if (value)
+        *value = bytes_to_hex(
+            packet_alloc, tvb_memdup(packet_alloc, tvb, offset + length, buffer_len), buffer_len, false
+        );
     if (tree) {
-        uint8_t *buffer = tvb_memdup(pinfo->pool, tvb, offset + length, buffer_len > 200 ? 200 : buffer_len);
+        uint8_t *buffer = tvb_memdup(packet_alloc, tvb, offset + length, buffer_len > 200 ? 200 : buffer_len);
         add_name(
             proto_tree_add_bytes(
                 tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset + length, buffer_len, buffer
@@ -400,7 +406,7 @@ DISSECT_PROTOCOL(buffer) {
 DISSECT_PROTOCOL(rest_buffer) {
     int32_t buffer_len = tvb_reported_length_remaining(tvb, offset);
     if (tree) {
-        uint8_t *buffer = tvb_memdup(pinfo->pool, tvb, offset, buffer_len > 200 ? 200 : buffer_len);
+        uint8_t *buffer = tvb_memdup(packet_alloc, tvb, offset, buffer_len > 200 ? 200 : buffer_len);
         add_name(
             proto_tree_add_bytes(tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset, buffer_len, buffer),
             name
@@ -410,7 +416,7 @@ DISSECT_PROTOCOL(rest_buffer) {
 }
 
 DISSECT_PROTOCOL(uuid) {
-    auto uuid = wmem_new(pinfo->pool, e_guid_t);
+    auto uuid = wmem_new(packet_alloc, e_guid_t);
     tvb_get_guid(tvb, offset, uuid, 0);
     if (value) *value = (char *) guids_resolve_guid_to_str(uuid, packet_alloc);
     if (tree)
@@ -444,7 +450,7 @@ DISSECT_PROTOCOL(nbt) {
         add_name(
             proto_tree_add_bytes(
                 tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset + len, len_nbt,
-                tvb_memdup(pinfo->pool, tvb, offset + len, len_nbt > 200 ? 200 : len_nbt)
+                tvb_memdup(packet_alloc, tvb, offset + len, len_nbt > 200 ? 200 : len_nbt)
             ),
             name
         );
@@ -460,7 +466,7 @@ DISSECT_PROTOCOL(bnbt) {
         add_name(
             proto_tree_add_bytes(
                 tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset, len_nbt,
-                tvb_memdup(pinfo->pool, tvb, offset, len_nbt > 200 ? 200 : len_nbt)
+                tvb_memdup(packet_alloc, tvb, offset, len_nbt > 200 ? 200 : len_nbt)
             ),
             name
         );
@@ -476,18 +482,18 @@ DISSECT_PROTOCOL(bnbt_loop) {
         // FIXME:
         while (tvb_reported_length(tvb) > offset + inner_len && tvb_get_uint8(tvb, offset + inner_len)) {
             if (pref_do_nbt_decode_be) {
-                char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d] (%%s)", name, id++);
+                char *nbt_name = wmem_strdup_printf(packet_alloc, "%s[%d] (%%s)", name, id++);
                 int32_t len = do_be_nbt_tree(tree, pinfo, tvb, offset + inner_len, nbt_name, true);
                 if (len == DISSECT_ERROR) return DISSECT_ERROR;
                 inner_len += len;
             } else {
-                char *nbt_name = wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, id++);
+                char *nbt_name = wmem_strdup_printf(packet_alloc, "%s[%d]", name, id++);
                 int32_t len = count_be_nbt_length(tvb, offset + inner_len);
                 if (len == DISSECT_ERROR) return DISSECT_ERROR;
                 add_name(
                     proto_tree_add_bytes(
                         tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset + inner_len, len,
-                        tvb_memdup(pinfo->pool, tvb, offset + inner_len, len > 200 ? 200 : len)
+                        tvb_memdup(packet_alloc, tvb, offset + inner_len, len > 200 ? 200 : len)
                     ),
                     nbt_name
                 );
@@ -605,7 +611,7 @@ DISSECT_PROTOCOL(array) {
             tree, tvb, offset, 0, dissector->settings->ett_tree, nullptr, "%s (%ld entries)", name, parsed_count
         );
     for (int i = 0; i < parsed_count; i++) {
-        char *name_format = wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, i);
+        char *name_format = wmem_strdup_printf(packet_alloc, "%s[%d]", name, i);
         int32_t len = sub_dissector->dissect_protocol(
             tree, pinfo, tvb, offset + total, packet_alloc, sub_dissector, name_format, packet_saves, nullptr
         );
@@ -651,16 +657,18 @@ DISSECT_PROTOCOL(mapper) {
         );
     wmem_map_t *mapper = wmem_map_lookup(dissector->dissect_arguments, "m");
     char *mapped = wmem_map_lookup(mapper, saved_value);
-    if (!mapped) mapped = wmem_strdup(wmem_file_scope(), saved_value);
-    if (value) *value = wmem_strdup(packet_alloc, mapped);
-    if (tree)
+    if (!mapped) mapped = saved_value;
+    if (value) *value = mapped;
+    if (tree) {
+        mapped = wmem_strdup(pinfo->pool, mapped);
         add_name(
             proto_tree_add_string_format_value(
-                tree, dissector->settings->hf_indexes[hf_string], tvb, offset, len, mapped, "%s (%s)", mapped,
-                saved_value
+                tree, dissector->settings->hf_indexes[hf_string], tvb, offset, len, mapped,
+                "%s (%s)", mapped, saved_value
             ),
             name
         );
+    }
     return len;
 }
 
@@ -763,8 +771,10 @@ DISSECT_PROTOCOL(global_save) {
         tree, pinfo, tvb, offset, packet_alloc, sub_dissector, name, packet_saves, &saved_value
     );
     if (len == DISSECT_ERROR) return DISSECT_ERROR;
-    wmem_map_t *global_data = get_global_data(pinfo);
-    wmem_map_insert(global_data, save_name, wmem_strdup(wmem_file_scope(), saved_value));
+    if (!tree) {
+        wmem_map_t *global_data = get_global_data(pinfo);
+        wmem_map_insert(global_data, save_name, wmem_strdup(wmem_file_scope(), saved_value));
+    }
     return len;
 }
 
@@ -795,7 +805,7 @@ DISSECT_PROTOCOL(registry) {
                   ? "<Unknown Registry Entry>"
                   : get_registry_data(dissector->settings->storage, protocol_version, registry_name, index);
     }
-    if (value) *value = wmem_strdup(packet_alloc, key);
+    if (value) *value = key;
     if (tree)
         add_name(
             proto_tree_add_string_format_value(
@@ -810,7 +820,8 @@ DISSECT_PROTOCOL(codec) {
     wmem_map_t *map = wmem_map_lookup(dissector->dissect_arguments, "d");
     char *search_key = wmem_map_lookup(dissector->dissect_arguments, "k");
     char *key = wmem_map_lookup(packet_saves, search_key);
-    if (key == nullptr) return add_invalid_data(dissector, tree, tvb, offset, name, "No value found, protocol has error?");
+    if (key == nullptr)
+        return add_invalid_data(dissector, tree, tvb, offset, name, "No value found, check protocol data");
     protocol_dissector *sub = wmem_map_lookup(map, key);
     if (sub == nullptr) {
         int64_t length = g_utf8_strlen(key, 400);
@@ -837,7 +848,7 @@ DISSECT_PROTOCOL(top_bit_set_terminated_array) {
         uint32_t ord = now & 0x7F;
         int32_t sub_len = sub_dissector->dissect_protocol(
             tree, pinfo, tvb, offset + len, packet_alloc,
-            sub_dissector, wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, ord), packet_saves, nullptr
+            sub_dissector, wmem_strdup_printf(packet_alloc, "%s[%d]", name, ord), packet_saves, nullptr
         );
         if (sub_len == DISSECT_ERROR) return DISSECT_ERROR;
         len += sub_len;
@@ -855,7 +866,7 @@ DISSECT_PROTOCOL(entity_metadata_loop) {
     while (tvb_get_uint8(tvb, offset + len) != end_val) {
         int32_t sub_len = sub_dissector->dissect_protocol(
             tree, pinfo, tvb, offset + len, packet_alloc,
-            sub_dissector, wmem_strdup_printf(wmem_file_scope(), "%s[%d]", name, ord), packet_saves, nullptr
+            sub_dissector, wmem_strdup_printf(packet_alloc, "%s[%d]", name, ord), packet_saves, nullptr
         );
         if (sub_len == DISSECT_ERROR) return DISSECT_ERROR;
         len += sub_len;
@@ -868,7 +879,7 @@ DISSECT_PROTOCOL(entity_metadata_loop) {
 DISSECT_PROTOCOL(fix_buffer) {
     int32_t buffer_len = (int32_t) (uint64_t) wmem_map_lookup(dissector->dissect_arguments, "s");
     if (tree) {
-        uint8_t *buffer = tvb_memdup(pinfo->pool, tvb, offset, buffer_len > 200 ? 200 : buffer_len);
+        uint8_t *buffer = tvb_memdup(packet_alloc, tvb, offset, buffer_len > 200 ? 200 : buffer_len);
         add_name(
             proto_tree_add_bytes(tree, dissector->settings->hf_indexes[hf_bytes], tvb, offset, buffer_len, buffer),
             name
@@ -922,7 +933,7 @@ DISSECT_PROTOCOL(direct_holder) {
                   ? "<Unknown Registry Entry>"
                   : get_registry_data(dissector->settings->storage, protocol_version, registry, index);
     }
-    if (value) *value = wmem_strdup(packet_alloc, key);
+    if (value) *value = key;
     if (tree)
         add_name(
             proto_tree_add_string_format_value(
@@ -1100,7 +1111,9 @@ COMPOSITE_PROTOCOL_DEFINE(mapper) {
     if (!cJSON_IsObject(object)) return make_error(allocator, "Mapper param needs to be a object", settings);
     cJSON *type = cJSON_GetObjectItem(object, "type");
     cJSON *var = cJSON_GetObjectItem(object, "var");
-    if (type == nullptr && var == nullptr) return make_error(allocator, "Lack of type and var for mapper object", settings);
+    if (type == nullptr && var == nullptr)
+        return
+            make_error(allocator, "Lack type and var for mapper object", settings);
     cJSON *mappings = cJSON_GetObjectItem(object, "mappings");
     cJSON *source = cJSON_GetObjectItem(object, "source");
     if (mappings == nullptr && source == nullptr)
@@ -1362,7 +1375,7 @@ COMPOSITE_PROTOCOL_DEFINE(reference) {
         protocol_dissector *this_dissector = make_void(allocator);
         wmem_map_insert(dissectors, cache_ref, this_dissector);
         protocol_dissector *dissector = make_protocol_dissector(
-            settings, allocator, json, dissectors, protocol_version,nullptr
+            settings, allocator, json, dissectors, protocol_version, nullptr
         );
         this_dissector->dissect_arguments = dissector->dissect_arguments;
         this_dissector->dissect_protocol = dissector->dissect_protocol;
@@ -1460,6 +1473,7 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
     protocol_dissector *this_dissector = wmem_alloc(allocator, sizeof(protocol_dissector));
     this_dissector->dissect_arguments = wmem_map_new(allocator, g_direct_hash, g_direct_equal);
     this_dissector->dissect_protocol = nullptr;
+    this_dissector->settings = settings;
 
     FUNC_PROTOCOL(sync_entity_data, dissect_sync_entity_data)
     FUNC_PROTOCOL(record_entity_id, dissect_record_entity_id)
@@ -1470,10 +1484,12 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
     FUNC_PROTOCOL(legacy_registry_holder, dissect_legacy_registry_holder)
     FUNC_PROTOCOL(find_encryption_key, dissect_find_encryption_key)
     FUNC_PROTOCOL(update_compression, dissect_update_compression)
+    FUNC_PROTOCOL(resolve_lpvec3, dissect_resolve_lpvec3)
 
     if (this_dissector->dissect_protocol == nullptr) {
-        wmem_free(allocator, this_dissector);
-        return make_error(allocator, "Unknown func type", settings);
+        wmem_map_insert(this_dissector->dissect_arguments, GUINT_TO_POINTER(1), ref);
+        this_dissector->dissect_protocol = dissect_unknown_function;
+        return this_dissector;
     }
 
     int count = cJSON_GetArraySize(params);
@@ -1481,7 +1497,7 @@ COMPOSITE_PROTOCOL_DEFINE(func) {
         cJSON *node = cJSON_GetArrayItem(params, i);
         if (!cJSON_IsString(node)) return make_error(allocator, "Invalid func parameter", settings);
         wmem_map_insert(
-            this_dissector->dissect_arguments, (void *) (uint64_t) (i - 2),
+            this_dissector->dissect_arguments, GUINT_TO_POINTER(i - 1),
             wmem_strdup(allocator, node->valuestring)
         );
     }

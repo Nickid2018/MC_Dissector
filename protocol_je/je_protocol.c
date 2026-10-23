@@ -312,6 +312,7 @@ int try_switch_state(
                     }
                 }
             }
+            wmem_destroy_allocator(temp_alloc);
         }
 
         if (strcmp(mark, "apply_response") == 0) {
@@ -336,6 +337,7 @@ int try_switch_state(
                 wmem_destroy_allocator(temp_alloc);
                 return INVALID_DATA;
             }
+            wmem_destroy_allocator(temp_alloc);
         }
 
         if (strcmp(mark, "registry") == 0) {

@@ -62,4 +62,6 @@ int32_t read_zigzag_int(tvbuff_t *tvb, int32_t offset, int32_t *result);
 
 int32_t read_zigzag_int64(tvbuff_t *tvb, int32_t offset, int64_t *result);
 
+int64_t string_to_int(const char *str, bool *failed);
+
 #endif //MC_DISSECTOR_PROTOCOL_DATA_H

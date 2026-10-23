@@ -99,3 +99,13 @@ int32_t read_zigzag_int64(tvbuff_t *tvb, const int32_t offset, int64_t *result) 
     *result = (int64_t) (unsigned_result >> 1) ^ -(int64_t) (unsigned_result & 1);
     return len;
 }
+
+int64_t string_to_int(const char *str, bool *failed) {
+    errno = 0;
+    int64_t data = strtol(str, nullptr, 10);
+    if (errno != 0) {
+        if (failed) *failed = true;
+        return 0;
+    }
+    return data;
+}

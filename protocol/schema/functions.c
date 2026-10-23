@@ -10,12 +10,20 @@
 #include "utils/key.h"
 #include "utils/nbt.h"
 
-extern int hf_generated_je;
-extern int hf_invalid_data_je;
+DISSECT_PROTOCOL(unknown_function) {
+    if (!tree) return 0;
+    char *function = wmem_map_lookup(dissector->dissect_arguments, GUINT_TO_POINTER(1));
+    proto_item *item = proto_tree_add_string_format_value(
+        tree, dissector->settings->hf_indexes[hf_parsing_error], tvb, offset, 0,
+        "", "Unknown function: %s", function
+    );
+    proto_item_prepend_text(item, "%s ", name);
+    return 0;
+}
 
 DISSECT_PROTOCOL(record_entity_id) {
-    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
-        return 0;
+    if (!get_settings_flag("registries") && !get_settings_flag("entities")) return 0;
+    if (tree) return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(get_global_data(pinfo), "#entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -32,8 +40,8 @@ DISSECT_PROTOCOL(record_entity_id) {
 }
 
 DISSECT_PROTOCOL(record_entity_id_player) {
-    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
-        return 0;
+    if (!get_settings_flag("registries") && !get_settings_flag("entities")) return 0;
+    if (tree) return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(get_global_data(pinfo), "#entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -45,8 +53,8 @@ DISSECT_PROTOCOL(record_entity_id_player) {
 }
 
 DISSECT_PROTOCOL(record_entity_id_experience_orb) {
-    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
-        return 0;
+    if (!get_settings_flag("registries") && !get_settings_flag("entities")) return 0;
+    if (tree) return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(get_global_data(pinfo), "#entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -58,8 +66,8 @@ DISSECT_PROTOCOL(record_entity_id_experience_orb) {
 }
 
 DISSECT_PROTOCOL(record_entity_id_painting) {
-    if (!get_settings_flag("registries") && !get_settings_flag("entities"))
-        return 0;
+    if (!get_settings_flag("registries") && !get_settings_flag("entities")) return 0;
+    if (tree) return 0;
     wmem_map_t *entity_id_record = wmem_map_lookup(get_global_data(pinfo), "#entity_id_record");
     if (entity_id_record == NULL) {
         entity_id_record = wmem_map_new(wmem_file_scope(), g_str_hash, g_str_equal);
@@ -81,11 +89,13 @@ DISSECT_PROTOCOL(sync_entity_data) {
     char *entity_id = wmem_map_lookup(packet_saves, "entity_id");
     char *type = wmem_map_lookup(entity_id_record, entity_id);
     if (type != NULL) {
-        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, type);
+        proto_item *item = proto_tree_add_string(tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, type);
         proto_item_set_generated(item);
         proto_item_prepend_text(item, "Entity Type ");
     } else {
-        proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, "Unknown");
+        proto_item *item = proto_tree_add_string(
+            tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, "Unknown"
+        );
         proto_item_set_generated(item);
         proto_item_prepend_text(item, "Entity Type ");
         return 0;
@@ -97,7 +107,9 @@ DISSECT_PROTOCOL(sync_entity_data) {
     char *found_name = get_entity_sync_data_name(dissector->settings->storage, protocol_version, type, sync);
     if (found_name == NULL)
         found_name = "Unknown Sync Data!";
-    proto_item *item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_name);
+    proto_item *item = proto_tree_add_string(
+        tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_name
+    );
     proto_item_set_generated(item);
     proto_item_prepend_text(item, "Sync Data Type ");
     return 0;
@@ -111,11 +123,16 @@ DISSECT_PROTOCOL(display_protocol_version) {
     char **java_versions = get_mapped_readable_versions(dissector->settings->storage, protocol_version);
     proto_item *item;
     if (java_versions == NULL || java_versions[0] == NULL) {
-        item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, "Unknown Protocol Version");
+        item = proto_tree_add_string(
+            tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, "Unknown Protocol Version"
+        );
     } else {
         char *java_version = g_strjoinv(", ", java_versions);
         g_strfreev(java_versions);
-        item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, wmem_strdup(wmem_file_scope(), java_version));
+        item = proto_tree_add_string(
+            tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0,
+            wmem_strdup(wmem_file_scope(), java_version)
+        );
         g_free(java_version);
     }
     proto_item_set_generated(item);
@@ -124,6 +141,7 @@ DISSECT_PROTOCOL(display_protocol_version) {
 }
 
 DISSECT_PROTOCOL(legacy_registry_holder) {
+    if (tree) return 0;
     wmem_map_t *writable_registry = wmem_map_lookup(get_global_data(pinfo), "#writable_registry");
     wmem_map_t *writable_registry_size = wmem_map_lookup(get_global_data(pinfo), "#writable_registry_size");
     if (writable_registry == NULL) {
@@ -188,33 +206,95 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
 }
 
 DISSECT_PROTOCOL(find_encryption_key) {
-    const gchar *found_key = wmem_map_lookup(get_global_data(pinfo), "#key_encryption");
-    if (!found_key) {
+    if (tree) {
+        const gchar *found_key = wmem_map_lookup(get_global_data(pinfo), "#key_encryption");
+        if (found_key) {
+            proto_item *item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key
+            );
+            proto_item_set_generated(item);
+            proto_item_prepend_text(item, "Encryption Key ");
+        } else {
+            proto_item *item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_invalid_data], tvb, 0, 0, "No invalid key found"
+            );
+            proto_item_set_generated(item);
+            proto_item_prepend_text(item, "Encryption Key ");
+        }
+    } else {
         char *challenge = wmem_map_lookup(get_global_data(pinfo), "#key_challenge");
         if (!challenge) return 0;
-        found_key = find_encryption_key(challenge);
-        wmem_map_insert(get_global_data(pinfo), "#key_encryption", (void *) found_key);
-    }
-    if (tree) {
-        proto_item *item = nullptr;
-        if (found_key) {
-            item = proto_tree_add_string(tree, hf_generated_je, tvb, 0, 0, found_key);
-        } else {
-            item = proto_tree_add_string(tree, hf_invalid_data_je, tvb, 0, 0, "No invalid key found");
-        }
-        proto_item_set_generated(item);
-        proto_item_prepend_text(item, "Encryption Key ");
+        wmem_map_insert(get_global_data(pinfo), "#key_encryption", (void *) find_encryption_key(challenge));
     }
     return 0;
 }
 
 DISSECT_PROTOCOL(update_compression) {
+    if (tree) return 0;
     gchar *limit = wmem_map_lookup(get_global_data(pinfo), "#compression");
-    errno = 0;
-    int32_t compression = (int32_t) strtol(limit, nullptr, 10);
-    if (errno != 0) {
-        return 0;
+    bool failed = false;
+    int64_t compression = string_to_int(limit, &failed);
+    if (failed) return 0;
+    wmem_map_insert(get_global_data(pinfo), "#compression", GINT_TO_POINTER((int32_t) compression));
+    return 0;
+}
+
+DISSECT_PROTOCOL(resolve_lpvec3) {
+    if (!tree) return 0;
+    bool failed = false;
+    gchar *continuousBit = wmem_map_lookup(packet_saves, "continuousBit");
+    bool continuous = continuousBit && strcmp(continuousBit, "1") == 0;
+    gchar *scaleLow2Bits = wmem_map_lookup(packet_saves, "scaleLow2Bits");
+    int64_t scaleLow2 = string_to_int(scaleLow2Bits, &failed);
+    if (failed) return 0;
+
+    int64_t scale = scaleLow2;
+    if (continuous) {
+        gchar *scaleHighBits = wmem_map_lookup(packet_saves, "scaleHighBits");
+        int64_t scaleHigh = string_to_int(scaleHighBits, &failed);
+        if (failed) return 0;
+        scale |= scaleHigh << 2;
     }
-    wmem_map_insert(get_global_data(pinfo), "#compression", GINT_TO_POINTER(compression));
+
+    double x = 0;
+    double y = 0;
+    double z = 0;
+    if (continuous || scaleLow2 != 0) {
+        gchar *packedXLow5Bits = wmem_map_lookup(packet_saves, "packedXLow5Bits");
+        int64_t packedXLow5 = string_to_int(packedXLow5Bits, &failed);
+        if (failed) return 0;
+        gchar *packedXMiddle8Bits = wmem_map_lookup(packet_saves, "packedXMiddle8Bits");
+        int64_t packedXMiddle8 = string_to_int(packedXMiddle8Bits, &failed);
+        if (failed) return 0;
+        gchar *packedXHigh2BitsYZ = wmem_map_lookup(packet_saves, "packedXHigh2BitsYZ");
+        int64_t packedXHigh2YZ = string_to_int(packedXHigh2BitsYZ, &failed);
+        if (failed) return 0;
+        int64_t x_base = packedXLow5 | packedXMiddle8 << 5 | (packedXHigh2YZ & 0x3);
+        int64_t y_base = (packedXHigh2YZ >> 2) & 0x8FFF;
+        int64_t z_base = packedXHigh2YZ >> 17;
+        x = ((double) x_base * 2 / 32766.0 - 1) * (double) scale;
+        y = ((double) y_base * 2 / 32766.0 - 1) * (double) scale;
+        z = ((double) z_base * 2 / 32766.0 - 1) * (double) scale;
+    }
+
+    proto_item *item = proto_tree_add_item(tree, dissector->settings->hf_indexes[hf_string], tvb, 0, 0, ENC_NA);
+    proto_item_set_text(item, "Low-Precision Vector 3D Analyzation");
+    proto_item_set_generated(item);
+    proto_tree *sub_tree = proto_item_add_subtree(item, dissector->settings->ett_tree);
+    proto_item *x_item = proto_tree_add_double(sub_tree, dissector->settings->hf_indexes[hf_double], tvb, 0, 0, x);
+    proto_item_set_text(x_item, "X: %lf", x);
+    proto_item_set_generated(x_item);
+    proto_item *y_item = proto_tree_add_double(sub_tree, dissector->settings->hf_indexes[hf_double], tvb, 0, 0, y);
+    proto_item_set_text(y_item, "Y: %lf", y);
+    proto_item_set_generated(y_item);
+    proto_item *z_item = proto_tree_add_double(sub_tree, dissector->settings->hf_indexes[hf_double], tvb, 0, 0, z);
+    proto_item_set_text(z_item, "Z: %lf", z);
+    proto_item_set_generated(z_item);
+    if (scale > 0) {
+        double p = (double) scale / 16383.0;
+        proto_item *s_item = proto_tree_add_double(sub_tree, dissector->settings->hf_indexes[hf_double], tvb, 0, 0, p);
+        proto_item_set_text(s_item, "Precision: %lf", p);
+        proto_item_set_generated(s_item);
+    }
     return 0;
 }

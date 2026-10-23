@@ -13,6 +13,8 @@ int32_t dissect_##fn(           \
     protocol_dissector *dissector, char *name, wmem_map_t *packet_saves, char **value \
 )
 
+DISSECT_PROTOCOL(unknown_function);
+
 DISSECT_PROTOCOL(record_entity_id);
 
 DISSECT_PROTOCOL(record_entity_id_player);
@@ -30,5 +32,7 @@ DISSECT_PROTOCOL(legacy_registry_holder);
 DISSECT_PROTOCOL(find_encryption_key);
 
 DISSECT_PROTOCOL(update_compression);
+
+DISSECT_PROTOCOL(resolve_lpvec3);
 
 #endif //MC_DISSECTOR_FUNCTIONS_H
