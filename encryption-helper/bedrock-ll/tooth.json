@@ -14,10 +14,10 @@
   },
   "variants": [
     {
-      "label": "",
+      "label": "client",
       "platform": "win-x64",
       "dependencies": {
-        "github.com/LiteLDev/LeviLamina": "1.8.*"
+        "github.com/LiteLDev/LeviLamina#client": "26.51.*"
       },
       "assets": [
         {
@@ -29,41 +29,7 @@
             {
               "type": "dir",
               "src": "encryption-helper/",
-              "dest": "plugins/encryption-helper/"
-            }
-          ]
-        }
-      ],
-      "preserve_files": [],
-      "remove_files": [],
-      "scripts": {
-        "pre_install": [],
-        "install": [],
-        "post_install": [],
-        "pre_pack": [],
-        "post_pack": [],
-        "pre_uninstall": [],
-        "uninstall": [],
-        "post_uninstall": []
-      }
-    },
-    {
-      "label": "client",
-      "platform": "win-x64",
-      "dependencies": {
-        "github.com/LiteLDev/LeviLamina#client": "1.8.*"
-      },
-      "assets": [
-        {
-          "type": "zip",
-          "urls": [
-            "https://{{tooth}}/releases/download/v{{version}}/encryption-helper-bedrock-ll.zip"
-          ],
-          "placements": [
-            {
-              "type": "dir",
-              "src": "my-mod/",
-              "dest": "mods/my-mod/"
+              "dest": "mods/encryption-helper/"
             }
           ]
         }

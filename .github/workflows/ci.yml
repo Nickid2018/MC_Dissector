@@ -139,10 +139,14 @@ jobs:
           xmake f -a x64 -m release -p windows -v -y
           xmake -v -y
         working-directory: encryption-helper/bedrock
+      - name: Setup LLVM
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
       - name: Build Bedrock Encryption Helper (LeviLamina)
         run: |
           xmake repo -u
-          xmake f -a x64 -m release -p windows -v --target_type=client -y
+          xmake f -a x64 -m release -p windows -v -y
           xmake -v -y
         working-directory: encryption-helper/bedrock-ll
       - name: Upload Bedrock Encryption Helper (Generic)
@@ -192,7 +196,8 @@ jobs:
           name: encryption-helper-bedrock-ll
           path: encryption-helper-bedrock-ll
       - name: Zip Bedrock Encryption Helper (LeviLamina)
-        run: zip -r encryption-helper-bedrock-ll.zip encryption-helper-bedrock-ll
+        run: zip -r ../encryption-helper-bedrock-ll.zip .
+        working-directory: encryption-helper-bedrock-ll
       - id: process-name
         env:
           REF: ${{ github.ref }}
