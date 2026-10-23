@@ -143,6 +143,19 @@ jobs:
         uses: ZhongRuoyu/setup-llvm@v0
         with:
           llvm-version: 22
+      - name: Select LLVM 22
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:LLVM_PATH\bin;$env:PATH"
+          $clangCl = (Get-Command clang-cl.exe).Source
+          if ($clangCl -notlike '*llvm-22*') {
+            throw "Unexpected clang-cl: $clangCl"
+          }
+          clang-cl --version
+          # xmake caches the vcvars environment (including its PATH snapshot); drop it so
+          # clang-cl resolves to the LLVM installed above instead of the runner's old one.
+          Remove-Item -Force "$env:LOCALAPPDATA\.xmake\cache\detect" -ErrorAction SilentlyContinue
+          "PATH=$env:PATH" >> $env:GITHUB_ENV
       - name: Build Bedrock Encryption Helper (LeviLamina)
         run: |
           xmake repo -u
