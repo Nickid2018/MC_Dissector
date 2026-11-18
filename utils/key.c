@@ -16,6 +16,19 @@ gchar *match_secret_key(const gchar *challenge, const gchar *content) {
     return nullptr;
 }
 
+gchar **match_secret_key_and_iv(const gchar *challenge, const gchar *content) {
+    char **split = g_strsplit(content, " ", 2);
+    if (split[1] == NULL) return nullptr;
+    char **split_line = g_strsplit(split[1], "\n", 2);
+    char **split_key = g_strsplit(split_line[0], " ", 4);
+    if (strlen(split_key[0]) != 32) return nullptr;
+    if (!split_key[1] || strlen(split_key[1]) != 32) return nullptr;
+    if (!split_key[2] || strlen(split_key[2]) != 32) return nullptr;
+    if (!split_key[3] || strlen(split_key[3]) != 32) return nullptr;
+    if (strcmp(split[0], challenge) == 0) return split_key;
+    return nullptr;
+}
+
 const gchar *find_encryption_key(gchar *challenge_str) {
     if (!challenge_str) return nullptr;
     if (!pref_key_log_filepath_je) return pref_secret_key_je;
@@ -33,6 +46,36 @@ const gchar *find_encryption_key(gchar *challenge_str) {
         if (matched) return matched;
     }
     return pref_secret_key_je;
+}
+
+gchar **find_encryption_key_salt(gchar *salt_str) {
+    if (!salt_str) return nullptr;
+    if (!pref_key_log_filepath_je) return nullptr;
+    char *content = nullptr;
+    if (!g_file_get_contents(pref_key_log_filepath_je, &content, nullptr, nullptr)) {
+        ws_log("MC-Dissector", LOG_LEVEL_WARNING, "Cannot read key file %s", pref_key_log_filepath_je);
+        return nullptr;
+    }
+    errno = 0;
+    uint64_t salt = strtoull(salt_str, nullptr, 10);
+    if (errno != 0) return nullptr;
+    gchar *search_str = g_strdup_printf("S%lx", salt);
+    gchar **matched = match_secret_key_and_iv(search_str, content);
+    if (matched) {
+        g_free(search_str);
+        return matched;
+    }
+    while ((content = g_utf8_strchr(content, -1, '\n'))) {
+        content++;
+        if (content[0] == '\0') break;
+        matched = match_secret_key_and_iv(search_str, content);
+        if (matched) {
+            g_free(search_str);
+            return matched;
+        }
+    }
+    g_free(search_str);
+    return nullptr;
 }
 
 uint8_t *make_key(const gchar *encryption_key) {

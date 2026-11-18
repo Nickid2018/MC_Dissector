@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.io.BufferedReader;
@@ -32,18 +35,18 @@ public class AgentBasedInjector implements ClassFileTransformer {
             inst.addTransformer((classLoader, className, aClass, protectionDomain, bytes) -> {
                 if (recordedLoaders.contains(classLoader)) return null;
                 recordedLoaders.add(classLoader);
-                log.info(classLoader.toString());
                 try (BufferedReader in = new BufferedReader(new InputStreamReader(Objects.requireNonNull(classLoader.getResourceAsStream("version.json"))))) {
                     Optional<String> matchLine = in.lines().filter(str -> str.contains("protocol_version")).findFirst();
                     if (!matchLine.isPresent()) return null;
-                    log.info("Match line for {}: {}", classLoader, matchLine.get());
                     Pattern extractPattern = Pattern.compile("\\s+\"protocol_version\": (\\d+),");
                     Matcher matcher = extractPattern.matcher(matchLine.get());
                     if (!matcher.find()) return null;
                     String version = matcher.group(1);
                     log.info("Checked Protocol Version = {}", version);
                     int protocol = Integer.parseInt(version);
-                    if ((protocol > 777 && protocol < 10000) || protocol > 1073742166) { // >= 26.4-snapshot-5
+                    if ((protocol > 777 && protocol < 10000) || protocol > 1073742171) { // >= 26.4-snapshot-9
+                        inst.addTransformer(new AgentBasedInjector(TransformProviders.KEY_LOG_TRANSFORM_V3));
+                    } else if (protocol > 1073742166) { // 26.4-snapshot-5 ~ 26.4-snapshot-8
                         inst.addTransformer(new AgentBasedInjector(TransformProviders.KEY_LOG_TRANSFORM_V2));
                     } else {
                         inst.addTransformer(new AgentBasedInjector(TransformProviders.KEY_LOG_TRANSFORM_V1));
@@ -70,8 +73,21 @@ public class AgentBasedInjector implements ClassFileTransformer {
         ClassNode classNode = new ClassNode();
         ClassReader reader = new ClassReader(classfileBuffer);
         reader.accept(classNode, 0);
+        Set<String> constantPool = new HashSet<>();
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitLdcInsn(Object value) {
+                        if (value instanceof String) constantPool.add((String) value);
+                        super.visitLdcInsn(value);
+                    }
+                };
+            }
+        }, 0);
 
-        byte[] transformed = transformProvider.transform(classNode, className);
+        byte[] transformed = transformProvider.transform(classNode, className, constantPool);
         if (transformed != null) {
             injected = true;
             log.info("Transformed class {}", className);

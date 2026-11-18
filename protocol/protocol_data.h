@@ -27,7 +27,11 @@ typedef struct {
 
     bool server_encrypted;
     bool client_encrypted;
-    uint8_t *secret_key;
+    uint8_t *client_key;
+    uint8_t *server_key;
+    uint8_t *client_iv;
+    uint8_t *server_iv;
+
     gcry_cipher_hd_t server_cipher;
     gcry_cipher_hd_t client_cipher;
 } mc_protocol_context;

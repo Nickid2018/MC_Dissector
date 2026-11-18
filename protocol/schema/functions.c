@@ -206,14 +206,32 @@ DISSECT_PROTOCOL(legacy_registry_holder) {
 }
 
 DISSECT_PROTOCOL(find_encryption_key) {
+    wmem_map_t *g_data = get_global_data(pinfo);
     if (tree) {
-        const gchar *found_key = wmem_map_lookup(get_global_data(pinfo), "#key_encryption");
+        const gchar *found_key = wmem_map_lookup(g_data, "#key_encryption");
+        const gchar **found_key_iv = wmem_map_lookup(g_data, "#key_encryption_iv");
         if (found_key) {
             proto_item *item = proto_tree_add_string(
                 tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key
             );
             proto_item_set_generated(item);
             proto_item_prepend_text(item, "Encryption Key ");
+        } else if (found_key_iv) {
+            proto_item *key_item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[0]
+            );
+            proto_item_set_generated(key_item);
+            proto_item_prepend_text(key_item, "Encryption Key ");
+            proto_item *c_iv_item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[1]
+            );
+            proto_item_set_generated(c_iv_item);
+            proto_item_prepend_text(c_iv_item, "Client IV ");
+            proto_item *s_iv_item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[2]
+            );
+            proto_item_set_generated(s_iv_item);
+            proto_item_prepend_text(s_iv_item, "Server IV ");
         } else {
             proto_item *item = proto_tree_add_string(
                 tree, dissector->settings->hf_indexes[hf_invalid_data], tvb, 0, 0, "No invalid key found"
@@ -222,9 +240,14 @@ DISSECT_PROTOCOL(find_encryption_key) {
             proto_item_prepend_text(item, "Encryption Key ");
         }
     } else {
-        char *challenge = wmem_map_lookup(get_global_data(pinfo), "#key_challenge");
-        if (!challenge) return 0;
-        wmem_map_insert(get_global_data(pinfo), "#key_encryption", (void *) find_encryption_key(challenge));
+        char *challenge = wmem_map_lookup(g_data, "#key_challenge");
+        if (challenge) {
+            wmem_map_insert(g_data, "#key_encryption", (void *) find_encryption_key(challenge));
+            return 0;
+        }
+        char *challenge_salt = wmem_map_lookup(g_data, "#key_challenge_salt");
+        if (challenge_salt)
+            wmem_map_insert(g_data, "#key_encryption_iv", find_encryption_key_salt(challenge_salt));
     }
     return 0;
 }

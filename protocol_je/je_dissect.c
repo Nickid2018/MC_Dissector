@@ -151,7 +151,10 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
         copy_address(&ctx->server_address, &pinfo->dst);
         ctx->server_encrypted = false;
         ctx->client_encrypted = false;
-        ctx->secret_key = nullptr;
+        ctx->server_key = nullptr;
+        ctx->client_key = nullptr;
+        ctx->server_iv = nullptr;
+        ctx->client_iv = nullptr;
         ctx->server_cipher = nullptr;
         ctx->client_cipher = nullptr;
         mcje_context *protocol_ctx = wmem_alloc(wmem_file_scope(), sizeof(mcje_context));
@@ -224,8 +227,8 @@ int dissect_je_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree _U_, voi
 
         if (*cipher == nullptr) {
             gcry_cipher_open(cipher, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CFB8, 0);
-            gcry_cipher_setkey(*cipher, ctx->secret_key, 16);
-            gcry_cipher_setiv(*cipher, ctx->secret_key, 16);
+            gcry_cipher_setkey(*cipher, is_server ? ctx->server_key : ctx->client_key, 16);
+            gcry_cipher_setiv(*cipher, is_server ? ctx->server_iv : ctx->client_iv, 16);
         }
 
         if (!*decrypt_data) {

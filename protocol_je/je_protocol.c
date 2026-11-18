@@ -256,7 +256,7 @@ int try_switch_state(
             if (!secret_key) {
                 ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
             } else {
-                ctx->secret_key = secret_key;
+                ctx->server_key = ctx->client_key = ctx->server_iv = ctx->client_iv = secret_key;
                 ctx->server_encrypted = ctx->client_encrypted = true;
             }
         }
@@ -301,14 +301,31 @@ int try_switch_state(
                 wmem_map_contains(packet_save, "encryption") &&
                 strcmp(wmem_map_lookup(packet_save, "encryption"), "1") == 0
             ) {
-                if (ctx->secret_key == nullptr) {
+                if (ctx->server_key == nullptr || ctx->client_key == nullptr) {
                     gchar *encryption_key = wmem_map_lookup(ctx->global_data, "#key_encryption");
-                    uint8_t *secret_key = make_key(encryption_key);
-                    if (!secret_key) {
-                        ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                    gchar **encryption_key_iv = wmem_map_lookup(ctx->global_data, "#key_encryption_iv");
+                    if (encryption_key_iv) {
+                        uint8_t *client_key = make_key(encryption_key_iv[0]);
+                        uint8_t *server_key = make_key(encryption_key_iv[1]);
+                        uint8_t *client_iv = make_key(encryption_key_iv[2]);
+                        uint8_t *server_iv = make_key(encryption_key_iv[3]);
+                        if (!client_key || !server_key || !client_iv || !server_iv) {
+                            ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                        } else {
+                            ctx->client_key = client_key;
+                            ctx->server_key = server_key;
+                            ctx->client_iv = client_iv;
+                            ctx->server_iv = server_iv;
+                            ctx->client_encrypted = true;
+                        }
                     } else {
-                        ctx->secret_key = secret_key;
-                        ctx->client_encrypted = true;
+                        uint8_t *secret_key = make_key(encryption_key);
+                        if (!secret_key) {
+                            ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
+                        } else {
+                            ctx->server_key = ctx->client_key = ctx->server_iv = ctx->client_iv = secret_key;
+                            ctx->client_encrypted = true;
+                        }
                     }
                 }
             }
@@ -321,7 +338,7 @@ int try_switch_state(
                 casted_frame_data->first_compression_packet = true;
                 casted_frame_data->compression_threshold = casted_protocol_data->client_compression_threshold;
             }
-            if (ctx->secret_key) ctx->server_encrypted = true;
+            if (ctx->server_key) ctx->server_encrypted = true;
         }
 
         if (strcmp(mark, "require_preload") == 0) {

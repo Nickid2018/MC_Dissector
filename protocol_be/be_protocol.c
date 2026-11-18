@@ -70,7 +70,7 @@ bool try_change_state(tvbuff_t *tvb, mc_protocol_context *ctx, const mc_frame_da
                 if (failed) {
                     ctx->server_state = ctx->client_state = SECRET_KEY_NOT_FOUND;
                 } else {
-                    ctx->secret_key = secret_key;
+                    ctx->server_key = ctx->client_key = ctx->server_iv = ctx->client_iv = secret_key;
                 }
             }
         }

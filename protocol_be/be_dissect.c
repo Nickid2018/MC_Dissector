@@ -194,12 +194,12 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         if (*cipher == nullptr) {
             if (ctx->protocol_version <= 431) {
                 gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_CFB8, 0);
-                gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
-                gcry_cipher_setiv(*cipher, ctx->secret_key, 16);
+                gcry_cipher_setkey(*cipher,  is_server ? ctx->server_key : ctx->client_key, 32);
+                gcry_cipher_setiv(*cipher, is_server ? ctx->server_iv : ctx->client_iv, 16);
             } else {
                 gcry_cipher_open(cipher, GCRY_CIPHER_AES256, GCRY_CIPHER_MODE_GCM, 0);
-                gcry_cipher_setkey(*cipher, ctx->secret_key, 32);
-                gcry_cipher_setiv(*cipher, ctx->secret_key, 12);
+                gcry_cipher_setkey(*cipher, is_server ? ctx->server_key : ctx->client_key, 32);
+                gcry_cipher_setiv(*cipher, is_server ? ctx->server_iv : ctx->client_iv, 12);
             }
         }
 
@@ -223,7 +223,7 @@ int dissect_be_conv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
             uint64_t le_counter = htole64(*counter);
             memcpy(checksum_buffer, &le_counter, 8);
             memcpy(checksum_buffer + 8, protocol_frame->decrypted_data, length - 8);
-            memcpy(checksum_buffer + length, ctx->secret_key, 32);
+            memcpy(checksum_buffer + length, is_server ? ctx->server_key : ctx->client_key, 32);
             uint8_t *hash_buffer = wmem_alloc(pinfo->pool, 32);
             gcry_md_hash_buffer(GCRY_MD_SHA256, hash_buffer, checksum_buffer, length + 32);
             char *got = bytes_to_hex(pinfo->pool, protocol_frame->decrypted_data + length - 8, 8, true);
@@ -275,7 +275,10 @@ bool dissect_be_core_heuristic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
         ctx->server_port = pinfo->destport;
         copy_address(&ctx->server_address, &pinfo->dst);
         ctx->server_encrypted = false;
-        ctx->secret_key = nullptr;
+        ctx->server_key = nullptr;
+        ctx->client_key = nullptr;
+        ctx->server_iv = nullptr;
+        ctx->client_iv = nullptr;
         ctx->server_cipher = nullptr;
         ctx->client_cipher = nullptr;
         mcbe_context *protocol_ctx = wmem_alloc(wmem_file_scope(), sizeof(mcbe_context));

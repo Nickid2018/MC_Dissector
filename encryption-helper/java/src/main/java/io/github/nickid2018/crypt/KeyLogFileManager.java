@@ -1,12 +1,15 @@
 package io.github.nickid2018.crypt;
 
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -64,10 +67,7 @@ public class KeyLogFileManager {
         return sb.toString();
     }
 
-    private static void pushKeyInfo(SecretKey key, byte[] challenge) {
-        if (disabled)
-            return;
-
+    private static void writeIntoFile(String content, String index) {
         FileChannel channel = getFileChannel();
         if (channel == null && !disabled) {
             getLogger().warn("Key file channel is not initialized, cannot flush keys.");
@@ -75,33 +75,67 @@ public class KeyLogFileManager {
         }
 
         try (FileLock ignored = channel.lock()) {
-            String writeContent = String.format(
-                "%s %s\n",
-                byteArrayToHexString(challenge),
-                byteArrayToHexString(key.getEncoded())
-            );
+            String writeContent = String.format("%s %s\n", index, content);
             ByteBuffer buffer = ByteBuffer.wrap(writeContent.getBytes(StandardCharsets.UTF_8));
             channel.write(buffer);
             channel.force(true);
-            getLogger().info(
-                "Successfully wrote key log file for challenge: {}",
-                byteArrayToHexString(challenge)
-            );
+            getLogger().info("Successfully wrote key log file for challenge: {}", index);
         } catch (IOException e) {
             getLogger().error("Failed to operate key file", e);
         }
     }
 
+    // We compile this file in Java 8, but we need Record in higher Java version, so reflect reflection
+    @SneakyThrows
+    private static Object getRecordComponent(Object obj, int index) {
+        Class<?> clazz = obj.getClass(); // should be a record, we will not check it
+        Method getRecordComponents = Class.class.getDeclaredMethod("getRecordComponents");
+        getRecordComponents.setAccessible(true);
+        Object[] recordComponents = (Object[]) getRecordComponents.invoke(clazz);
+        Object component = recordComponents[index];
+        Method getAccessor = component.getClass().getDeclaredMethod("getAccessor");
+        getAccessor.setAccessible(true);
+        Method accessor = (Method) getAccessor.invoke(component);
+        accessor.setAccessible(true);
+        return accessor.invoke(obj);
+    }
+
+    // V1
+    private static void pushKeyInfo(SecretKey key, byte[] challenge) {
+        if (disabled)
+            return;
+        writeIntoFile(byteArrayToHexString(key.getEncoded()), byteArrayToHexString(challenge));
+    }
+
     // V2
     private static SecretKey savedKey;
+
     private static void push(byte[] data) {
         if (disabled)
             return;
         if (savedKey == null) {
             savedKey = new SecretKeySpec(data, "AES");
         } else {
-            pushKeyInfo(savedKey, data);
+            writeIntoFile(byteArrayToHexString(savedKey.getEncoded()), byteArrayToHexString(data));
             savedKey = null;
         }
+    }
+
+    // V3
+    private static void pushSalt(
+        Object savedSalt,
+        SecretKey serverToClientKey,
+        SecretKey clientToServerKey,
+        IvParameterSpec serverToClient,
+        IvParameterSpec clientToServer
+    ) {
+        if (disabled)
+            return;
+        writeIntoFile(String.format("%s %s %s %s",
+            byteArrayToHexString(serverToClientKey.getEncoded()),
+            byteArrayToHexString(clientToServerKey.getEncoded()),
+            byteArrayToHexString(serverToClient.getIV()),
+            byteArrayToHexString(clientToServer.getIV())
+        ), String.format("S%x", (Long) (savedSalt)));
     }
 }

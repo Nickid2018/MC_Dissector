@@ -9,7 +9,11 @@
 
 gchar *match_secret_key(const gchar *challenge, const gchar *content);
 
+gchar **match_secret_key_and_iv(const gchar *challenge, const gchar *content);
+
 const gchar *find_encryption_key(gchar *challenge_str);
+
+gchar **find_encryption_key_salt(gchar *salt_str);
 
 uint8_t *make_key(const gchar *encryption_key);
 
