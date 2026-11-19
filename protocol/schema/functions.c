@@ -217,18 +217,23 @@ DISSECT_PROTOCOL(find_encryption_key) {
             proto_item_set_generated(item);
             proto_item_prepend_text(item, "Encryption Key ");
         } else if (found_key_iv) {
-            proto_item *key_item = proto_tree_add_string(
+            proto_item *c_key_item = proto_tree_add_string(
                 tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[0]
             );
-            proto_item_set_generated(key_item);
-            proto_item_prepend_text(key_item, "Encryption Key ");
-            proto_item *c_iv_item = proto_tree_add_string(
+            proto_item_set_generated(c_key_item);
+            proto_item_prepend_text(c_key_item, "Client Encryption Key ");
+            proto_item *s_key_item = proto_tree_add_string(
                 tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[1]
+            );
+            proto_item_set_generated(s_key_item);
+            proto_item_prepend_text(s_key_item, "Server Encryption Key ");
+            proto_item *c_iv_item = proto_tree_add_string(
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[2]
             );
             proto_item_set_generated(c_iv_item);
             proto_item_prepend_text(c_iv_item, "Client IV ");
             proto_item *s_iv_item = proto_tree_add_string(
-                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[2]
+                tree, dissector->settings->hf_indexes[hf_generated], tvb, 0, 0, found_key_iv[3]
             );
             proto_item_set_generated(s_iv_item);
             proto_item_prepend_text(s_iv_item, "Server IV ");
